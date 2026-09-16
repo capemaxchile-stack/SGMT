@@ -17,7 +17,7 @@ export class FaenasController {
   constructor(private readonly faenasService: FaenasService) {}
 
   @Post()
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES')
   create(@Body() createFaenaDto: CreateFaenaDto) {
     return this.faenasService.create(createFaenaDto);
   }
@@ -33,25 +33,25 @@ export class FaenasController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'JEFE_FAENA')
   update(@Param('id') id: string, @Body() updateFaenaDto: UpdateFaenaDto) {
     return this.faenasService.update(id, updateFaenaDto);
   }
 
   @Delete(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO')
   remove(@Param('id') id: string) {
     return this.faenasService.remove(id);
   }
 
   @Post(':id/contracts')
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'GERENTE_ADMIN_FINANZAS')
   addContract(@Param('id') id: string, @Body() createContractDto: CreateContractDto) {
     return this.faenasService.addContract(id, createContractDto);
   }
 
   @Post('contracts/:contractId/cost-centers')
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_ADMIN_FINANZAS', 'CONTADOR')
   addCostCenter(@Param('contractId') contractId: string, @Body() createCostCenterDto: CreateCostCenterDto) {
     return this.faenasService.addCostCenter(contractId, createCostCenterDto);
   }

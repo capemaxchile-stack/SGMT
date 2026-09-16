@@ -14,7 +14,7 @@ export class SuppliersController {
   constructor(private readonly suppliersService: SuppliersService) {}
 
   @Post()
-  @Roles('ADMIN', 'COMPRADOR')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'COMPRADOR', 'GERENTE_ADMIN_FINANZAS')
   create(@Body() createSupplierDto: CreateSupplierDto) {
     return this.suppliersService.create(createSupplierDto);
   }
@@ -30,13 +30,13 @@ export class SuppliersController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'COMPRADOR')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'COMPRADOR', 'GERENTE_ADMIN_FINANZAS')
   update(@Param('id') id: string, @Body() updateSupplierDto: UpdateSupplierDto) {
     return this.suppliersService.update(id, updateSupplierDto);
   }
 
   @Delete(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO')
   remove(@Param('id') id: string) {
     return this.suppliersService.remove(id);
   }

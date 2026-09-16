@@ -17,7 +17,7 @@ export class AssetsController {
   constructor(private readonly assetsService: AssetsService) {}
 
   @Post()
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES')
   create(@Body() createAssetDto: CreateAssetDto) {
     return this.assetsService.create(createAssetDto);
   }
@@ -37,24 +37,25 @@ export class AssetsController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'MANTENIMIENTO')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'JEFE_FAENA')
   update(@Param('id') id: string, @Body() updateAssetDto: UpdateAssetDto) {
     return this.assetsService.update(id, updateAssetDto);
   }
 
   @Patch(':id/meter')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'JEFE_FAENA', 'BODEGUERO', 'SOLICITANTE_TERRENO')
   updateMeter(@Param('id') id: string, @Body() updateMeterDto: UpdateMeterDto) {
     return this.assetsService.updateMeter(id, updateMeterDto);
   }
 
   @Post(':id/assign')
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'JEFE_FAENA')
   assign(@Param('id') id: string, @Body() assignAssetDto: AssignAssetDto) {
     return this.assetsService.assign(id, assignAssetDto);
   }
 
   @Delete(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO')
   remove(@Param('id') id: string) {
     return this.assetsService.remove(id);
   }

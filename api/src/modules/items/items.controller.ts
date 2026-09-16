@@ -14,7 +14,7 @@ export class ItemsController {
   constructor(private readonly itemsService: ItemsService) {}
 
   @Post()
-  @Roles('ADMIN', 'BODEGUERO')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'SUPERVISOR_BODEGA', 'BODEGUERO', 'COMPRADOR')
   create(@Body() createItemDto: CreateItemDto) {
     return this.itemsService.create(createItemDto);
   }
@@ -30,13 +30,13 @@ export class ItemsController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'BODEGUERO')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'SUPERVISOR_BODEGA', 'BODEGUERO')
   update(@Param('id') id: string, @Body() updateItemDto: UpdateItemDto) {
     return this.itemsService.update(id, updateItemDto);
   }
 
   @Delete(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO')
   remove(@Param('id') id: string) {
     return this.itemsService.remove(id);
   }

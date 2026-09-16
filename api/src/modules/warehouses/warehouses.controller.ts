@@ -14,7 +14,7 @@ export class WarehousesController {
   constructor(private readonly warehousesService: WarehousesService) {}
 
   @Post()
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'SUPERVISOR_BODEGA')
   create(@Body() createWarehouseDto: CreateWarehouseDto) {
     return this.warehousesService.create(createWarehouseDto);
   }
@@ -30,13 +30,13 @@ export class WarehousesController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'SUPERVISOR_BODEGA')
   update(@Param('id') id: string, @Body() updateWarehouseDto: UpdateWarehouseDto) {
     return this.warehousesService.update(id, updateWarehouseDto);
   }
 
   @Delete(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO')
   remove(@Param('id') id: string) {
     return this.warehousesService.remove(id);
   }
