@@ -1,32 +1,120 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/axios';
-import { Asset } from '../types/models';
+import { Asset, AssetType, AssetOperationalStatus } from '../types/models';
 
 export const flotaKeys = {
-  all: ['flota'] as const,
+  all: ['assets'] as const,
   lists: () => [...flotaKeys.all, 'list'] as const,
+  list: (filters?: { type?: string; operationalStatus?: string; search?: string }) =>
+    [...flotaKeys.lists(), filters] as const,
+  details: () => [...flotaKeys.all, 'detail'] as const,
+  detail: (id: string) => [...flotaKeys.details(), id] as const,
 };
 
-export const fetchFlota = async (): Promise<Asset[]> => {
-  const { data } = await api.get<Asset[]>('/flota');
+export const fetchAssets = async (params?: {
+  type?: string;
+  operationalStatus?: string;
+  search?: string;
+}): Promise<Asset[]> => {
+  const { data } = await api.get<Asset[]>('/assets', { params });
   return data;
 };
 
-export const useFlota = () => {
+export const fetchAsset = async (id: string): Promise<Asset> => {
+  const { data } = await api.get<Asset>(`/assets/${id}`);
+  return data;
+};
+
+export const createAsset = async (payload: {
+  type: AssetType;
+  brand: string;
+  model: string;
+  year: number;
+  licensePlate?: string;
+  internalNumber: string;
+  operationalStatus: AssetOperationalStatus;
+  currentHourmeter?: number;
+  currentKilometrage?: number;
+}): Promise<Asset> => {
+  const { data } = await api.post<Asset>('/assets', payload);
+  return data;
+};
+
+export const updateAsset = async ({ id, payload }: { id: string; payload: Partial<Asset> }): Promise<Asset> => {
+  const { data } = await api.patch<Asset>(`/assets/${id}`, payload);
+  return data;
+};
+
+export const updateMeter = async ({
+  id,
+  currentHourmeter,
+  currentKilometrage,
+}: {
+  id: string;
+  currentHourmeter?: number;
+  currentKilometrage?: number;
+}): Promise<Asset> => {
+  const { data } = await api.patch<Asset>(`/assets/${id}/meter`, { currentHourmeter, currentKilometrage });
+  return data;
+};
+
+export const assignAsset = async ({
+  id,
+  faenaId,
+  startDate,
+}: {
+  id: string;
+  faenaId: string;
+  startDate?: string;
+}): Promise<void> => {
+  await api.post(`/assets/${id}/assign`, { faenaId, startDate });
+};
+
+export const deleteAsset = async (id: string): Promise<void> => {
+  await api.delete(`/assets/${id}`);
+};
+
+export const useFlota = (params?: { type?: string; operationalStatus?: string; search?: string }) => {
   return useQuery({
-    queryKey: flotaKeys.lists(),
-    queryFn: fetchFlota,
-    initialData: [
-      {
-        id: '1', internalNumber: 'EXC-01', type: 'Excavadora', brand: 'Caterpillar', model: '320', year: 2022,
-        licensePlate: 'ABC-123', status: 'OPERATIVO', currentHorometer: 1500, currentKilometers: 0,
-        faenaName: 'Mina Los Pelambres', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
-      },
-      {
-        id: '2', internalNumber: 'CAM-05', type: 'Camión', brand: 'Volvo', model: 'FMX', year: 2023,
-        licensePlate: 'XYZ-987', status: 'EN_MANTENCION', currentHorometer: 0, currentKilometers: 45000,
-        faenaName: 'Proyecto Quebrada Blanca', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
-      }
-    ]
+    queryKey: flotaKeys.list(params),
+    queryFn: () => fetchAssets(params),
+  });
+};
+
+export const useAsset = (id: string) => {
+  return useQuery({
+    queryKey: flotaKeys.detail(id),
+    queryFn: () => fetchAsset(id),
+    enabled: Boolean(id),
+  });
+};
+
+export const useCreateAsset = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createAsset,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: flotaKeys.all });
+    },
+  });
+};
+
+export const useUpdateMeter = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateMeter,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: flotaKeys.all });
+    },
+  });
+};
+
+export const useAssignAsset = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: assignAsset,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: flotaKeys.all });
+    },
   });
 };
