@@ -12,6 +12,7 @@
     "baseUrl": "./",
     "incremental": true,
     "strict": true,
+    "strictPropertyInitialization": false,
     "paths": {
       "@modules/*": ["src/modules/*"],
       "@common/*": ["src/common/*"],

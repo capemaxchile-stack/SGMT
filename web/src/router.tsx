@@ -4,6 +4,9 @@ import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { FaenasPage } from './pages/faenas/FaenasPage';
+import { FlotaPage } from './pages/flota/FlotaPage';
+import { BodegaPage } from './pages/bodega/BodegaPage';
 
 export const router = createBrowserRouter([
   {
@@ -24,15 +27,15 @@ export const router = createBrowserRouter([
       },
       {
         path: 'faenas',
-        element: <div>Módulo Faenas</div>,
+        element: <FaenasPage />,
       },
       {
         path: 'flota',
-        element: <div>Módulo Flota</div>,
+        element: <FlotaPage />,
       },
       {
         path: 'bodega',
-        element: <div>Módulo Bodega</div>,
+        element: <BodegaPage />,
       },
       {
         path: 'compras',
