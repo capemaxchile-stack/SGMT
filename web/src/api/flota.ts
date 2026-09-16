@@ -118,3 +118,22 @@ export const useAssignAsset = () => {
     },
   });
 };
+export const useUpdateAsset = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateAsset,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: flotaKeys.all });
+    },
+  });
+};
+
+export const useDeleteAsset = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteAsset,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: flotaKeys.all });
+    },
+  });
+};

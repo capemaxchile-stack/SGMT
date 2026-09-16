@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/axios';
 import { Item, Warehouse, Supplier, WarehouseType } from '../types/models';
 
@@ -25,6 +25,15 @@ export const createItem = async (payload: {
   return data;
 };
 
+export const updateItem = async ({ id, payload }: { id: string; payload: Partial<Item> }): Promise<Item> => {
+  const { data } = await api.patch<Item>('/items/' + id, payload);
+  return data;
+};
+
+export const deleteItem = async (id: string): Promise<void> => {
+  await api.delete('/items/' + id);
+};
+
 // --- Warehouses ---
 export const fetchWarehouses = async (): Promise<Warehouse[]> => {
   const { data } = await api.get<Warehouse[]>('/warehouses');
@@ -38,6 +47,15 @@ export const createWarehouse = async (payload: {
 }): Promise<Warehouse> => {
   const { data } = await api.post<Warehouse>('/warehouses', payload);
   return data;
+};
+
+export const updateWarehouse = async ({ id, payload }: { id: string; payload: Partial<Warehouse> }): Promise<Warehouse> => {
+  const { data } = await api.patch<Warehouse>('/warehouses/' + id, payload);
+  return data;
+};
+
+export const deleteWarehouse = async (id: string): Promise<void> => {
+  await api.delete('/warehouses/' + id);
 };
 
 // --- Suppliers ---
@@ -56,6 +74,15 @@ export const createSupplier = async (payload: {
 }): Promise<Supplier> => {
   const { data } = await api.post<Supplier>('/suppliers', payload);
   return data;
+};
+
+export const updateSupplier = async ({ id, payload }: { id: string; payload: Partial<Supplier> }): Promise<Supplier> => {
+  const { data } = await api.patch<Supplier>('/suppliers/' + id, payload);
+  return data;
+};
+
+export const deleteSupplier = async (id: string): Promise<void> => {
+  await api.delete('/suppliers/' + id);
 };
 
 // --- Hooks ---
@@ -90,6 +117,26 @@ export const useCreateItem = () => {
   });
 };
 
+export const useUpdateItem = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: bodegaKeys.items });
+    },
+  });
+};
+
+export const useDeleteItem = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: bodegaKeys.items });
+    },
+  });
+};
+
 export const useCreateWarehouse = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -100,10 +147,50 @@ export const useCreateWarehouse = () => {
   });
 };
 
+export const useUpdateWarehouse = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateWarehouse,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: bodegaKeys.warehouses });
+    },
+  });
+};
+
+export const useDeleteWarehouse = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteWarehouse,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: bodegaKeys.warehouses });
+    },
+  });
+};
+
 export const useCreateSupplier = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createSupplier,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: bodegaKeys.suppliers });
+    },
+  });
+};
+
+export const useUpdateSupplier = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateSupplier,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: bodegaKeys.suppliers });
+    },
+  });
+};
+
+export const useDeleteSupplier = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteSupplier,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: bodegaKeys.suppliers });
     },

@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+﻿import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { DashboardPage } from './pages/DashboardPage';
@@ -7,6 +7,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { FaenasPage } from './pages/faenas/FaenasPage';
 import { FlotaPage } from './pages/flota/FlotaPage';
 import { BodegaPage } from './pages/bodega/BodegaPage';
+import { ComprasPage } from './pages/compras/ComprasPage';
 
 export const router = createBrowserRouter([
   {
@@ -39,11 +40,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'compras',
-        element: <div>Módulo Compras</div>,
+        element: <ComprasPage />,
       },
       {
         path: 'admin',
-        element: <div>Módulo Administración</div>,
+        element: <div>Modulo Administracion</div>,
       },
     ],
   },

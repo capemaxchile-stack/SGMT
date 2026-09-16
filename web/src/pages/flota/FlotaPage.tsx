@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useFlota, useCreateAsset, useUpdateMeter, useAssignAsset } from '../../api/flota';
+﻿import { useState } from 'react';
+import { useFlota, useCreateAsset, useUpdateAsset, useDeleteAsset, useUpdateMeter, useAssignAsset } from '../../api/flota';
 import { useFaenas } from '../../api/faenas';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -7,14 +7,14 @@ import { DataTable } from '../../components/ui/DataTable';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Modal } from '../../components/ui/Modal';
 import { Asset, AssetType, AssetOperationalStatus } from '../../types/models';
-import { Search, Plus, Gauge, MapPin, AlertCircle } from 'lucide-react';
+import { Search, Plus, Gauge, MapPin, AlertCircle, Edit2, Trash2 } from 'lucide-react';
 
 const ASSET_TYPES: { value: AssetType; label: string }[] = [
   { value: 'EXCAVADORA', label: 'Excavadora' },
   { value: 'RETROEXCAVADORA', label: 'Retroexcavadora' },
   { value: 'BULLDOZER', label: 'Bulldozer' },
-  { value: 'CAMION_TOLVA', label: 'Camión Tolva' },
-  { value: 'CAMION_PLUMA', label: 'Camión Pluma' },
+  { value: 'CAMION_TOLVA', label: 'Camion Tolva' },
+  { value: 'CAMION_PLUMA', label: 'Camion Pluma' },
   { value: 'CAMIONETA', label: 'Camioneta' },
   { value: 'RODILLO', label: 'Rodillo Compactador' },
   { value: 'MOTONIVELADORA', label: 'Motoniveladora' },
@@ -31,10 +31,11 @@ export function FlotaPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isMeterModalOpen, setIsMeterModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Form: Create Asset
+  // Form: Create / Edit Asset
   const [internalNumber, setInternalNumber] = useState('');
   const [type, setType] = useState<AssetType>('EXCAVADORA');
   const [brand, setBrand] = useState('');
@@ -61,10 +62,13 @@ export function FlotaPage() {
   const { data: faenas } = useFaenas();
 
   const createAssetMutation = useCreateAsset();
+  const updateAssetMutation = useUpdateAsset();
+  const deleteAssetMutation = useDeleteAsset();
   const updateMeterMutation = useUpdateMeter();
   const assignAssetMutation = useAssignAsset();
 
   const handleOpenCreateModal = () => {
+    setSelectedAsset(null);
     setInternalNumber('');
     setType('EXCAVADORA');
     setBrand('');
@@ -74,6 +78,21 @@ export function FlotaPage() {
     setOperationalStatus('OPERATIVO');
     setCurrentHourmeter(0);
     setCurrentKilometrage(0);
+    setErrorMsg('');
+    setIsCreateModalOpen(true);
+  };
+
+  const handleOpenEditModal = (asset: Asset) => {
+    setSelectedAsset(asset);
+    setInternalNumber(asset.internalNumber);
+    setType(asset.type);
+    setBrand(asset.brand);
+    setModel(asset.model);
+    setYear(asset.year);
+    setLicensePlate(asset.licensePlate || '');
+    setOperationalStatus(asset.operationalStatus);
+    setCurrentHourmeter(Number(asset.currentHourmeter) || 0);
+    setCurrentKilometrage(Number(asset.currentKilometrage) || 0);
     setErrorMsg('');
     setIsCreateModalOpen(true);
   };
@@ -94,29 +113,61 @@ export function FlotaPage() {
     setIsAssignModalOpen(true);
   };
 
-  const handleCreateSubmit = async (e: React.FormEvent) => {
+  const handleOpenDeleteModal = (asset: Asset) => {
+    setSelectedAsset(asset);
+    setErrorMsg('');
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCreateOrEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!internalNumber.trim() || !brand.trim() || !model.trim()) {
-      setErrorMsg('Número interno, marca y modelo son obligatorios.');
+      setErrorMsg('Numero interno, marca y modelo son obligatorios.');
       return;
     }
 
     try {
-      await createAssetMutation.mutateAsync({
-        internalNumber: internalNumber.trim().toUpperCase(),
-        type,
-        brand: brand.trim(),
-        model: model.trim(),
-        year: Number(year),
-        licensePlate: licensePlate.trim().toUpperCase() || undefined,
-        operationalStatus,
-        currentHourmeter: Number(currentHourmeter) || 0,
-        currentKilometrage: Number(currentKilometrage) || 0,
-      });
+      if (selectedAsset) {
+        await updateAssetMutation.mutateAsync({
+          id: selectedAsset.id,
+          payload: {
+            internalNumber: internalNumber.trim().toUpperCase(),
+            type,
+            brand: brand.trim(),
+            model: model.trim(),
+            year: Number(year),
+            licensePlate: licensePlate.trim().toUpperCase() || undefined,
+            operationalStatus,
+          },
+        });
+      } else {
+        await createAssetMutation.mutateAsync({
+          internalNumber: internalNumber.trim().toUpperCase(),
+          type,
+          brand: brand.trim(),
+          model: model.trim(),
+          year: Number(year),
+          licensePlate: licensePlate.trim().toUpperCase() || undefined,
+          operationalStatus,
+          currentHourmeter: Number(currentHourmeter) || 0,
+          currentKilometrage: Number(currentKilometrage) || 0,
+        });
+      }
       setIsCreateModalOpen(false);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setErrorMsg(error?.response?.data?.message || 'Error al registrar el equipo.');
+      setErrorMsg(error?.response?.data?.message || 'Error al guardar el equipo.');
+    }
+  };
+
+  const handleDeleteSubmit = async () => {
+    if (!selectedAsset) return;
+    try {
+      await deleteAssetMutation.mutateAsync(selectedAsset.id);
+      setIsDeleteModalOpen(false);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setErrorMsg(error?.response?.data?.message || 'Error al eliminar el equipo.');
     }
   };
 
@@ -227,11 +278,11 @@ export function FlotaPage() {
     {
       header: 'Acciones',
       cell: (item: Asset) => (
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <Button
             variant="ghost"
             size="sm"
-            title="Actualizar Horómetro/KM"
+            title="Actualizar Horometro/KM"
             onClick={() => handleOpenMeterModal(item)}
           >
             <Gauge size={15} />
@@ -243,6 +294,23 @@ export function FlotaPage() {
             onClick={() => handleOpenAssignModal(item)}
           >
             <MapPin size={15} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            title="Editar Equipo"
+            onClick={() => handleOpenEditModal(item)}
+          >
+            <Edit2 size={15} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-red-600 hover:text-red-700"
+            title="Eliminar Equipo"
+            onClick={() => handleOpenDeleteModal(item)}
+          >
+            <Trash2 size={15} />
           </Button>
         </div>
       ),
@@ -256,7 +324,7 @@ export function FlotaPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Control de Flota y Maquinaria</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Gestión técnica de equipos, horómetros y asignaciones a faenas
+            Gestion tecnica de equipos, horometros y asignaciones a faenas
           </p>
         </div>
         <Button onClick={handleOpenCreateModal}>
@@ -276,7 +344,7 @@ export function FlotaPage() {
           <p className="text-2xl font-bold text-emerald-700 mt-1">{operativos}</p>
         </div>
         <div className="bg-white p-4 rounded-lg border border-slate-200">
-          <p className="text-xs text-amber-600 uppercase font-bold">En Mantención</p>
+          <p className="text-xs text-amber-600 uppercase font-bold">En Mantencion</p>
           <p className="text-2xl font-bold text-amber-700 mt-1">{enMantencion}</p>
         </div>
         <div className="bg-white p-4 rounded-lg border border-slate-200">
@@ -317,7 +385,7 @@ export function FlotaPage() {
           >
             <option value="TODOS">Todos los Estados</option>
             <option value="OPERATIVO">Operativo</option>
-            <option value="EN_MANTENCION">En Mantención</option>
+            <option value="EN_MANTENCION">En Mantencion</option>
             <option value="DETENIDO">Detenido</option>
           </select>
         </div>
@@ -330,9 +398,13 @@ export function FlotaPage() {
         emptyMessage="No hay maquinaria o equipos registrados"
       />
 
-      {/* Modal: Crear Equipo */}
-      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Nuevo Equipo">
-        <form onSubmit={handleCreateSubmit} className="space-y-4 pt-2">
+      {/* Modal: Crear / Editar Equipo */}
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title={selectedAsset ? 'Editar Equipo' : 'Nuevo Equipo'}
+      >
+        <form onSubmit={handleCreateOrEditSubmit} className="space-y-4 pt-2">
           {errorMsg && (
             <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm border border-red-200 flex items-center">
               <AlertCircle size={16} className="mr-2 shrink-0" />
@@ -372,7 +444,7 @@ export function FlotaPage() {
               </select>
             </div>
             <Input
-              label="Año *"
+              label="Ano *"
               type="number"
               min="1990"
               max={new Date().getFullYear() + 1}
@@ -400,28 +472,38 @@ export function FlotaPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Horómetro Inicial (hrs)"
-              type="number"
-              step="0.1"
-              value={currentHourmeter}
-              onChange={(e) => setCurrentHourmeter(Number(e.target.value))}
-            />
-            <Input
-              label="Kilometraje Inicial (km)"
-              type="number"
-              step="0.1"
-              value={currentKilometrage}
-              onChange={(e) => setCurrentKilometrage(Number(e.target.value))}
-            />
+            <div className="flex flex-col w-full">
+              <label className="mb-1 text-sm font-medium text-slate-700">Estado Operativo</label>
+              <select
+                value={operationalStatus}
+                onChange={(e) => setOperationalStatus(e.target.value as AssetOperationalStatus)}
+                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="OPERATIVO">Operativo</option>
+                <option value="EN_MANTENCION">En Mantencion</option>
+                <option value="DETENIDO">Detenido</option>
+              </select>
+            </div>
+            {!selectedAsset && (
+              <Input
+                label="Horometro Inicial (hrs)"
+                type="number"
+                step="0.1"
+                value={currentHourmeter}
+                onChange={(e) => setCurrentHourmeter(Number(e.target.value))}
+              />
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
             <Button variant="ghost" type="button" onClick={() => setIsCreateModalOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit" isLoading={createAssetMutation.isPending}>
-              Guardar Equipo
+            <Button
+              type="submit"
+              isLoading={createAssetMutation.isPending || updateAssetMutation.isPending}
+            >
+              {selectedAsset ? 'Guardar Cambios' : 'Registrar Equipo'}
             </Button>
           </div>
         </form>
@@ -448,7 +530,7 @@ export function FlotaPage() {
           </div>
 
           <Input
-            label="Horómetro Actual (hrs)"
+            label="Horometro Actual (hrs)"
             type="number"
             step="0.1"
             value={newHourmeter}
@@ -506,7 +588,7 @@ export function FlotaPage() {
           </div>
 
           <p className="text-xs text-slate-500">
-            Al confirmar, el equipo quedará vinculado a la faena y cerrará cualquier asignación previa.
+            Al confirmar, el equipo quedara vinculado a la faena y cerrara cualquier asignacion previa.
           </p>
 
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
@@ -514,10 +596,41 @@ export function FlotaPage() {
               Cancelar
             </Button>
             <Button type="submit" isLoading={assignAssetMutation.isPending}>
-              Confirmar Asignación
+              Confirmar Asignacion
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal: Eliminar Equipo */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Eliminar Equipo"
+      >
+        <div className="space-y-4 pt-2">
+          {errorMsg && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm border border-red-200">
+              {errorMsg}
+            </div>
+          )}
+          <p className="text-slate-700 text-sm">
+            ¿Estas seguro de que deseas eliminar el equipo{' '}
+            <strong>{selectedAsset?.internalNumber}</strong> ({selectedAsset?.brand} {selectedAsset?.model})?
+          </p>
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+            <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              isLoading={deleteAssetMutation.isPending}
+              onClick={handleDeleteSubmit}
+            >
+              Eliminar Equipo
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
