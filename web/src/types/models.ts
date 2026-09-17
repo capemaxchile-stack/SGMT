@@ -78,11 +78,14 @@ export interface Asset extends BaseEntity {
   assignments?: AssetAssignment[];
 }
 
+export const ITEM_CATEGORIES = ['COMBUSTIBLE', 'LUBRICANTE', 'REPUESTO', 'FILTRO', 'FERRETERIA', 'EPP', 'HERRAMIENTA', 'DESGASTE', 'OTRO'] as const;
+export type ItemCategory = typeof ITEM_CATEGORIES[number];
+
 export interface Item extends BaseEntity {
   code: string;
   description: string;
   unitOfMeasure: string;
-  category: string;
+  category: ItemCategory | string;
   minimumStock: number;
   isActive: boolean;
   totalStock?: number;

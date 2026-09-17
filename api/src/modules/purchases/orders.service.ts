@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { ReceiveOrderDto } from './dto/receive-order.dto';
 import { OrderStatus, AuthorizationAction, AuthorizationEntityType, MovementType, Prisma } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class OrdersService {
@@ -95,6 +96,17 @@ export class OrdersService {
         throw new NotFoundException(`Purchase order with id ${id} not found`);
       }
 
+      if (updateDto.action === AuthorizationAction.EXCEPCION) {
+        const user = await tx.user.findUnique({ where: { id: userId } });
+        if (!user || !user.superKeyHash || !updateDto.superKey) {
+          throw new UnauthorizedException('Clave de Súper Usuario inválida o no configurada');
+        }
+        const isValid = await bcrypt.compare(updateDto.superKey, user.superKeyHash);
+        if (!isValid) {
+          throw new UnauthorizedException('Clave de Súper Usuario inválida o no configurada');
+        }
+      }
+
       // 1. Create Authorization Record
       await tx.authorization.create({
         data: {
@@ -102,7 +114,7 @@ export class OrdersService {
           entityId: id,
           userId,
           action: updateDto.action,
-          level: updateDto.level,
+          level: updateDto.level ?? 1,
           comments: updateDto.comments,
           exceptionReason: updateDto.exceptionReason,
         },

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import {
   useItems,
   useWarehouses,
@@ -17,8 +17,8 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/DataTable';
 import { Modal } from '../../../components/ui/Modal';
-import { Item, Warehouse, Supplier, WarehouseType } from '../../../types/models';
-import { Search, Plus, Edit2, Trash2, AlertCircle } from 'lucide-react';
+import { Item, Warehouse, Supplier, WarehouseType, ITEM_CATEGORIES } from '../../../types/models';
+import { Search, Plus, Edit2, Trash2, AlertCircle, Filter } from 'lucide-react';
 
 interface BodegaCatalogTabProps {
   type: 'items' | 'warehouses' | 'suppliers';
@@ -26,6 +26,7 @@ interface BodegaCatalogTabProps {
 
 export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('TODOS');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -231,9 +232,12 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
 
   // Filtered
   const filteredItems = (items || []).filter(
-    (i) =>
-      i.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      i.code.toLowerCase().includes(searchTerm.toLowerCase())
+    (i) => {
+      const matchesSearch = i.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        i.code.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = categoryFilter === 'TODOS' || i.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    }
   );
 
   const filteredWarehouses = (warehouses || []).filter(
@@ -269,13 +273,33 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
         </Button>
       </div>
 
-      <div className="bg-white p-4 rounded-lg border border-slate-200">
-        <Input
-          placeholder="Buscar..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          icon={<Search size={18} />}
-        />
+      <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <Input
+            placeholder="Buscar..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            icon={<Search size={18} />}
+          />
+        </div>
+        {type === 'items' && (
+          <div className="w-full sm:w-64">
+            <div className="flex items-center gap-2 mb-1">
+              <Filter size={16} className="text-slate-500" />
+              <label className="text-sm font-medium text-slate-700">Filtrar por Categoria</label>
+            </div>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="TODOS">Todas las Categorías</option>
+              {ITEM_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {type === 'items' && (
@@ -433,7 +457,14 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
             <>
               <div className="grid grid-cols-2 gap-4">
                 <Input label="Codigo *" placeholder="Ej: ITM-006" value={itemCode} onChange={(e) => setItemCode(e.target.value)} required />
-                <Input label="Categoria *" placeholder="Ej: REPUESTO" value={itemCategory} onChange={(e) => setItemCategory(e.target.value)} required />
+                <div className="flex flex-col w-full">
+                  <label className="mb-1 text-sm font-medium text-slate-700">Categoria *</label>
+                  <select value={itemCategory} onChange={(e) => setItemCategory(e.target.value)} className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    {ITEM_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <Input label="Descripcion *" placeholder="Ej: Filtro de Petroleo" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} required />
               <div className="grid grid-cols-2 gap-4">

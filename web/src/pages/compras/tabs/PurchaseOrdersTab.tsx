@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import {
   usePurchaseOrders,
   useCreatePurchaseOrder,
@@ -27,6 +27,10 @@ export function PurchaseOrdersTab() {
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
+  const [isSuperUserModalOpen, setIsSuperUserModalOpen] = useState(false);
+  const [superOrderId, setSuperOrderId] = useState<string>('');
+  const [exceptionReason, setExceptionReason] = useState('');
+  const [superKey, setSuperKey] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
   const [receiveWarehouseId, setReceiveWarehouseId] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -113,7 +117,7 @@ export function PurchaseOrdersTab() {
 
   const handleApprove = async (orderId: string) => {
     try {
-      await updateStatusMutation.mutateAsync({ id: orderId, status: 'APROBADA', comments: 'Aprobacion directa' });
+      await updateStatusMutation.mutateAsync({ id: orderId, action: 'APROBADA', level: 1, comments: 'Aprobación estándar' });
     } catch (err: unknown) {
       console.error(err);
     }
@@ -121,10 +125,40 @@ export function PurchaseOrdersTab() {
 
   const handleReject = async (orderId: string) => {
     try {
-      await updateStatusMutation.mutateAsync({ id: orderId, status: 'RECHAZADA', comments: 'Rechazado por revision' });
+      await updateStatusMutation.mutateAsync({ id: orderId, action: 'RECHAZADA', level: 1, comments: 'Rechazado' });
     } catch (err: unknown) {
       console.error(err);
     }
+  };
+
+  const handleSuperApprove = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!exceptionReason || !superKey) {
+      setErrorMsg('Debe ingresar motivo y clave de autorización.');
+      return;
+    }
+    try {
+      await updateStatusMutation.mutateAsync({ 
+        id: superOrderId, 
+        action: 'APROBADA', 
+        level: 1, 
+        comments: 'Aprobación por excepción',
+        exceptionReason,
+        superKey 
+      });
+      setIsSuperUserModalOpen(false);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setErrorMsg(error?.response?.data?.message || 'Error en la autorización.');
+    }
+  };
+
+  const handleOpenSuperApprove = (orderId: string) => {
+    setSuperOrderId(orderId);
+    setExceptionReason('');
+    setSuperKey('');
+    setErrorMsg('');
+    setIsSuperUserModalOpen(true);
   };
 
   const handleReceiveSubmit = async (e: React.FormEvent) => {
@@ -218,6 +252,15 @@ export function PurchaseOrdersTab() {
                 onClick={() => handleReject(item.id)}
               >
                 <XCircle size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-amber-600 hover:text-amber-700"
+                title="Súper Usuario (Aprobar por Excepción)"
+                onClick={() => handleOpenSuperApprove(item.id)}
+              >
+                <AlertCircle size={16} />
               </Button>
             </>
           )}
@@ -464,6 +507,40 @@ export function PurchaseOrdersTab() {
             </Button>
             <Button type="submit" isLoading={receiveOrderMutation.isPending}>
               Confirmar Recepcion e Ingresar Stock
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal: Aprobación Súper Usuario */}
+      <Modal isOpen={isSuperUserModalOpen} onClose={() => setIsSuperUserModalOpen(false)} title="Aprobación Súper Usuario">
+        <form onSubmit={handleSuperApprove} className="space-y-4 pt-2">
+          {errorMsg && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm border border-red-200">
+              {errorMsg}
+            </div>
+          )}
+          <Input 
+            label="Motivo de la excepción *" 
+            placeholder="Ej: Aprobación urgente fuera de flujo" 
+            value={exceptionReason} 
+            onChange={(e) => setExceptionReason(e.target.value)} 
+            required 
+          />
+          <Input 
+            label="Clave Doble Autenticación *" 
+            type="password"
+            placeholder="Ingrese llave del súper usuario" 
+            value={superKey} 
+            onChange={(e) => setSuperKey(e.target.value)} 
+            required 
+          />
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+            <Button variant="ghost" type="button" onClick={() => setIsSuperUserModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" isLoading={updateStatusMutation.isPending}>
+              Aprobar por Excepción
             </Button>
           </div>
         </form>

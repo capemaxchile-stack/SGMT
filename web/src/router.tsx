@@ -1,4 +1,4 @@
-﻿import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { DashboardPage } from './pages/DashboardPage';
@@ -8,6 +8,7 @@ import { FaenasPage } from './pages/faenas/FaenasPage';
 import { FlotaPage } from './pages/flota/FlotaPage';
 import { BodegaPage } from './pages/bodega/BodegaPage';
 import { ComprasPage } from './pages/compras/ComprasPage';
+import { AdminPage } from './pages/admin/AdminPage';
 
 export const router = createBrowserRouter([
   {
@@ -44,7 +45,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'admin',
-        element: <div>Modulo Administracion</div>,
+        element: <AdminPage />,
       },
     ],
   },

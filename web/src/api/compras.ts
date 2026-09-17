@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/axios';
 import { PurchaseOrder, PurchaseRequest, CreatePurchaseOrderDto, CreatePurchaseRequestDto } from '../types/compras';
 
@@ -20,8 +20,8 @@ export const createPurchaseOrder = async (payload: CreatePurchaseOrderDto): Prom
   return data;
 };
 
-export const updateOrderStatus = async ({ id, status, comments }: { id: string; status: string; comments?: string }): Promise<PurchaseOrder> => {
-  const { data } = await api.patch<PurchaseOrder>('/purchases/orders/' + id + '/status', { status, comments });
+export const updateOrderStatus = async ({ id, action, level, comments, exceptionReason, superKey }: { id: string; action: string; level: number; comments?: string; exceptionReason?: string; superKey?: string }): Promise<PurchaseOrder> => {
+  const { data } = await api.patch<PurchaseOrder>('/purchases/orders/' + id + '/status', { action, level, comments, exceptionReason, superKey });
   return data;
 };
 

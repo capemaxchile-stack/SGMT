@@ -5,8 +5,9 @@ export class UpdateOrderStatusDto {
   @IsEnum(AuthorizationAction)
   action: AuthorizationAction;
 
+  @IsOptional()
   @IsNumber()
-  level: number;
+  level?: number = 1;
 
   @IsOptional()
   @IsString()
@@ -15,4 +16,8 @@ export class UpdateOrderStatusDto {
   @IsOptional()
   @IsString()
   exceptionReason?: string;
+
+  @IsOptional()
+  @IsString()
+  superKey?: string;
 }

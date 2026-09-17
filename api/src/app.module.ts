@@ -11,6 +11,8 @@ import { WarehousesModule } from './modules/warehouses/warehouses.module';
 import { UsersModule } from './modules/users/users.module';
 import { MovementsModule } from './modules/movements/movements.module';
 import { PurchasesModule } from './modules/purchases/purchases.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { PurchasesModule } from './modules/purchases/purchases.module';
     UsersModule,
     MovementsModule,
     PurchasesModule,
+    AuditModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}
