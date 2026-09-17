@@ -443,28 +443,47 @@ export function BodegaMovementsTab() {
                     <th className="p-2">Fecha</th>
                     <th className="p-2">Movimiento</th>
                     <th className="p-2">Tipo</th>
+                    <th className="p-2">Bodega</th>
                     <th className="p-2 text-right">Entrada</th>
                     <th className="p-2 text-right">Salida</th>
+                    <th className="p-2 text-right">Costo Unit.</th>
                     <th className="p-2 text-right">Saldo</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {kardexData.map((k, idx) => (
-                    <tr key={idx} className="border-b border-slate-100">
-                      <td className="p-2">{new Date(k.date).toLocaleDateString()}</td>
-                      <td className="p-2 font-mono font-medium">{k.movementNumber}</td>
-                      <td className="p-2">
-                        <StatusBadge status={k.type} />
-                      </td>
-                      <td className="p-2 text-right text-emerald-600 font-medium">
-                        {Number(k.entries) > 0 ? `+${Number(k.entries)}` : '-'}
-                      </td>
-                      <td className="p-2 text-right text-red-600 font-medium">
-                        {Number(k.exits) > 0 ? `-${Number(k.exits)}` : '-'}
-                      </td>
-                      <td className="p-2 text-right font-bold text-slate-900">{Number(k.balance)}</td>
-                    </tr>
-                  ))}
+                  {kardexData.map((k: any, idx: number) => {
+                    const mov = k.movement || {};
+                    const isIngreso = mov.type === 'INGRESO';
+                    const isSalida = mov.type === 'SALIDA';
+                    return (
+                      <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="p-2 text-slate-600">
+                          {mov.createdAt ? new Date(mov.createdAt).toLocaleDateString() : '-'}
+                        </td>
+                        <td className="p-2 font-mono font-bold text-slate-800">
+                          {mov.movementNumber || '-'}
+                        </td>
+                        <td className="p-2">
+                          <StatusBadge status={mov.type} />
+                        </td>
+                        <td className="p-2 text-slate-600">
+                          {mov.warehouse?.name || '-'}
+                        </td>
+                        <td className="p-2 text-right text-emerald-600 font-bold">
+                          {isIngreso ? `+${Number(k.quantity)}` : '-'}
+                        </td>
+                        <td className="p-2 text-right text-red-600 font-bold">
+                          {isSalida ? `-${Number(k.quantity)}` : '-'}
+                        </td>
+                        <td className="p-2 text-right text-slate-700">
+                          ${Number(k.unitCost || 0).toLocaleString('es-CL')}
+                        </td>
+                        <td className="p-2 text-right font-extrabold text-slate-900 bg-slate-50/50">
+                          {Number(k.balance || 0)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
