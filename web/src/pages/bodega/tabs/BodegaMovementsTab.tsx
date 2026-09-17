@@ -233,7 +233,7 @@ export function BodegaMovementsTab() {
       />
 
       {/* Modal: Nuevo Movimiento */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Nuevo Movimiento de Bodega">
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Nuevo Movimiento de Bodega" size="2xl">
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           {errorMsg && (
             <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm border border-red-200 flex items-center">
@@ -414,6 +414,7 @@ export function BodegaMovementsTab() {
         isOpen={isKardexModalOpen}
         onClose={() => setIsKardexModalOpen(false)}
         title="Kardex de Inventario"
+        size="4xl"
       >
         <div className="space-y-4 pt-2">
           <div className="flex flex-col w-full">

@@ -10,9 +10,21 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   className?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | '5xl' | 'full';
 }
 
-export function Modal({ isOpen, onClose, title, children, className }: ModalProps) {
+const sizeClasses: Record<string, string> = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  '4xl': 'max-w-4xl',
+  '5xl': 'max-w-5xl',
+  full: 'max-w-[95vw]',
+};
+
+export function Modal({ isOpen, onClose, title, children, className, size = 'lg' }: ModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -38,7 +50,8 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
       />
       <div 
         className={cn(
-          "relative bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col mx-4 animate-in fade-in zoom-in-95 duration-200",
+          "relative bg-white rounded-lg shadow-xl w-full max-h-[90vh] flex flex-col mx-4 animate-in fade-in zoom-in-95 duration-200",
+          sizeClasses[size] || 'max-w-lg',
           className
         )}
         role="dialog"

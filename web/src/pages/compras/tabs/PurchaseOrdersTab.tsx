@@ -358,7 +358,7 @@ export function PurchaseOrdersTab() {
       />
 
       {/* Modal: Nueva OC */}
-      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Nueva Orden de Compra">
+      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Nueva Orden de Compra" size="2xl">
         <form onSubmit={handleCreateSubmit} className="space-y-4 pt-2">
           {errorMsg && (
             <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm border border-red-200 flex items-center">
