@@ -75,21 +75,29 @@ export function BodegaMovementsTab() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!warehouseId) {
-      setErrorMsg('Debe seleccionar una bodega.');
+    const targetWarehouseId = warehouseId || (warehouses && warehouses.length > 0 ? warehouses[0].id : '');
+    if (!targetWarehouseId) {
+      setErrorMsg('Debe seleccionar una bodega válida.');
       return;
     }
 
-    const validLines = lines.filter((l) => l.itemId && Number(l.quantity) > 0);
+    const validLines = lines
+      .map((l) => ({
+        itemId: l.itemId || (items && items.length > 0 ? items[0].id : ''),
+        quantity: Number(l.quantity),
+        unitCost: Number(l.unitCost) || 0,
+      }))
+      .filter((l) => l.itemId && l.quantity > 0);
+
     if (validLines.length === 0) {
-      setErrorMsg('Debe agregar al menos una linea valida con cantidad mayor a 0.');
+      setErrorMsg('Debe agregar al menos un material con cantidad mayor a 0.');
       return;
     }
 
     try {
       await createMovementMutation.mutateAsync({
         type: movementType,
-        warehouseId,
+        warehouseId: targetWarehouseId,
         faenaId: faenaId || undefined,
         assetId: assetId || undefined,
         notes: notes.trim() || undefined,
@@ -249,13 +257,14 @@ export function BodegaMovementsTab() {
             </div>
 
             <div className="flex flex-col w-full">
-              <label className="mb-1 text-sm font-medium text-slate-700">Bodega *</label>
+              <label className="mb-1 text-sm font-medium text-slate-700">Bodega Destino/Origen *</label>
               <select
                 value={warehouseId}
                 onChange={(e) => setWarehouseId(e.target.value)}
                 required
                 className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
+                <option value="">-- Seleccione Bodega --</option>
                 {warehouses?.map((w) => (
                   <option key={w.id} value={w.id}>
                     {w.name} ({w.location})
@@ -310,55 +319,76 @@ export function BodegaMovementsTab() {
               </Button>
             </div>
 
-            {lines.map((line, idx) => (
-              <div key={idx} className="flex gap-2 items-center bg-slate-50 p-2 rounded border border-slate-200">
-                <div className="flex-1">
-                  <select
-                    value={line.itemId}
-                    onChange={(e) => handleLineChange(idx, 'itemId', e.target.value)}
-                    required
-                    className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {items?.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.code} - {item.description} ({item.unitOfMeasure})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="w-24">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    placeholder="Cant."
-                    value={line.quantity}
-                    onChange={(e) => handleLineChange(idx, 'quantity', Number(e.target.value))}
-                    required
-                  />
-                </div>
-                {movementType === 'INGRESO' && (
-                  <div className="w-28">
+            {/* Column Headers */}
+            <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-slate-500 px-2 pb-1 border-b border-slate-200">
+              <div className={movementType === 'INGRESO' ? 'col-span-5' : 'col-span-8'}>Material / Insumo</div>
+              <div className="col-span-3 text-center">Cantidad</div>
+              {movementType === 'INGRESO' && <div className="col-span-3 text-center">Costo Unit. ($)</div>}
+              <div className="col-span-1 text-center"></div>
+            </div>
+
+            {lines.map((line, idx) => {
+              const selectedItem = items?.find((i) => i.id === line.itemId);
+              return (
+                <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-slate-50 p-2 rounded border border-slate-200">
+                  <div className={movementType === 'INGRESO' ? 'col-span-5' : 'col-span-8'}>
+                    <select
+                      value={line.itemId}
+                      onChange={(e) => handleLineChange(idx, 'itemId', e.target.value)}
+                      required
+                      className="flex w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">-- Seleccionar Material --</option>
+                      {items?.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.code} - {item.description} ({item.unitOfMeasure})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-span-3 flex items-center gap-1">
                     <Input
                       type="number"
-                      step="1"
-                      placeholder="Costo Unit."
-                      value={line.unitCost}
-                      onChange={(e) => handleLineChange(idx, 'unitCost', Number(e.target.value))}
+                      step="0.01"
+                      min="0.01"
+                      placeholder="Cant."
+                      value={line.quantity}
+                      onChange={(e) => handleLineChange(idx, 'quantity', Number(e.target.value))}
+                      required
+                      className="text-center font-medium"
                     />
+                    {selectedItem && (
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-1.5 py-1 rounded whitespace-nowrap">
+                        {selectedItem.unitOfMeasure}
+                      </span>
+                    )}
                   </div>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  type="button"
-                  className="text-red-500 hover:text-red-700"
-                  onClick={() => handleRemoveLine(idx)}
-                >
-                  <Trash2 size={15} />
-                </Button>
-              </div>
-            ))}
+                  {movementType === 'INGRESO' && (
+                    <div className="col-span-3">
+                      <Input
+                        type="number"
+                        step="1"
+                        placeholder="$ Costo Unit."
+                        value={line.unitCost}
+                        onChange={(e) => handleLineChange(idx, 'unitCost', Number(e.target.value))}
+                        className="text-right"
+                      />
+                    </div>
+                  )}
+                  <div className="col-span-1 flex justify-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                      className="text-red-500 hover:text-red-700 p-1 h-auto"
+                      onClick={() => handleRemoveLine(idx)}
+                    >
+                      <Trash2 size={15} />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <Input
