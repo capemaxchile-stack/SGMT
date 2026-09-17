@@ -40,6 +40,11 @@ export const createPurchaseRequest = async (payload: CreatePurchaseRequestDto): 
   return data;
 };
 
+export const updatePurchaseRequestStatus = async ({ id, status }: { id: string; status: string }): Promise<PurchaseRequest> => {
+  const { data } = await api.patch<PurchaseRequest>('/purchases/requests/' + id + '/status', { status });
+  return data;
+};
+
 // Hooks
 export const usePurchaseOrders = () => {
   return useQuery({
@@ -64,6 +69,8 @@ export const useUpdateOrderStatus = () => {
     mutationFn: updateOrderStatus,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: comprasKeys.orders() });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['audit'] });
     },
   });
 };
@@ -76,6 +83,8 @@ export const useReceivePurchaseOrder = () => {
       queryClient.invalidateQueries({ queryKey: comprasKeys.orders() });
       queryClient.invalidateQueries({ queryKey: ['items'] });
       queryClient.invalidateQueries({ queryKey: ['movements'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['audit'] });
     },
   });
 };
@@ -91,6 +100,16 @@ export const useCreatePurchaseRequest = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createPurchaseRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: comprasKeys.requests() });
+    },
+  });
+};
+
+export const useUpdatePurchaseRequestStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updatePurchaseRequestStatus,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: comprasKeys.requests() });
     },

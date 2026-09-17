@@ -87,19 +87,27 @@ export function PurchaseOrdersTab() {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supplierId) {
-      setErrorMsg('Debe seleccionar un proveedor.');
+    const targetSupplierId = supplierId || (suppliers && suppliers.length > 0 ? suppliers[0].id : '');
+    if (!targetSupplierId) {
+      setErrorMsg('Debe seleccionar un proveedor válido.');
       return;
     }
-    const validLines = lines.filter((l) => l.itemId && Number(l.quantity) > 0);
+    const validLines = lines
+      .map((l) => ({
+        itemId: l.itemId || (items && items.length > 0 ? items[0].id : ''),
+        quantity: Number(l.quantity),
+        unitPrice: Number(l.unitPrice) || 0,
+      }))
+      .filter((l) => l.itemId && l.quantity > 0);
+
     if (validLines.length === 0) {
-      setErrorMsg('Debe ingresar al menos una linea valida.');
+      setErrorMsg('Debe ingresar al menos una línea válida con cantidad mayor a 0.');
       return;
     }
 
     try {
       await createOrderMutation.mutateAsync({
-        supplierId,
+        supplierId: targetSupplierId,
         deliveryTerms: deliveryTerms.trim() || undefined,
         estimatedDeliveryDate: estimatedDeliveryDate ? new Date(estimatedDeliveryDate).toISOString() : undefined,
         lines: validLines.map((l) => ({
@@ -140,9 +148,9 @@ export function PurchaseOrdersTab() {
     try {
       await updateStatusMutation.mutateAsync({ 
         id: superOrderId, 
-        action: 'APROBADA', 
+        action: 'EXCEPCION', 
         level: 1, 
-        comments: 'Aprobación por excepción',
+        comments: 'Aprobación por excepción de Súper Usuario',
         exceptionReason,
         superKey 
       });

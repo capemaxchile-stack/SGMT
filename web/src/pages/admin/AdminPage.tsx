@@ -62,9 +62,9 @@ export function AdminPage() {
     try {
       await updateStatusMutation.mutateAsync({ 
         id: superOrderId, 
-        action: 'APROBADA', 
+        action: 'EXCEPCION', 
         level: 1, 
-        comments: 'Aprobación por excepción',
+        comments: 'Aprobación por excepción de Súper Usuario',
         exceptionReason,
         superKey 
       });

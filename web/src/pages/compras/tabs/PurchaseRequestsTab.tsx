@@ -1,5 +1,5 @@
-﻿import { useState } from 'react';
-import { usePurchaseRequests, useCreatePurchaseRequest } from '../../../api/compras';
+import { useState } from 'react';
+import { usePurchaseRequests, useCreatePurchaseRequest, useUpdatePurchaseRequestStatus } from '../../../api/compras';
 import { useFaenas } from '../../../api/faenas';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -7,7 +7,7 @@ import { DataTable } from '../../../components/ui/DataTable';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { Modal } from '../../../components/ui/Modal';
 import { PurchaseRequest } from '../../../types/compras';
-import { Plus, Search, AlertCircle } from 'lucide-react';
+import { Plus, Search, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 
 export function PurchaseRequestsTab() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,6 +22,7 @@ export function PurchaseRequestsTab() {
   const { data: requests, isLoading } = usePurchaseRequests();
   const { data: faenas } = useFaenas();
   const createRequestMutation = useCreatePurchaseRequest();
+  const updateStatusMutation = useUpdatePurchaseRequestStatus();
 
   const handleOpenModal = () => {
     setRequestNumber('SOL-' + Math.floor(1000 + Math.random() * 9000));
@@ -33,21 +34,38 @@ export function PurchaseRequestsTab() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!faenaId || !justification.trim()) {
-      setErrorMsg('Debe seleccionar una faena e ingresar una justificacion.');
+    const targetFaenaId = faenaId || (faenas && faenas.length > 0 ? faenas[0].id : '');
+    if (!targetFaenaId || !justification.trim()) {
+      setErrorMsg('Debe seleccionar una faena válida e ingresar una justificación.');
       return;
     }
 
     try {
       await createRequestMutation.mutateAsync({
         requestNumber,
-        faenaId,
+        faenaId: targetFaenaId,
         justification: justification.trim(),
       });
       setIsModalOpen(false);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setErrorMsg(error?.response?.data?.message || 'Error al crear la solicitud de compra.');
+    }
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      await updateStatusMutation.mutateAsync({ id, status: 'APROBADA' });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    try {
+      await updateStatusMutation.mutateAsync({ id, status: 'RECHAZADA' });
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -73,7 +91,7 @@ export function PurchaseRequestsTab() {
       cell: (item: PurchaseRequest) => <span className="font-medium text-slate-800">{item.faena?.name}</span>,
     },
     {
-      header: 'Justificacion',
+      header: 'Justificación',
       cell: (item: PurchaseRequest) => <span className="text-xs text-slate-600">{item.justification}</span>,
     },
     {
@@ -88,6 +106,35 @@ export function PurchaseRequestsTab() {
         </span>
       ),
     },
+    {
+      header: 'Acciones',
+      cell: (item: PurchaseRequest) => (
+        <div className="flex gap-1 items-center">
+          {item.status === 'PENDIENTE' && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-emerald-600 hover:text-emerald-700"
+                title="Aprobar Solicitud"
+                onClick={() => handleApprove(item.id)}
+              >
+                <CheckCircle size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:text-red-700"
+                title="Rechazar Solicitud"
+                onClick={() => handleReject(item.id)}
+              >
+                <XCircle size={16} />
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -95,7 +142,7 @@ export function PurchaseRequestsTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900">Solicitudes de Compra desde Faena</h2>
-          <p className="text-slate-500 text-sm">Requerimientos originados en terreno para conversion a Orden de Compra</p>
+          <p className="text-slate-500 text-sm">Requerimientos originados en terreno para conversión a Orden de Compra</p>
         </div>
         <Button onClick={handleOpenModal}>
           <Plus size={16} className="mr-2" />
@@ -139,6 +186,7 @@ export function PurchaseRequestsTab() {
               required
               className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
+              <option value="">-- Seleccione Faena --</option>
               {faenas?.map((f) => (
                 <option key={f.id} value={f.id}>
                   {f.name} ({f.location})
@@ -148,8 +196,8 @@ export function PurchaseRequestsTab() {
           </div>
 
           <Input
-            label="Justificacion del Requerimiento *"
-            placeholder="Ej: Insumos de perforacion para cumplimiento de meta mensual"
+            label="Justificación del Requerimiento *"
+            placeholder="Ej: Insumos de perforación para cumplimiento de meta mensual"
             value={justification}
             onChange={(e) => setJustification(e.target.value)}
             required
