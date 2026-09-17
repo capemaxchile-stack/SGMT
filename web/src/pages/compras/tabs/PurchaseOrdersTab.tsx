@@ -171,13 +171,17 @@ export function PurchaseOrdersTab() {
 
   const handleReceiveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedOrder || !receiveWarehouseId) return;
+    const targetWarehouseId = receiveWarehouseId || (warehouses && warehouses.length > 0 ? warehouses[0].id : '');
+    if (!selectedOrder || !targetWarehouseId) {
+      setErrorMsg('Debe seleccionar una bodega válida de destino.');
+      return;
+    }
 
     try {
       await receiveOrderMutation.mutateAsync({
         id: selectedOrder.id,
-        warehouseId: receiveWarehouseId,
-        notes: 'Recepcion completa de OC ' + selectedOrder.orderNumber,
+        warehouseId: targetWarehouseId,
+        notes: 'Recepción completa de OC ' + selectedOrder.orderNumber,
       });
       setIsReceiveModalOpen(false);
     } catch (err: unknown) {
@@ -497,6 +501,7 @@ export function PurchaseOrdersTab() {
               required
               className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
+              <option value="">-- Seleccione Bodega de Destino --</option>
               {warehouses?.map((w) => (
                 <option key={w.id} value={w.id}>
                   {w.name} ({w.location})
