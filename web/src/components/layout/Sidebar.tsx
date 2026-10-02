@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Factory, Truck, Box, ShoppingCart, Settings, X } from 'lucide-react';
+import { LayoutDashboard, Factory, Truck, Box, ShoppingCart, Settings, X, Server } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useEffect } from 'react';
 
@@ -7,6 +7,9 @@ interface SidebarProps {
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
 }
+
+export const APP_VERSION = 'v1.1.0';
+export const BUILD_DATE = '2026.10.02';
 
 export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   const navItems = [
@@ -33,37 +36,59 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   }, [isMobileOpen, onCloseMobile]);
 
   const navContent = (
-    <ul className="space-y-1 px-3">
-      {navItems.map((item) => (
-        <li key={item.path}>
-          <NavLink
-            to={item.path}
-            onClick={() => {
-              if (onCloseMobile) onCloseMobile();
-            }}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium',
-                isActive
-                  ? 'bg-primary-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              )
-            }
-          >
-            {item.icon}
-            <span>{item.name}</span>
-          </NavLink>
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col h-full justify-between">
+      <ul className="space-y-1 px-3">
+        {navItems.map((item) => (
+          <li key={item.path}>
+            <NavLink
+              to={item.path}
+              onClick={() => {
+                if (onCloseMobile) onCloseMobile();
+              }}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium',
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                )
+              }
+            >
+              {item.icon}
+              <span>{item.name}</span>
+            </NavLink>
+          </li>
+        ))}
+      </ul>
+
+      {/* Version Footer */}
+      <div className="p-4 mx-3 mb-3 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-400 text-xs">
+        <div className="flex items-center justify-between font-semibold text-slate-300 mb-1">
+          <span>SGMT Core</span>
+          <span className="px-1.5 py-0.5 rounded bg-blue-900/80 text-blue-300 font-mono text-[10px]">
+            {APP_VERSION}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+          <Server size={12} className="text-emerald-400" />
+          <span>LXC Contenedor 106</span>
+        </div>
+        <div className="text-[10px] text-slate-500 mt-1">
+          Build {BUILD_DATE} (Producción)
+        </div>
+      </div>
+    </div>
   );
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="w-64 flex-shrink-0 bg-sidebar text-white flex flex-col hidden md:flex">
-        <div className="h-16 flex items-center px-6 border-b border-slate-700 font-bold text-xl tracking-wider">
-          SGMT
+      <aside className="w-64 flex-shrink-0 bg-slate-900 dark:bg-slate-950 text-white flex flex-col hidden md:flex border-r border-slate-800">
+        <div className="h-16 flex items-center px-6 border-b border-slate-800 font-bold text-xl tracking-wider text-white">
+          <span className="text-blue-500 mr-1">SGMT</span>
+          <span className="text-xs font-normal text-slate-400 px-2 py-0.5 rounded bg-slate-800 ml-auto">
+            PROD
+          </span>
         </div>
         <nav className="flex-1 overflow-y-auto py-4">
           {navContent}
@@ -79,16 +104,16 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           aria-label="Menú de navegación móvil"
         >
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-200"
             onClick={onCloseMobile}
             aria-hidden="true"
           />
-          <aside className="relative w-64 max-w-[80vw] bg-sidebar text-white flex flex-col h-full shadow-2xl z-10 transition-transform duration-200 ease-out">
-            <div className="h-16 flex items-center justify-between px-6 border-b border-slate-700 font-bold text-xl tracking-wider">
-              <span>SGMT</span>
+          <aside className="relative w-64 max-w-[80vw] bg-slate-900 dark:bg-slate-950 text-white flex flex-col h-full shadow-2xl z-10 transition-transform duration-200 ease-out border-r border-slate-800">
+            <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800 font-bold text-xl tracking-wider">
+              <span className="text-blue-500">SGMT</span>
               <button
                 onClick={onCloseMobile}
-                className="p-1.5 rounded text-slate-400 hover:text-white transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                 aria-label="Cerrar menú móvil"
               >
                 <X size={20} />

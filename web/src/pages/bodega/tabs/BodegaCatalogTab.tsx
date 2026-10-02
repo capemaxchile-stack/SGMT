@@ -18,7 +18,9 @@ import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/DataTable';
 import { Modal } from '../../../components/ui/Modal';
 import { Item, Warehouse, Supplier, WarehouseType, ITEM_CATEGORIES } from '../../../types/models';
-import { Search, Plus, Edit2, Trash2, AlertCircle, Filter } from 'lucide-react';
+import { useToast } from '../../../components/ui/Toast';
+import { exportToCSV } from '../../../lib/export';
+import { Search, Plus, Edit2, Trash2, AlertCircle, Filter, Download } from 'lucide-react';
 
 interface BodegaCatalogTabProps {
   type: 'items' | 'warehouses' | 'suppliers';
@@ -252,6 +254,64 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
       s.rut.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const toast = useToast();
+
+  const handleExport = () => {
+    if (type === 'items') {
+      if (!filteredItems.length) {
+        toast.info('No hay materiales para exportar');
+        return;
+      }
+      exportToCSV(
+        filteredItems,
+        [
+          { header: 'Código', key: 'code' },
+          { header: 'Descripción', key: 'description' },
+          { header: 'Categoría', key: 'category' },
+          { header: 'Unidad', key: 'unitOfMeasure' },
+          { header: 'Stock Mínimo', key: 'minimumStock' },
+          { header: 'Estado', key: (i) => (i.isActive ? 'Activo' : 'Inactivo') },
+        ],
+        'SGMT_Catalogo_Materiales'
+      );
+      toast.success('Catálogo de materiales exportado a Excel');
+    } else if (type === 'warehouses') {
+      if (!filteredWarehouses.length) {
+        toast.info('No hay bodegas para exportar');
+        return;
+      }
+      exportToCSV(
+        filteredWarehouses,
+        [
+          { header: 'Nombre', key: 'name' },
+          { header: 'Ubicación', key: 'location' },
+          { header: 'Tipo', key: 'type' },
+          { header: 'Estado', key: (w) => (w.isActive ? 'Activa' : 'Inactiva') },
+        ],
+        'SGMT_Listado_Bodegas'
+      );
+      toast.success('Listado de bodegas exportado a Excel');
+    } else if (type === 'suppliers') {
+      if (!filteredSuppliers.length) {
+        toast.info('No hay proveedores para exportar');
+        return;
+      }
+      exportToCSV(
+        filteredSuppliers,
+        [
+          { header: 'RUT', key: 'rut' },
+          { header: 'Razón Social', key: 'businessName' },
+          { header: 'Contacto', key: (s) => s.contactName || '' },
+          { header: 'Teléfono', key: (s) => s.contactPhone || '' },
+          { header: 'Email', key: (s) => s.contactEmail || '' },
+          { header: 'Dirección', key: (s) => s.address || '' },
+        ],
+        'SGMT_Directorio_Proveedores'
+      );
+      toast.success('Directorio de proveedores exportado a Excel');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -267,10 +327,16 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
               : 'Proveedores autorizados con RUT'}
           </p>
         </div>
-        <Button onClick={handleOpenCreate}>
-          <Plus size={16} className="mr-2" />
-          {type === 'items' ? 'Nuevo Material' : type === 'warehouses' ? 'Nueva Bodega' : 'Nuevo Proveedor'}
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={handleExport} className="flex items-center gap-1.5">
+            <Download size={15} />
+            Exportar Excel
+          </Button>
+          <Button onClick={handleOpenCreate} className="flex items-center gap-1.5">
+            <Plus size={16} />
+            {type === 'items' ? 'Nuevo Material' : type === 'warehouses' ? 'Nueva Bodega' : 'Nuevo Proveedor'}
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col sm:flex-row gap-4">

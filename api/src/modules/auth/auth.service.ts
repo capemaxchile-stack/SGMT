@@ -101,4 +101,33 @@ export class AuthService {
   async getProfile(userId: string) {
     return this.validateUserBySub(userId);
   }
+
+  async updateProfile(userId: string, name?: string) {
+    if (name) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { name: name.trim() },
+      });
+    }
+    return this.validateUserBySub(userId);
+  }
+
+  async changePassword(userId: string, currentPass: string, newPass: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new UnauthorizedException('Usuario no encontrado');
+    }
+    const isMatch = await bcrypt.compare(currentPass, user.passwordHash);
+    if (!isMatch) {
+      throw new UnauthorizedException('La contraseña actual es incorrecta');
+    }
+    const passwordHash = await bcrypt.hash(newPass, 12);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+    return { success: true, message: 'Contraseña actualizada correctamente' };
+  }
 }

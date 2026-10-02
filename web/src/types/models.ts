@@ -6,10 +6,26 @@ export interface BaseEntity {
 
 export type FaenaStatus = 'EN_FORMACION' | 'ACTIVA' | 'EN_CIERRE' | 'CERRADA';
 
+export interface Role extends BaseEntity {
+  name: string;
+  displayName: string;
+  level: number;
+  maxApprovalAmount?: number | null;
+}
+
+export interface UserRole {
+  userId?: string;
+  roleId?: string;
+  id?: string;
+  name?: string;
+  role?: Role;
+}
+
 export interface User extends BaseEntity {
   name: string;
   email: string;
   isActive: boolean;
+  roles?: (UserRole | string)[];
 }
 
 export interface Contract extends BaseEntity {
