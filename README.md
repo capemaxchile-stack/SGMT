@@ -114,4 +114,4 @@ docker compose --profile dev-tools up -d
 
 ## License
 
-Private — SAMTECH S.A.
+Private — HTTPS://CAPEMAXCHILE.COM
