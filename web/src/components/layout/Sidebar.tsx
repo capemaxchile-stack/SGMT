@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Factory, Truck, Box, ShoppingCart, Settings, X, Server } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useEffect } from 'react';
+import { Logo } from '../ui/Logo';
 
 interface SidebarProps {
   isMobileOpen?: boolean;
@@ -84,11 +85,8 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
     <>
       {/* Desktop Sidebar */}
       <aside className="w-64 flex-shrink-0 bg-slate-900 dark:bg-slate-950 text-white flex flex-col hidden md:flex border-r border-slate-800">
-        <div className="h-16 flex items-center px-6 border-b border-slate-800 font-bold text-xl tracking-wider text-white">
-          <span className="text-blue-500 mr-1">SGMT</span>
-          <span className="text-xs font-normal text-slate-400 px-2 py-0.5 rounded bg-slate-800 ml-auto">
-            PROD
-          </span>
+        <div className="h-16 flex items-center px-4 border-b border-slate-800">
+          <Logo size="sm" variant="full" textColor="text-white" />
         </div>
         <nav className="flex-1 overflow-y-auto py-4">
           {navContent}
@@ -109,8 +107,8 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             aria-hidden="true"
           />
           <aside className="relative w-64 max-w-[80vw] bg-slate-900 dark:bg-slate-950 text-white flex flex-col h-full shadow-2xl z-10 transition-transform duration-200 ease-out border-r border-slate-800">
-            <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800 font-bold text-xl tracking-wider">
-              <span className="text-blue-500">SGMT</span>
+            <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
+              <Logo size="sm" variant="full" textColor="text-white" />
               <button
                 onClick={onCloseMobile}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"

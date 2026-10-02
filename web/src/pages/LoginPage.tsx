@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/auth.store';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../components/ui/Card';
+import { Logo } from '../components/ui/Logo';
 import { Mail, Lock } from 'lucide-react';
 
 export function LoginPage() {
@@ -30,14 +31,14 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 p-4">
-      <Card className="w-full max-w-md shadow-xl border-0">
-        <CardHeader className="text-center pb-2">
-          <div className="w-16 h-16 bg-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl font-bold text-white">SGMT</span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-950 dark:to-slate-900 p-4">
+      <Card className="w-full max-w-md shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <CardHeader className="text-center pb-2 flex flex-col items-center">
+          <div className="mb-4">
+            <Logo size="lg" variant="full" />
           </div>
-          <CardTitle className="text-2xl font-bold text-slate-800">Iniciar Sesión</CardTitle>
-          <p className="text-slate-500 text-sm mt-2">Ingresa tus credenciales para acceder al sistema</p>
+          <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-100">Iniciar Sesión</CardTitle>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Ingresa tus credenciales para acceder al sistema</p>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4 pt-4">

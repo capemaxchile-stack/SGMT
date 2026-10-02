@@ -35,6 +35,7 @@ export const useThemeStore = create<ThemeState>()(
 );
 
 export function applyTheme(theme: Theme) {
+  if (typeof document === 'undefined') return;
   const root = document.documentElement;
   const isDark =
     theme === 'dark' ||
@@ -45,4 +46,17 @@ export function applyTheme(theme: Theme) {
   } else {
     root.classList.remove('dark');
   }
+}
+
+// Immediate initial execution
+if (typeof window !== 'undefined') {
+  try {
+    const stored = localStorage.getItem('sgmt-theme-storage');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed?.state?.theme) {
+        applyTheme(parsed.state.theme);
+      }
+    }
+  } catch {}
 }
