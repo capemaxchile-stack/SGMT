@@ -14,7 +14,7 @@ export function DashboardPage() {
   const recentOrders = orders?.slice(0, 5) || [];
 
   const stats = [
-    { title: 'Faenas Activas', value: metrics?.activeFaenasCount || 0, icon: <Factory className="text-blue-500" size={24} />, trend: 'Operando' },
+    { title: 'Faenas Activas', value: metrics?.activeFaenasCount || 0, icon: <Factory className="text-primary-500" size={24} />, trend: 'Operando' },
     { title: 'Equipos en Flota', value: metrics?.totalAssetsCount || 0, icon: <Truck className="text-amber-500" size={24} />, trend: `${metrics?.operationalPercentage || 0}% operativos` },
     { title: 'Items en Bodega', value: metrics?.totalStockItemsCount || 0, icon: <Box className="text-emerald-500" size={24} />, trend: `${metrics?.lowStockItemsCount || 0} bajo stock mínimo` },
     { title: 'OC Pendientes', value: metrics?.pendingOrdersCount || 0, icon: <FileText className="text-purple-500" size={24} />, trend: 'Requieren aprobación' },
@@ -52,7 +52,7 @@ export function DashboardPage() {
         <Card className="h-96 flex flex-col bg-white border border-slate-200 overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <h3 className="font-bold text-slate-800">Movimientos Recientes en Bodega</h3>
-            <Link to="/bodega" className="text-sm text-blue-600 hover:underline flex items-center gap-1">Ver todos <ArrowRight size={14} /></Link>
+            <Link to="/bodega" className="text-sm text-primary-600 hover:underline flex items-center gap-1">Ver todos <ArrowRight size={14} /></Link>
           </div>
           <div className="p-4 flex-1 overflow-auto">
             {loadingMovements ? (
@@ -91,7 +91,7 @@ export function DashboardPage() {
         <Card className="h-96 flex flex-col bg-white border border-slate-200 overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <h3 className="font-bold text-slate-800">Órdenes de Compra Recientes</h3>
-            <Link to="/compras" className="text-sm text-blue-600 hover:underline flex items-center gap-1">Ver todas <ArrowRight size={14} /></Link>
+            <Link to="/compras" className="text-sm text-primary-600 hover:underline flex items-center gap-1">Ver todas <ArrowRight size={14} /></Link>
           </div>
           <div className="p-4 flex-1 overflow-auto">
             {loadingOrders ? (

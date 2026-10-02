@@ -56,6 +56,8 @@ model Faena {
   name               String
   location           String
   status             FaenaStatus
+  isActive           Boolean             @default(true)
+  deletedAt          DateTime?
   startDate          DateTime
   endDate            DateTime?
   chiefId            String?
@@ -119,6 +121,8 @@ model Asset {
   operationalStatus  AssetOperationalStatus
   currentHourmeter   Decimal                @default(0)
   currentKilometrage Decimal                @default(0)
+  isActive           Boolean                @default(true)
+  deletedAt          DateTime?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   assignments        AssetAssignment[]
@@ -142,14 +146,16 @@ enum WarehouseType {
 }
 
 model Warehouse {
-  id        String              @id @default(uuid())
-  name      String
-  location  String
-  type      WarehouseType
-  isActive  Boolean             @default(true)
-  createdAt DateTime            @default(now())
-  stocks    Stock[]
-  movements WarehouseMovement[]
+  id                String              @id @default(uuid())
+  name              String
+  location          String
+  type              WarehouseType
+  isActive          Boolean             @default(true)
+  deletedAt         DateTime?
+  createdAt         DateTime            @default(now())
+  stocks            Stock[]
+  movements         WarehouseMovement[] @relation("OriginWarehouse")
+  incomingTransfers WarehouseMovement[] @relation("DestinationWarehouse")
 }
 
 model Item {
@@ -160,6 +166,7 @@ model Item {
   category           String
   minimumStock       Int                     @default(0)
   isActive           Boolean                 @default(true)
+  deletedAt          DateTime?
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
   stocks             Stock[]
@@ -184,25 +191,28 @@ enum MovementType {
   INGRESO
   SALIDA
   AJUSTE
+  TRANSFER
 }
 
 model WarehouseMovement {
-  id              String                  @id @default(uuid())
-  type            MovementType
-  movementNumber  String                  @unique
-  warehouseId     String
-  faenaId         String?
-  assetId         String?
-  purchaseOrderId String?
-  userId          String
-  notes           String?
-  createdAt       DateTime                @default(now())
-  warehouse       Warehouse               @relation(fields: [warehouseId], references: [id])
-  faena           Faena?                  @relation(fields: [faenaId], references: [id])
-  asset           Asset?                  @relation(fields: [assetId], references: [id])
-  purchaseOrder   PurchaseOrder?          @relation(fields: [purchaseOrderId], references: [id])
-  user            User                    @relation(fields: [userId], references: [id])
-  lines           WarehouseMovementLine[]
+  id                String                  @id @default(uuid())
+  type              MovementType
+  movementNumber    String                  @unique
+  warehouseId       String
+  targetWarehouseId String?
+  faenaId           String?
+  assetId           String?
+  purchaseOrderId   String?
+  userId            String
+  notes             String?
+  createdAt         DateTime                @default(now())
+  warehouse         Warehouse               @relation("OriginWarehouse", fields: [warehouseId], references: [id])
+  targetWarehouse   Warehouse?              @relation("DestinationWarehouse", fields: [targetWarehouseId], references: [id])
+  faena             Faena?                  @relation(fields: [faenaId], references: [id])
+  asset             Asset?                  @relation(fields: [assetId], references: [id])
+  purchaseOrder     PurchaseOrder?          @relation(fields: [purchaseOrderId], references: [id])
+  user              User                    @relation(fields: [userId], references: [id])
+  lines             WarehouseMovementLine[]
 }
 
 model WarehouseMovementLine {
@@ -224,6 +234,7 @@ model Supplier {
   contactPhone   String?
   address        String?
   isActive       Boolean         @default(true)
+  deletedAt      DateTime?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   purchaseOrders PurchaseOrder[]
@@ -317,6 +328,7 @@ model Authorization {
   @@index([entityType, entityId])
 }
 
+/// Immutable Audit Trail: Database trigger trg_audit_log_immutable prohibits UPDATE and DELETE operations.
 model AuditLog {
   id        BigInt   @id @default(autoincrement())
   timestamp DateTime @default(now())

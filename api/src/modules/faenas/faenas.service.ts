@@ -17,7 +17,7 @@ export class FaenasService {
   }
 
   async findAll(status?: FaenaStatus, search?: string) {
-    const where: any = {};
+    const where: any = { isActive: true };
     if (status) where.status = status;
     if (search) where.name = { contains: search, mode: 'insensitive' };
 
@@ -63,6 +63,8 @@ export class FaenasService {
   }
 
   async update(id: string, updateFaenaDto: UpdateFaenaDto) {
+    const faena = await this.prisma.faena.findUnique({ where: { id } });
+    if (!faena) throw new NotFoundException(`Faena with ID ${id} not found`);
     return this.prisma.faena.update({
       where: { id },
       data: updateFaenaDto,
@@ -70,8 +72,15 @@ export class FaenasService {
   }
 
   async remove(id: string) {
-    return this.prisma.faena.delete({
+    const faena = await this.prisma.faena.findUnique({ where: { id } });
+    if (!faena) throw new NotFoundException(`Faena with ID ${id} not found`);
+    return this.prisma.faena.update({
       where: { id },
+      data: {
+        isActive: false,
+        status: FaenaStatus.CERRADA,
+        deletedAt: new Date(),
+      },
     });
   }
 

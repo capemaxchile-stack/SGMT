@@ -37,13 +37,16 @@ export class MovementsController {
 
   @Get('inventory/stock')
   @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'BODEGUERO', 'COMPRADOR')
-  getStock() {
-    return this.movementsService.getStock();
+  getStock(@Query('warehouseId') warehouseId?: string) {
+    return this.movementsService.getStock(warehouseId);
   }
 
   @Get('inventory/kardex/:itemId')
   @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'BODEGUERO')
-  getKardex(@Param('itemId') itemId: string) {
-    return this.movementsService.getKardex(itemId);
+  getKardex(
+    @Param('itemId') itemId: string,
+    @Query('warehouseId') warehouseId?: string,
+  ) {
+    return this.movementsService.getKardex(itemId, warehouseId);
   }
 }

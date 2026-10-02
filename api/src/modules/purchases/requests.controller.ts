@@ -20,6 +20,12 @@ export class RequestsController {
     return this.requestsService.findAll();
   }
 
+  @Get(':id')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'COMPRADOR')
+  findOne(@Param('id') id: string) {
+    return this.requestsService.findOne(id);
+  }
+
   @Post()
   @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES')
   create(

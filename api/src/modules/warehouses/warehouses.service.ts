@@ -15,6 +15,7 @@ export class WarehousesService {
 
   async findAll() {
     const warehouses = await this.prisma.warehouse.findMany({
+      where: { isActive: true },
       include: {
         _count: {
           select: { stocks: true }
@@ -41,6 +42,8 @@ export class WarehousesService {
   }
 
   async update(id: string, updateWarehouseDto: UpdateWarehouseDto) {
+    const warehouse = await this.prisma.warehouse.findUnique({ where: { id } });
+    if (!warehouse) throw new NotFoundException(`Warehouse with id ${id} not found`);
     return this.prisma.warehouse.update({
       where: { id },
       data: updateWarehouseDto,
@@ -48,8 +51,14 @@ export class WarehousesService {
   }
 
   async remove(id: string) {
-    return this.prisma.warehouse.delete({
+    const warehouse = await this.prisma.warehouse.findUnique({ where: { id } });
+    if (!warehouse) throw new NotFoundException(`Warehouse with id ${id} not found`);
+    return this.prisma.warehouse.update({
       where: { id },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+      },
     });
   }
 }

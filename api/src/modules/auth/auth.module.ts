@@ -14,10 +14,20 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'default_secret_key_change_me_in_prod'),
-        signOptions: { expiresIn: '1h' },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret) {
+          throw new Error('JWT_SECRET environment variable is missing. Application cannot boot without JWT_SECRET.');
+        }
+        const refreshSecret = configService.get<string>('JWT_REFRESH_SECRET');
+        if (!refreshSecret) {
+          throw new Error('JWT_REFRESH_SECRET environment variable is missing. Application cannot boot without JWT_REFRESH_SECRET.');
+        }
+        return {
+          secret,
+          signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN', '1h') },
+        };
+      },
     }),
   ],
   controllers: [AuthController],

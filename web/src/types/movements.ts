@@ -1,4 +1,4 @@
-﻿import { BaseEntity, Faena, Asset, Item, Warehouse, User } from './models';
+import { BaseEntity, Faena, Asset, Item, Warehouse, User } from './models';
 
 export type MovementType = 'INGRESO' | 'SALIDA' | 'AJUSTE';
 
@@ -42,14 +42,33 @@ export interface CreateMovementDto {
   lines: CreateMovementLineDto[];
 }
 
+export interface KardexMovement {
+  id?: string;
+  movementNumber?: string;
+  type?: MovementType;
+  createdAt?: string;
+  warehouseId?: string;
+  targetWarehouseId?: string;
+  warehouse?: { id: string; name: string };
+  targetWarehouse?: { id: string; name: string };
+  user?: { id: string; name: string };
+}
+
 export interface KardexEntry {
-  date: string;
-  movementNumber: string;
-  type: MovementType;
-  warehouseName: string;
-  entries: number;
-  exits: number;
+  id?: string;
+  movementId?: string;
+  itemId?: string;
+  movementNumber?: string;
+  date?: string;
+  type?: MovementType;
+  quantity: number;
   balance: number;
   unitCost: number;
+  totalCost?: number;
+  warehouseId?: string;
+  warehouseName?: string;
+  entries?: number;
+  exits?: number;
   notes?: string;
+  movement?: KardexMovement;
 }

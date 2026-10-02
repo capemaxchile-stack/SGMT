@@ -14,7 +14,7 @@ export class ItemsService {
   }
 
   async findAll(category?: string, search?: string) {
-    const where: any = {};
+    const where: any = { isActive: true };
     if (category) where.category = category;
     if (search) {
       where.OR = [
@@ -45,6 +45,8 @@ export class ItemsService {
   }
 
   async update(id: string, updateItemDto: UpdateItemDto) {
+    const item = await this.prisma.item.findUnique({ where: { id } });
+    if (!item) throw new NotFoundException(`Item ${id} not found`);
     return this.prisma.item.update({
       where: { id },
       data: updateItemDto,
@@ -52,8 +54,14 @@ export class ItemsService {
   }
 
   async remove(id: string) {
-    return this.prisma.item.delete({
+    const item = await this.prisma.item.findUnique({ where: { id } });
+    if (!item) throw new NotFoundException(`Item ${id} not found`);
+    return this.prisma.item.update({
       where: { id },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+      },
     });
   }
 }

@@ -22,7 +22,7 @@ export function LoginPage() {
     try {
       await login({ email, password });
       navigate('/');
-    } catch (err) {
+    } catch {
       setError('Credenciales inválidas o error de conexión');
     } finally {
       setIsLoading(false);

@@ -7,12 +7,13 @@ export class MovementLineDto {
   itemId: string;
 
   @IsNumber()
-  @Min(0.01)
+  @Min(0)
   quantity: number;
 
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  unitCost: number;
+  unitCost?: number;
 }
 
 export class CreateMovementDto {
@@ -21,6 +22,10 @@ export class CreateMovementDto {
 
   @IsUUID()
   warehouseId: string;
+
+  @IsOptional()
+  @IsUUID()
+  targetWarehouseId?: string;
 
   @IsOptional()
   @IsUUID()

@@ -8,11 +8,17 @@ export class UsersService {
   async findAllActive() {
     return this.prisma.user.findMany({
       where: { isActive: true },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
         roles: {
-          include: { role: true }
-        }
-      }
+          include: { role: true },
+        },
+      },
     });
   }
 

@@ -17,7 +17,7 @@ export class AssetsService {
   }
 
   async findAll(type?: AssetType, operationalStatus?: AssetOperationalStatus, faenaId?: string) {
-    const where: any = {};
+    const where: any = { isActive: true };
     if (type) where.type = type;
     if (operationalStatus) where.operationalStatus = operationalStatus;
     if (faenaId) {
@@ -55,6 +55,8 @@ export class AssetsService {
   }
 
   async update(id: string, updateAssetDto: UpdateAssetDto) {
+    const asset = await this.prisma.asset.findUnique({ where: { id } });
+    if (!asset) throw new NotFoundException(`Asset ${id} not found`);
     return this.prisma.asset.update({
       where: { id },
       data: updateAssetDto,
@@ -62,6 +64,8 @@ export class AssetsService {
   }
 
   async updateMeter(id: string, updateMeterDto: UpdateMeterDto) {
+    const asset = await this.prisma.asset.findUnique({ where: { id } });
+    if (!asset) throw new NotFoundException(`Asset ${id} not found`);
     return this.prisma.asset.update({
       where: { id },
       data: updateMeterDto,
@@ -69,6 +73,8 @@ export class AssetsService {
   }
 
   async assign(id: string, assignAssetDto: AssignAssetDto) {
+    const asset = await this.prisma.asset.findUnique({ where: { id } });
+    if (!asset) throw new NotFoundException(`Asset ${id} not found`);
     // Close any prior open assignment
     await this.prisma.assetAssignment.updateMany({
       where: { assetId: id, endDate: null },
@@ -85,8 +91,15 @@ export class AssetsService {
   }
 
   async remove(id: string) {
-    return this.prisma.asset.delete({
+    const asset = await this.prisma.asset.findUnique({ where: { id } });
+    if (!asset) throw new NotFoundException(`Asset ${id} not found`);
+    return this.prisma.asset.update({
       where: { id },
+      data: {
+        isActive: false,
+        operationalStatus: AssetOperationalStatus.DADO_DE_BAJA,
+        deletedAt: new Date(),
+      },
     });
   }
 }

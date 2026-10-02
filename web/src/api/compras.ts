@@ -69,7 +69,7 @@ export const useUpdateOrderStatus = () => {
     mutationFn: updateOrderStatus,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: comprasKeys.orders() });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
       queryClient.invalidateQueries({ queryKey: ['audit'] });
     },
   });
@@ -83,7 +83,7 @@ export const useReceivePurchaseOrder = () => {
       queryClient.invalidateQueries({ queryKey: comprasKeys.orders() });
       queryClient.invalidateQueries({ queryKey: ['items'] });
       queryClient.invalidateQueries({ queryKey: ['movements'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
       queryClient.invalidateQueries({ queryKey: ['audit'] });
     },
   });

@@ -11,22 +11,41 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!requiredRoles || requiredRoles.length === 0) {
-      return true;
-    }
+
     const { user } = context.switchToHttp().getRequest();
     if (!user || !user.roles) {
       return false;
     }
 
-    const userRoles: string[] = Array.isArray(user.roles) ? user.roles : [];
+    if (user.isActive === false) {
+      return false;
+    }
+
+    let userRoles: string[] = [];
+    if (Array.isArray(user.roles)) {
+      userRoles = user.roles
+        .map((r: any) => {
+          if (typeof r === 'string') return r;
+          return r?.role?.name || r?.name || '';
+        })
+        .filter(Boolean);
+    } else if (typeof user.roles === 'string') {
+      userRoles = [user.roles];
+    }
+
+    if (userRoles.length === 0) {
+      return false;
+    }
 
     // System Admins and Super Users always bypass specific role restrictions
     if (
       userRoles.includes('ADMIN_SISTEMA') ||
-      userRoles.includes('SUPER_USUARIO') ||
-      userRoles.includes('ADMIN')
+      userRoles.includes('SUPER_USUARIO')
     ) {
+      return true;
+    }
+
+    if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
 

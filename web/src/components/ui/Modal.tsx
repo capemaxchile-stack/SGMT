@@ -11,6 +11,8 @@ interface ModalProps {
   children: React.ReactNode;
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | '5xl' | 'full';
+  closeOnBackdrop?: boolean;
+  isDirty?: boolean;
 }
 
 const sizeClasses: Record<string, string> = {
@@ -24,10 +26,27 @@ const sizeClasses: Record<string, string> = {
   full: 'max-w-[95vw]',
 };
 
-export function Modal({ isOpen, onClose, title, children, className, size = 'lg' }: ModalProps) {
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  className,
+  size = 'lg',
+  closeOnBackdrop = false,
+  isDirty = false,
+}: ModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (isDirty) {
+          if (window.confirm('¿Descartar los cambios no guardados?')) {
+            onClose();
+          }
+        } else {
+          onClose();
+        }
+      }
     };
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
@@ -37,20 +56,33 @@ export function Modal({ isOpen, onClose, title, children, className, size = 'lg'
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isDirty]);
 
   if (!isOpen) return null;
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target !== e.currentTarget) return;
+    if (isDirty) {
+      if (window.confirm('¿Descartar los cambios no guardados?')) {
+        onClose();
+      }
+      return;
+    }
+    if (closeOnBackdrop) {
+      onClose();
+    }
+  };
+
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
-        onClick={onClose}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-200" 
+        onClick={handleBackdropClick}
         aria-hidden="true"
       />
       <div 
         className={cn(
-          "relative bg-white rounded-lg shadow-xl w-full max-h-[90vh] flex flex-col mx-4 animate-in fade-in zoom-in-95 duration-200",
+          "relative bg-white rounded-lg shadow-xl w-full max-h-[90vh] flex flex-col mx-4 transition-all transform duration-200 ease-out",
           sizeClasses[size] || 'max-w-lg',
           className
         )}

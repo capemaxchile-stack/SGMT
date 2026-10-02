@@ -452,23 +452,23 @@ export function BodegaMovementsTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {kardexData.map((k: any, idx: number) => {
+                  {kardexData.map((k, idx: number) => {
                     const mov = k.movement || {};
-                    const isIngreso = mov.type === 'INGRESO';
-                    const isSalida = mov.type === 'SALIDA';
+                    const isIngreso = (mov.type || k.type) === 'INGRESO';
+                    const isSalida = (mov.type || k.type) === 'SALIDA';
                     return (
-                      <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
+                      <tr key={k.id || idx} className="border-b border-slate-100 hover:bg-slate-50">
                         <td className="p-2 text-slate-600">
-                          {mov.createdAt ? new Date(mov.createdAt).toLocaleDateString() : '-'}
+                          {mov.createdAt ? new Date(mov.createdAt).toLocaleDateString() : (k.date ? new Date(k.date).toLocaleDateString() : '-')}
                         </td>
                         <td className="p-2 font-mono font-bold text-slate-800">
-                          {mov.movementNumber || '-'}
+                          {mov.movementNumber || k.movementNumber || '-'}
                         </td>
                         <td className="p-2">
-                          <StatusBadge status={mov.type} />
+                          <StatusBadge status={mov.type || k.type || 'INFO'} />
                         </td>
                         <td className="p-2 text-slate-600">
-                          {mov.warehouse?.name || '-'}
+                          {mov.warehouse?.name || k.warehouseName || '-'}
                         </td>
                         <td className="p-2 text-right text-emerald-600 font-bold">
                           {isIngreso ? `+${Number(k.quantity)}` : '-'}

@@ -14,7 +14,7 @@ export class SuppliersService {
   }
 
   async findAll(rut?: string, businessName?: string) {
-    const where: any = {};
+    const where: any = { isActive: true };
     if (rut) where.rut = { contains: rut, mode: 'insensitive' };
     if (businessName) where.businessName = { contains: businessName, mode: 'insensitive' };
 
@@ -28,6 +28,8 @@ export class SuppliersService {
   }
 
   async update(id: string, updateSupplierDto: UpdateSupplierDto) {
+    const supplier = await this.prisma.supplier.findUnique({ where: { id } });
+    if (!supplier) throw new NotFoundException(`Supplier with id ${id} not found`);
     return this.prisma.supplier.update({
       where: { id },
       data: updateSupplierDto,
@@ -35,8 +37,14 @@ export class SuppliersService {
   }
 
   async remove(id: string) {
-    return this.prisma.supplier.delete({
+    const supplier = await this.prisma.supplier.findUnique({ where: { id } });
+    if (!supplier) throw new NotFoundException(`Supplier with id ${id} not found`);
+    return this.prisma.supplier.update({
       where: { id },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+      },
     });
   }
 }

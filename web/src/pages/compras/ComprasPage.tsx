@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { ShoppingCart, FileText } from 'lucide-react';
 import { PurchaseOrdersTab } from './tabs/PurchaseOrdersTab';
 import { PurchaseRequestsTab } from './tabs/PurchaseRequestsTab';
@@ -17,12 +17,12 @@ export function ComprasPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 gap-6">
+      <div className="flex border-b border-slate-200 gap-6 overflow-x-auto">
         <button
           onClick={() => setActiveTab('orders')}
-          className={`flex items-center pb-3 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center pb-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'orders'
-              ? 'border-blue-600 text-blue-600 font-semibold'
+              ? 'border-primary-600 text-primary-600 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -31,9 +31,9 @@ export function ComprasPage() {
         </button>
         <button
           onClick={() => setActiveTab('requests')}
-          className={`flex items-center pb-3 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center pb-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'requests'
-              ? 'border-blue-600 text-blue-600 font-semibold'
+              ? 'border-primary-600 text-primary-600 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >

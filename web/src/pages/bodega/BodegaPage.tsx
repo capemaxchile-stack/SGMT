@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Package, Building, Truck, ArrowRightLeft } from 'lucide-react';
 import { BodegaCatalogTab } from './tabs/BodegaCatalogTab';
 import { BodegaMovementsTab } from './tabs/BodegaMovementsTab';
@@ -17,12 +17,12 @@ export function BodegaPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 gap-6">
+      <div className="flex border-b border-slate-200 gap-6 overflow-x-auto">
         <button
           onClick={() => setActiveTab('items')}
-          className={`flex items-center pb-3 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center pb-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'items'
-              ? 'border-blue-600 text-blue-600 font-semibold'
+              ? 'border-primary-600 text-primary-600 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -31,9 +31,9 @@ export function BodegaPage() {
         </button>
         <button
           onClick={() => setActiveTab('warehouses')}
-          className={`flex items-center pb-3 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center pb-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'warehouses'
-              ? 'border-blue-600 text-blue-600 font-semibold'
+              ? 'border-primary-600 text-primary-600 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -42,9 +42,9 @@ export function BodegaPage() {
         </button>
         <button
           onClick={() => setActiveTab('suppliers')}
-          className={`flex items-center pb-3 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center pb-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'suppliers'
-              ? 'border-blue-600 text-blue-600 font-semibold'
+              ? 'border-primary-600 text-primary-600 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -53,9 +53,9 @@ export function BodegaPage() {
         </button>
         <button
           onClick={() => setActiveTab('movements')}
-          className={`flex items-center pb-3 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center pb-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
             activeTab === 'movements'
-              ? 'border-blue-600 text-blue-600 font-semibold'
+              ? 'border-primary-600 text-primary-600 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
