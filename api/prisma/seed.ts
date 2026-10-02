@@ -138,6 +138,62 @@ async function main() {
     }
   });
 
+  // 6. Maintenance Plans
+  const plansData = [
+    {
+      name: 'Pauta Preventiva 250 Horas (Excavadoras y Bulldozers)',
+      assetType: 'EXCAVADORA' as const,
+      intervalHours: 250,
+      description: 'Cambio de aceite de motor, reemplazo de filtro de aceite y combustible, engrase general de pasadores y revisión de niveles.',
+      checklist: [
+        'Cambiar aceite de motor y filtro',
+        'Cambiar filtro primario de combustible',
+        'Engrasar balde, pluma y tornamesa',
+        'Verificar tensión de orugas',
+        'Revisar nivel de refrigerante y líquido hidráulico',
+        'Inspección visual de fugas en mangueras'
+      ]
+    },
+    {
+      name: 'Pauta Preventiva 500 Horas (Maquinaria Pesada)',
+      assetType: 'EXCAVADORA' as const,
+      intervalHours: 500,
+      description: 'Mantenimiento intermedio con cambio de filtros de aire, combustible, aceite y chequeo de mandos finales.',
+      checklist: [
+        'Todas las tareas de Pauta 250h',
+        'Reemplazo de filtro de aire primario y secundario',
+        'Cambio de filtro hidráulico de retorno',
+        'Inspección de desgaste de zapatas y rodillos',
+        'Comprobación de baterías y bornes de carga',
+        'Muestreo de aceite para análisis de laboratorio'
+      ]
+    },
+    {
+      name: 'Pauta Preventiva 10.000 Km (Camionetas y Vehículos Livianos)',
+      assetType: 'CAMIONETA' as const,
+      intervalKm: 10000,
+      description: 'Alineación, balanceo, cambio de aceite sintético, filtros de habitáculo y frenos.',
+      checklist: [
+        'Cambio de aceite de motor y filtro de aceite',
+        'Cambio de filtro de aire y de polen',
+        'Revisión y rotación de neumáticos',
+        'Inspección de pastillas y discos de freno',
+        'Revisión de amortiguadores y tren delantero'
+      ]
+    }
+  ];
+
+  for (const plan of plansData) {
+    const existing = await prisma.maintenancePlan.findFirst({
+      where: { name: plan.name }
+    });
+    if (!existing) {
+      await prisma.maintenancePlan.create({
+        data: plan
+      });
+    }
+  }
+
   console.log('Seed completed successfully.');
 }
 

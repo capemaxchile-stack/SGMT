@@ -22,6 +22,7 @@ model User {
   faenasAsChief    Faena[]           @relation("FaenaChief")
   movementsCreated WarehouseMovement[]
   requestsCreated  PurchaseRequest[]
+  workOrdersCreated WorkOrder[]
   auditLogs        AuditLog[]
 }
 
@@ -68,6 +69,7 @@ model Faena {
   assets             AssetAssignment[]
   warehouseMovements WarehouseMovement[]
   purchaseRequests   PurchaseRequest[]
+  workOrders         WorkOrder[]
 }
 
 model Contract {
@@ -127,6 +129,7 @@ model Asset {
   updatedAt          DateTime               @updatedAt
   assignments        AssetAssignment[]
   warehouseMovements WarehouseMovement[]
+  workOrders         WorkOrder[]
 }
 
 model AssetAssignment {
@@ -156,6 +159,7 @@ model Warehouse {
   stocks            Stock[]
   movements         WarehouseMovement[] @relation("OriginWarehouse")
   incomingTransfers WarehouseMovement[] @relation("DestinationWarehouse")
+  workOrderItems    WorkOrderItem[]
 }
 
 model Item {
@@ -172,6 +176,7 @@ model Item {
   stocks             Stock[]
   movementLines      WarehouseMovementLine[]
   purchaseOrderLines PurchaseOrderLine[]
+  workOrderItems     WorkOrderItem[]
 }
 
 model Stock {
@@ -213,6 +218,7 @@ model WarehouseMovement {
   purchaseOrder     PurchaseOrder?          @relation(fields: [purchaseOrderId], references: [id])
   user              User                    @relation(fields: [userId], references: [id])
   lines             WarehouseMovementLine[]
+  workOrderItems    WorkOrderItem[]
 }
 
 model WarehouseMovementLine {
@@ -340,3 +346,92 @@ model AuditLog {
   ipAddress String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: NoAction)
 }
+
+enum WorkOrderType {
+  PREVENTIVO
+  CORRECTIVO
+  EMERGENCIA
+  PREDICTIVO
+}
+
+enum WorkOrderPriority {
+  BAJA
+  MEDIA
+  ALTA
+  CRITICA
+}
+
+enum WorkOrderStatus {
+  ABIERTA
+  EN_PROGRESO
+  ESPERA_REPUESTOS
+  COMPLETADA
+  CANCELADA
+}
+
+model MaintenancePlan {
+  id            String      @id @default(uuid())
+  assetType     AssetType
+  name          String
+  intervalHours Int?
+  intervalKm    Int?
+  description   String?
+  checklist     Json?
+  isActive      Boolean     @default(true)
+  deletedAt     DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  workOrders    WorkOrder[]
+}
+
+model WorkOrder {
+  id                 String            @id @default(uuid())
+  otNumber           String            @unique
+  assetId            String
+  faenaId            String?
+  maintenancePlanId  String?
+  type               WorkOrderType
+  priority           WorkOrderPriority @default(MEDIA)
+  status             WorkOrderStatus   @default(ABIERTA)
+  description        String
+  failureReport      String?
+  currentHourmeter   Decimal           @default(0)
+  currentKilometrage Decimal           @default(0)
+  technicianName     String?
+  startDate          DateTime?
+  completedDate      DateTime?
+  totalCost          Decimal           @default(0)
+  notes              String?
+  createdById        String
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  asset              Asset             @relation(fields: [assetId], references: [id])
+  faena              Faena?            @relation(fields: [faenaId], references: [id])
+  maintenancePlan    MaintenancePlan?  @relation(fields: [maintenancePlanId], references: [id])
+  createdBy          User              @relation(fields: [createdById], references: [id])
+  items              WorkOrderItem[]
+
+  @@index([assetId, status])
+  @@index([faenaId])
+}
+
+model WorkOrderItem {
+  id          String             @id @default(uuid())
+  workOrderId String
+  itemId      String
+  quantity    Decimal
+  unitCost    Decimal            @default(0)
+  totalCost   Decimal            @default(0)
+  warehouseId String
+  movementId  String?
+  createdAt   DateTime           @default(now())
+
+  workOrder   WorkOrder          @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  item        Item               @relation(fields: [itemId], references: [id])
+  warehouse   Warehouse          @relation(fields: [warehouseId], references: [id])
+  movement    WarehouseMovement? @relation(fields: [movementId], references: [id])
+
+  @@index([workOrderId])
+}
+

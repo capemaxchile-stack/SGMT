@@ -129,3 +129,79 @@ export interface Supplier extends BaseEntity {
   address?: string;
   isActive: boolean;
 }
+
+export type WorkOrderType = 'PREVENTIVO' | 'CORRECTIVO' | 'EMERGENCIA' | 'PREDICTIVO';
+export type WorkOrderPriority = 'BAJA' | 'MEDIA' | 'ALTA' | 'CRITICA';
+export type WorkOrderStatus = 'ABIERTA' | 'EN_PROGRESO' | 'ESPERA_REPUESTOS' | 'COMPLETADA' | 'CANCELADA';
+
+export interface MaintenancePlan extends BaseEntity {
+  assetType: AssetType;
+  name: string;
+  intervalHours?: number | null;
+  intervalKm?: number | null;
+  description?: string | null;
+  checklist?: string[] | null;
+  isActive: boolean;
+  _count?: {
+    workOrders: number;
+  };
+}
+
+export interface WorkOrderItem extends BaseEntity {
+  workOrderId: string;
+  itemId: string;
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+  warehouseId: string;
+  movementId?: string | null;
+  item?: Item;
+  warehouse?: Warehouse;
+}
+
+export interface WorkOrder extends BaseEntity {
+  otNumber: string;
+  assetId: string;
+  faenaId?: string | null;
+  maintenancePlanId?: string | null;
+  type: WorkOrderType;
+  priority: WorkOrderPriority;
+  status: WorkOrderStatus;
+  description: string;
+  failureReport?: string | null;
+  currentHourmeter: number;
+  currentKilometrage: number;
+  technicianName?: string | null;
+  startDate?: string | null;
+  completedDate?: string | null;
+  totalCost: number;
+  notes?: string | null;
+  createdById: string;
+  asset?: Asset;
+  faena?: Faena | null;
+  maintenancePlan?: MaintenancePlan | null;
+  createdBy?: User;
+  items?: WorkOrderItem[];
+  _count?: {
+    items: number;
+  };
+}
+
+export interface MaintenanceAlert {
+  assetId: string;
+  internalNumber: string;
+  brand: string;
+  model: string;
+  type: AssetType;
+  operationalStatus: AssetOperationalStatus;
+  faena: string;
+  planId: string;
+  planName: string;
+  metricType: 'HORAS' | 'KILOMETROS';
+  interval: number;
+  currentValue: number;
+  remainingValue: number;
+  percentUsed: number;
+  alertLevel: 'NORMAL' | 'PROXIMO' | 'VENCIDO';
+}
+

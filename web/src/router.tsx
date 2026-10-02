@@ -11,6 +11,7 @@ const FaenasPage = lazy(() => import('./pages/faenas/FaenasPage').then(m => ({ d
 const FlotaPage = lazy(() => import('./pages/flota/FlotaPage').then(m => ({ default: m.FlotaPage })));
 const BodegaPage = lazy(() => import('./pages/bodega/BodegaPage').then(m => ({ default: m.BodegaPage })));
 const ComprasPage = lazy(() => import('./pages/compras/ComprasPage').then(m => ({ default: m.ComprasPage })));
+const MantenimientoPage = lazy(() => import('./pages/mantenimiento/MantenimientoPage').then(m => ({ default: m.MantenimientoPage })));
 const AdminPage = lazy(() => import('./pages/admin/AdminPage').then(m => ({ default: m.AdminPage })));
 
 const routeFallback = (
@@ -56,6 +57,10 @@ export const router = createBrowserRouter([
       {
         path: 'flota',
         element: withSuspense(FlotaPage),
+      },
+      {
+        path: 'mantenimiento',
+        element: withSuspense(MantenimientoPage),
       },
       {
         path: 'bodega',
