@@ -12,6 +12,7 @@ import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { HelpTip } from '../../components/ui/HelpTip';
+import { AssetIcon } from '../../components/ui/AssetIcon';
 import {
   Fuel,
   Plus,
@@ -323,11 +324,16 @@ export function CombustiblePage() {
                           {new Date(log.dispatchDate).toLocaleDateString('es-CL')}
                         </td>
                         <td className="px-4 py-3">
-                          <div className="font-medium text-slate-800 dark:text-slate-200">
-                            {log.asset?.internalNumber}
-                          </div>
-                          <div className="text-xs text-slate-400">
-                            {log.asset?.brand} {log.asset?.model} ({log.asset?.type})
+                          <div className="flex items-center gap-2.5">
+                            <AssetIcon type={log.asset?.type || 'OTRO'} size="sm" />
+                            <div>
+                              <div className="font-bold text-slate-800 dark:text-slate-200">
+                                {log.asset?.internalNumber}
+                              </div>
+                              <div className="text-[11px] text-slate-400">
+                                {log.asset?.brand} {log.asset?.model}
+                              </div>
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-slate-600 dark:text-slate-300">

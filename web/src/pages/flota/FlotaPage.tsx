@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { DataTable } from '../../components/ui/DataTable';
 import { StatusBadge } from '../../components/ui/StatusBadge';
+import { AssetIcon } from '../../components/ui/AssetIcon';
 import { Modal } from '../../components/ui/Modal';
 import { Asset, AssetType, AssetOperationalStatus } from '../../types/models';
 import { Search, Plus, Gauge, MapPin, AlertCircle, Edit2, Trash2 } from 'lucide-react';
@@ -216,31 +217,33 @@ export function FlotaPage() {
 
   const columns = [
     {
-      header: 'N° Interno / Patente',
+      header: 'Equipo / Tipo',
       cell: (item: Asset) => (
-        <div>
-          <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded text-xs">
-            {item.internalNumber}
-          </span>
-          {item.licensePlate && <p className="text-xs text-slate-500 mt-1 font-mono">{item.licensePlate}</p>}
+        <div className="flex items-center gap-3">
+          <AssetIcon type={item.type} size="md" />
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-black text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs">
+                {item.internalNumber}
+              </span>
+              {item.licensePlate && (
+                <span className="text-[11px] text-slate-500 font-mono font-bold">
+                  {item.licensePlate}
+                </span>
+              )}
+            </div>
+            <p className="font-bold text-slate-800 dark:text-slate-200 text-xs mt-0.5">
+              {item.brand} {item.model}
+            </p>
+            <p className="text-[10px] text-slate-400 font-medium">
+              {item.type} • Año {item.year}
+            </p>
+          </div>
         </div>
       ),
     },
     {
-      header: 'Tipo y Modelo',
-      cell: (item: Asset) => (
-        <div>
-          <p className="font-medium text-slate-800">
-            {item.brand} {item.model}
-          </p>
-          <p className="text-xs text-slate-500">
-            {item.type} • {item.year}
-          </p>
-        </div>
-      ),
-    },
-    {
-      header: 'Estado',
+      header: 'Estado Operativo',
       cell: (item: Asset) => <StatusBadge status={item.operationalStatus} />,
     },
     {

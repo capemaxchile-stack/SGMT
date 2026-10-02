@@ -14,6 +14,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { StatusBadge } from '../../components/ui/StatusBadge';
+import { AssetIcon } from '../../components/ui/AssetIcon';
 import { Card, CardContent } from '../../components/ui/Card';
 import {
   Wrench,
@@ -358,12 +359,17 @@ export function WorkOrdersTab() {
                       {order.otNumber}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-800 dark:text-slate-200">
-                        {order.asset?.internalNumber} - {order.asset?.brand} {order.asset?.model}
-                      </div>
-                      <div className="text-xs text-slate-400">
-                        {order.currentHourmeter ? `${Number(order.currentHourmeter)} hrs` : ''}{' '}
-                        {order.currentKilometrage ? `| ${Number(order.currentKilometrage)} km` : ''}
+                      <div className="flex items-center gap-2.5">
+                        <AssetIcon type={order.asset?.type || 'OTRO'} size="sm" />
+                        <div>
+                          <div className="font-bold text-slate-800 dark:text-slate-200">
+                            {order.asset?.internalNumber} - {order.asset?.brand} {order.asset?.model}
+                          </div>
+                          <div className="text-[11px] text-slate-400">
+                            {order.currentHourmeter ? `${Number(order.currentHourmeter)} hrs` : ''}{' '}
+                            {order.currentKilometrage ? `| ${Number(order.currentKilometrage)} km` : ''}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">

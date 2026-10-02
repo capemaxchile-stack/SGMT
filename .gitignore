@@ -25,3 +25,4 @@ api/prisma/migrations/**/migration_lock.toml
 # Agent Workspaces
 .agents/
 SGMT/
+*.tsbuildinfo

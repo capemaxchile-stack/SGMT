@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent } from '../../components/ui/Card';
+import { AssetIcon } from '../../components/ui/AssetIcon';
 import {
   AlertTriangle,
   Clock,
@@ -167,20 +168,20 @@ export function AlertsRadarTab() {
               }`}
             >
               <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-black text-slate-900 dark:text-white">
-                      {al.internalNumber}
-                    </span>
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                      {al.brand} {al.model}
-                    </span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                      {al.type}
-                    </span>
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Ubicación actual: <strong className="text-slate-700 dark:text-slate-300">{al.faena}</strong>
+                <div className="flex items-start gap-3">
+                  <AssetIcon type={al.type} size="md" />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-black text-slate-900 dark:text-white">
+                        {al.internalNumber}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        {al.brand} {al.model}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Ubicación actual: <strong className="text-slate-700 dark:text-slate-300">{al.faena}</strong>
+                    </div>
                   </div>
                 </div>
 
