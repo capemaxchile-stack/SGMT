@@ -13,24 +13,20 @@ const BodegaPage = lazy(() => import('./pages/bodega/BodegaPage').then(m => ({ d
 const ComprasPage = lazy(() => import('./pages/compras/ComprasPage').then(m => ({ default: m.ComprasPage })));
 const AdminPage = lazy(() => import('./pages/admin/AdminPage').then(m => ({ default: m.AdminPage })));
 
-function RouteFallback() {
-  return (
-    <div className="flex h-64 w-full items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <Spinner className="h-8 w-8 text-primary-600 animate-spin" />
-        <span className="text-sm font-medium text-slate-500">Cargando módulo...</span>
-      </div>
+const routeFallback = (
+  <div className="flex h-64 w-full items-center justify-center">
+    <div className="flex flex-col items-center gap-3">
+      <Spinner className="h-8 w-8 text-primary-600 animate-spin" />
+      <span className="text-sm font-medium text-slate-500">Cargando módulo...</span>
     </div>
-  );
-}
+  </div>
+);
 
-function withSuspense(Component: React.ComponentType) {
-  return (
-    <Suspense fallback={<RouteFallback />}>
-      <Component />
-    </Suspense>
-  );
-}
+const withSuspense = (Component: React.ComponentType) => (
+  <Suspense fallback={routeFallback}>
+    <Component />
+  </Suspense>
+);
 
 export const router = createBrowserRouter([
   {

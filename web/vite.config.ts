@@ -16,6 +16,18 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
+    build: {
+      chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-query': ['@tanstack/react-query'],
+            'vendor-icons': ['lucide-react'],
+          },
+        },
+      },
+    },
     server: {
       port: 5173,
       host: '0.0.0.0',

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useFaenas, useCreateFaena, useUpdateFaena, useDeleteFaena, useUsers } from '../../api/faenas';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -146,9 +146,9 @@ export function FaenasPage() {
         <div className="flex gap-4">
           <button
             onClick={() => handleOpenContractsModal(item)}
-            className="flex items-center text-sm text-blue-600 hover:underline"
+            className="flex items-center text-sm text-primary-600 hover:underline"
           >
-            <FileText size={14} className="mr-1 text-blue-500" />
+            <FileText size={14} className="mr-1 text-primary-500" />
             {item._count?.contracts ?? 0} Contratos
           </button>
           <div className="flex items-center text-sm text-slate-600">
@@ -217,7 +217,7 @@ export function FaenasPage() {
               onClick={() => setStatusFilter(st)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                 statusFilter === st
-                  ? 'bg-blue-100 text-blue-700 font-semibold'
+                  ? 'bg-primary-100 text-primary-700 font-semibold'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -270,7 +270,7 @@ export function FaenasPage() {
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as FaenaStatus)}
-                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="EN_FORMACION">En Formacion</option>
                 <option value="ACTIVA">Activa</option>
@@ -292,7 +292,7 @@ export function FaenasPage() {
             <select
               value={chiefId}
               onChange={(e) => setChiefId(e.target.value)}
-              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">-- Sin asignar / Seleccionar despues --</option>
               {users?.map((u) => (

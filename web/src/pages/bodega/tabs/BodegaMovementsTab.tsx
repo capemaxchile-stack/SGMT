@@ -215,7 +215,7 @@ export function BodegaMovementsTab() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="TODOS">Todos los Tipos</option>
             <option value="INGRESO">Ingresos (+)</option>
@@ -248,7 +248,7 @@ export function BodegaMovementsTab() {
               <select
                 value={movementType}
                 onChange={(e) => setMovementType(e.target.value as MovementType)}
-                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="INGRESO">Ingreso a Bodega (+)</option>
                 <option value="SALIDA">Salida / Consumo (-)</option>
@@ -262,7 +262,7 @@ export function BodegaMovementsTab() {
                 value={warehouseId}
                 onChange={(e) => setWarehouseId(e.target.value)}
                 required
-                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">-- Seleccione Bodega --</option>
                 {warehouses?.map((w) => (
@@ -281,7 +281,7 @@ export function BodegaMovementsTab() {
                 <select
                   value={faenaId}
                   onChange={(e) => setFaenaId(e.target.value)}
-                  className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">-- Sin imputar a Faena --</option>
                   {faenas?.map((f) => (
@@ -297,7 +297,7 @@ export function BodegaMovementsTab() {
                 <select
                   value={assetId}
                   onChange={(e) => setAssetId(e.target.value)}
-                  className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">-- Sin imputar a Equipo --</option>
                   {assets?.map((a) => (
@@ -336,7 +336,7 @@ export function BodegaMovementsTab() {
                       value={line.itemId}
                       onChange={(e) => handleLineChange(idx, 'itemId', e.target.value)}
                       required
-                      className="flex w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
                     >
                       <option value="">-- Seleccionar Material --</option>
                       {items?.map((item) => (
@@ -422,7 +422,7 @@ export function BodegaMovementsTab() {
             <select
               value={selectedKardexItemId}
               onChange={(e) => setSelectedKardexItemId(e.target.value)}
-              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               {items?.map((i) => (
                 <option key={i.id} value={i.id}>

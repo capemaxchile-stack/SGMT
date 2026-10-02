@@ -291,7 +291,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="TODOS">Todas las Categorías</option>
               {ITEM_CATEGORIES.map((cat) => (
@@ -360,7 +360,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
             {
               header: 'Tipo',
               cell: (w: Warehouse) => (
-                <span className={`text-xs px-2.5 py-1 rounded font-medium ${w.type === 'CENTRAL' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                <span className={`text-xs px-2.5 py-1 rounded font-medium ${w.type === 'CENTRAL' ? 'bg-primary-100 text-primary-800' : 'bg-emerald-100 text-emerald-800'}`}>
                   {w.type === 'CENTRAL' ? 'Central' : 'En Faena'}
                 </span>
               ),
@@ -459,7 +459,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
                 <Input label="Codigo *" placeholder="Ej: ITM-006" value={itemCode} onChange={(e) => setItemCode(e.target.value)} required />
                 <div className="flex flex-col w-full">
                   <label className="mb-1 text-sm font-medium text-slate-700">Categoria *</label>
-                  <select value={itemCategory} onChange={(e) => setItemCategory(e.target.value)} className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <select value={itemCategory} onChange={(e) => setItemCategory(e.target.value)} className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                     {ITEM_CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
@@ -470,7 +470,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col w-full">
                   <label className="mb-1 text-sm font-medium text-slate-700">Unidad de Medida *</label>
-                  <select value={itemUnit} onChange={(e) => setItemUnit(e.target.value)} className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <select value={itemUnit} onChange={(e) => setItemUnit(e.target.value)} className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                     <option value="UN">UN (Unidad)</option>
                     <option value="L">L (Litros)</option>
                     <option value="KG">KG (Kilogramos)</option>
@@ -489,7 +489,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col w-full">
                   <label className="mb-1 text-sm font-medium text-slate-700">Tipo *</label>
-                  <select value={warehouseType} onChange={(e) => setWarehouseType(e.target.value as WarehouseType)} className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <select value={warehouseType} onChange={(e) => setWarehouseType(e.target.value as WarehouseType)} className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                     <option value="CENTRAL">Central</option>
                     <option value="FAENA">En Faena</option>
                   </select>

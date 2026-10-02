@@ -25,11 +25,11 @@ for (const arg of args) {
 }
 
 console.log('\x1b[1m\x1b[34m============================================================\x1b[0m');
-console.log('\x1b[1m\x1b[37m  SGMT Opaque-Box E2E Test Suite (Tiers 1 - 4)\x1b[0m');
+console.log('\x1b[1m\x1b[37m  SGMT Opaque-Box E2E Test Suite (Tiers 1 - 5)\x1b[0m');
 console.log('\x1b[1m\x1b[34m============================================================\x1b[0m');
 console.log(`Node Runtime : ${process.version}`);
 console.log(`Working Dir  : ${process.cwd()}`);
-console.log(`Tier Filter  : ${tierFilter ? 'Tier ' + tierFilter : 'All Tiers (1-4)'}`);
+console.log(`Tier Filter  : ${tierFilter ? 'Tier ' + tierFilter : 'All Tiers (1-5)'}`);
 console.log(`Verbose Mode : ${verbose ? 'ON' : 'OFF'}\n`);
 
 // Load all suites
@@ -50,6 +50,9 @@ require('./tier3-combinations/cross-feature.test');
 
 // Tier 4: Real-World Mining Logistics Scenarios
 require('./tier4-scenarios/mining-scenarios.test');
+
+// Tier 5: Adversarial Coverage Hardening Suite
+require('./tier5_adversarial');
 
 async function main() {
   const result = await runSuites({

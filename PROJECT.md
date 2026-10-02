@@ -63,8 +63,8 @@
 |---|------|-------|-------------|--------|
 | M1 | Backend Security & Architecture Hardening | Auth, JWT, credentials sanitization, RBAC, AuditLog immutability & DTO validation | none | DONE (Passed Gate: 2 Reviewers, 2 Challengers, 1 Auditor) |
 | M2 | Business Logic, Concurrency & Data Integrity | Concurrency locking (`FOR UPDATE`), Kardex/PMP decimal, state machines, soft delete, DB filter | M1 | DONE (Passed Gate: 2 Reviewers, 2 Challengers, 1 Auditor) |
-| M3 | Frontend Modernization & UX/UI Resilience | ESLint 9, mobile nav drawer, toasts, DataTable responsive, lazy routes, Tailwind v4 | M1, M2 | IN_PROGRESS (0885e622) |
-| M4 | Final E2E Acceptance, Adversarial Hardening & Audit | 100% E2E test pass, adversarial testing (Tier 5), forensic audit, consolidated report | M1, M2, M3, E2E Track | PLANNED |
+| M3 | Frontend Modernization & UX/UI Resilience | ESLint 9, mobile nav drawer, toasts, DataTable responsive, lazy routes, Tailwind v4 | M1, M2 | DONE (Passed Gate: 2 Reviewers, 2 Challengers, 1 Auditor) |
+| M4 | Final E2E Acceptance, Adversarial Hardening & Audit | 100% E2E test pass, adversarial testing (Tier 5), forensic audit, consolidated report | M1, M2, M3, E2E Track | DONE (Passed Gate: 1 Reviewer, 1 Challenger, 1 Auditor) |
 
 ## Interface Contracts
 ### `UsersModule` ↔ Frontend / Internal Callers

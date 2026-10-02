@@ -409,7 +409,7 @@ export function PurchaseOrdersTab() {
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
               required
-              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               {suppliers?.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -450,7 +450,7 @@ export function PurchaseOrdersTab() {
                     value={line.itemId}
                     onChange={(e) => handleLineChange(idx, 'itemId', e.target.value)}
                     required
-                    className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     {items?.map((item) => (
                       <option key={item.id} value={item.id}>
@@ -535,7 +535,7 @@ export function PurchaseOrdersTab() {
               value={receiveWarehouseId}
               onChange={(e) => setReceiveWarehouseId(e.target.value)}
               required
-              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">-- Seleccione Bodega de Destino --</option>
               {warehouses?.map((w) => (

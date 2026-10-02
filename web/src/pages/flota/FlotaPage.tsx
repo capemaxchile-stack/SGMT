@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useFlota, useCreateAsset, useUpdateAsset, useDeleteAsset, useUpdateMeter, useAssignAsset } from '../../api/flota';
 import { useFaenas } from '../../api/faenas';
 import { Button } from '../../components/ui/Button';
@@ -264,7 +264,7 @@ export function FlotaPage() {
         return (
           <div className="text-sm">
             {active?.faena ? (
-              <span className="inline-flex items-center text-blue-700 bg-blue-50 px-2 py-1 rounded text-xs font-medium">
+              <span className="inline-flex items-center text-primary-700 bg-primary-50 px-2 py-1 rounded text-xs font-medium">
                 <MapPin size={12} className="mr-1" />
                 {active.faena.name}
               </span>
@@ -367,7 +367,7 @@ export function FlotaPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="TODOS">Todos los Tipos</option>
             {ASSET_TYPES.map((t) => (
@@ -381,7 +381,7 @@ export function FlotaPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="TODOS">Todos los Estados</option>
             <option value="OPERATIVO">Operativo</option>
@@ -434,7 +434,7 @@ export function FlotaPage() {
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as AssetType)}
-                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 {ASSET_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
@@ -477,7 +477,7 @@ export function FlotaPage() {
               <select
                 value={operationalStatus}
                 onChange={(e) => setOperationalStatus(e.target.value as AssetOperationalStatus)}
-                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="OPERATIVO">Operativo</option>
                 <option value="EN_MANTENCION">En Mantencion</option>
@@ -576,7 +576,7 @@ export function FlotaPage() {
               value={selectedFaenaId}
               onChange={(e) => setSelectedFaenaId(e.target.value)}
               required
-              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">-- Seleccionar Faena --</option>
               {faenas?.map((f) => (
