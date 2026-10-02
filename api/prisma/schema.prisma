@@ -23,6 +23,7 @@ model User {
   movementsCreated WarehouseMovement[]
   requestsCreated  PurchaseRequest[]
   workOrdersCreated WorkOrder[]
+  fuelLogsCreated  FuelLog[]
   auditLogs        AuditLog[]
 }
 
@@ -70,6 +71,7 @@ model Faena {
   warehouseMovements WarehouseMovement[]
   purchaseRequests   PurchaseRequest[]
   workOrders         WorkOrder[]
+  fuelLogs           FuelLog[]
 }
 
 model Contract {
@@ -130,6 +132,7 @@ model Asset {
   assignments        AssetAssignment[]
   warehouseMovements WarehouseMovement[]
   workOrders         WorkOrder[]
+  fuelLogs           FuelLog[]
 }
 
 model AssetAssignment {
@@ -160,6 +163,7 @@ model Warehouse {
   movements         WarehouseMovement[] @relation("OriginWarehouse")
   incomingTransfers WarehouseMovement[] @relation("DestinationWarehouse")
   workOrderItems    WorkOrderItem[]
+  fuelLogs          FuelLog[]
 }
 
 model Item {
@@ -219,6 +223,7 @@ model WarehouseMovement {
   user              User                    @relation(fields: [userId], references: [id])
   lines             WarehouseMovementLine[]
   workOrderItems    WorkOrderItem[]
+  fuelLogs          FuelLog[]
 }
 
 model WarehouseMovementLine {
@@ -434,4 +439,42 @@ model WorkOrderItem {
 
   @@index([workOrderId])
 }
+
+model FuelLog {
+  id                    String              @id @default(uuid())
+  dispatchNumber        String              @unique
+  assetId               String
+  faenaId               String?
+  warehouseId           String?
+  movementId            String?
+  liters                Decimal
+  unitPrice             Decimal             @default(0)
+  totalCost             Decimal             @default(0)
+  previousHourmeter     Decimal             @default(0)
+  currentHourmeter      Decimal             @default(0)
+  hourmeterDelta        Decimal             @default(0)
+  litersPerHour         Decimal             @default(0)
+  previousKilometrage   Decimal             @default(0)
+  currentKilometrage    Decimal             @default(0)
+  kilometrageDelta      Decimal             @default(0)
+  kmPerLiter            Decimal             @default(0)
+  operatorName          String?
+  fuelTruckPlate        String?
+  dispatchTicketNumber  String?
+  notes                 String?
+  createdById           String
+  dispatchDate          DateTime            @default(now())
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  asset                 Asset               @relation(fields: [assetId], references: [id])
+  faena                 Faena?              @relation(fields: [faenaId], references: [id])
+  warehouse             Warehouse?          @relation(fields: [warehouseId], references: [id])
+  movement              WarehouseMovement?  @relation(fields: [movementId], references: [id])
+  createdBy             User                @relation(fields: [createdById], references: [id])
+
+  @@index([assetId, dispatchDate])
+  @@index([faenaId])
+}
+
 

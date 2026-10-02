@@ -205,3 +205,42 @@ export interface MaintenanceAlert {
   alertLevel: 'NORMAL' | 'PROXIMO' | 'VENCIDO';
 }
 
+export interface FuelLog extends BaseEntity {
+  dispatchNumber: string;
+  assetId: string;
+  faenaId?: string | null;
+  warehouseId?: string | null;
+  movementId?: string | null;
+  liters: number;
+  unitPrice: number;
+  totalCost: number;
+  previousHourmeter: number;
+  currentHourmeter: number;
+  hourmeterDelta: number;
+  litersPerHour: number;
+  previousKilometrage: number;
+  currentKilometrage: number;
+  kilometrageDelta: number;
+  kmPerLiter: number;
+  operatorName?: string | null;
+  fuelTruckPlate?: string | null;
+  dispatchTicketNumber?: string | null;
+  notes?: string | null;
+  createdById: string;
+  dispatchDate: string;
+  asset?: Asset;
+  faena?: Faena | null;
+  warehouse?: Warehouse | null;
+  createdBy?: User;
+}
+
+export interface FuelStats {
+  totalLiters: number;
+  totalSpend: number;
+  totalDispatches: number;
+  byAssetType: Record<string, { count: number; totalLiters: number; totalHoursDelta: number; avgLitersPerHour: number }>;
+  byFaena: Array<{ name: string; totalLiters: number; totalSpend: number }>;
+  recentLogs: FuelLog[];
+}
+
+

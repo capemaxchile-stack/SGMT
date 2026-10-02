@@ -12,6 +12,8 @@ const FlotaPage = lazy(() => import('./pages/flota/FlotaPage').then(m => ({ defa
 const BodegaPage = lazy(() => import('./pages/bodega/BodegaPage').then(m => ({ default: m.BodegaPage })));
 const ComprasPage = lazy(() => import('./pages/compras/ComprasPage').then(m => ({ default: m.ComprasPage })));
 const MantenimientoPage = lazy(() => import('./pages/mantenimiento/MantenimientoPage').then(m => ({ default: m.MantenimientoPage })));
+const CombustiblePage = lazy(() => import('./pages/combustible/CombustiblePage').then(m => ({ default: m.CombustiblePage })));
+const DocumentacionPage = lazy(() => import('./pages/docs/DocumentacionPage').then(m => ({ default: m.DocumentacionPage })));
 const AdminPage = lazy(() => import('./pages/admin/AdminPage').then(m => ({ default: m.AdminPage })));
 
 const routeFallback = (
@@ -63,12 +65,20 @@ export const router = createBrowserRouter([
         element: withSuspense(MantenimientoPage),
       },
       {
+        path: 'combustible',
+        element: withSuspense(CombustiblePage),
+      },
+      {
         path: 'bodega',
         element: withSuspense(BodegaPage),
       },
       {
         path: 'compras',
         element: withSuspense(ComprasPage),
+      },
+      {
+        path: 'documentacion',
+        element: withSuspense(DocumentacionPage),
       },
       {
         path: 'admin',

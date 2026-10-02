@@ -53,6 +53,33 @@ export class DashboardService {
       },
     });
 
+    const openWorkOrdersCount = await this.prisma.workOrder.count({
+      where: {
+        status: {
+          in: ['ABIERTA', 'EN_PROGRESO', 'ESPERA_REPUESTOS'],
+        },
+      },
+    });
+
+    const criticalWorkOrdersCount = await this.prisma.workOrder.count({
+      where: {
+        priority: 'CRITICA',
+        status: {
+          not: 'COMPLETADA',
+        },
+      },
+    });
+
+    const fuelLogs = await this.prisma.fuelLog.findMany({
+      select: {
+        liters: true,
+        totalCost: true,
+      },
+    });
+
+    const totalFuelLiters = fuelLogs.reduce((acc, log) => acc + Number(log.liters), 0);
+    const totalFuelSpend = fuelLogs.reduce((acc, log) => acc + Number(log.totalCost), 0);
+
     const recentMovements = await this.prisma.warehouseMovement.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
@@ -73,6 +100,24 @@ export class DashboardService {
       },
     });
 
+    const recentWorkOrders = await this.prisma.workOrder.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        asset: true,
+        faena: true,
+      },
+    });
+
+    const recentFuelLogs = await this.prisma.fuelLog.findMany({
+      take: 5,
+      orderBy: { dispatchDate: 'desc' },
+      include: {
+        asset: true,
+        faena: true,
+      },
+    });
+
     return {
       activeFaenasCount,
       totalAssetsCount,
@@ -81,8 +126,14 @@ export class DashboardService {
       totalStockItemsCount,
       lowStockItemsCount,
       pendingOrdersCount,
+      openWorkOrdersCount,
+      criticalWorkOrdersCount,
+      totalFuelLiters,
+      totalFuelSpend,
       recentMovements,
       recentOrders,
+      recentWorkOrders,
+      recentFuelLogs,
     };
   }
 }
