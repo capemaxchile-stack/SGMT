@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/axios';
 import { Movement, CreateMovementDto, KardexEntry } from '../types/movements';
 
@@ -39,6 +39,7 @@ export const useCreateMovement = () => {
       queryClient.invalidateQueries({ queryKey: movementsKeys.all });
       queryClient.invalidateQueries({ queryKey: ['items'] });
       queryClient.invalidateQueries({ queryKey: ['warehouses'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
     },
   });
 };

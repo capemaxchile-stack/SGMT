@@ -1,6 +1,6 @@
 import { BaseEntity, Faena, Asset, Item, Warehouse, User } from './models';
 
-export type MovementType = 'INGRESO' | 'SALIDA' | 'AJUSTE';
+export type MovementType = 'INGRESO' | 'SALIDA' | 'AJUSTE' | 'TRANSFER';
 
 export interface MovementLine extends BaseEntity {
   movementId: string;

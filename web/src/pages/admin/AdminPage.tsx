@@ -6,12 +6,14 @@ import { DataTable } from '../../components/ui/DataTable';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
+import { useToast } from '../../components/ui/Toast';
 import { PurchaseOrder } from '../../types/compras';
 import { User } from '../../types/models';
 import { Shield, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 export function AdminPage() {
   const [activeTab, setActiveTab] = useState<'aprobaciones' | 'auditoria' | 'usuarios'>('aprobaciones');
+  const toast = useToast();
 
   // Queries
   const { data: orders, isLoading: loadingOrders } = usePurchaseOrders();
@@ -19,6 +21,7 @@ export function AdminPage() {
   const { data: users, isLoading: loadingUsers } = useUsers();
   
   const updateStatusMutation = useUpdateOrderStatus();
+  const [mutatingOrderId, setMutatingOrderId] = useState<string | null>(null);
 
   // Super User Modal
   const [isSuperUserModalOpen, setIsSuperUserModalOpen] = useState(false);
@@ -30,18 +33,30 @@ export function AdminPage() {
   const pendingOrders = orders?.filter(o => o.status === 'PENDIENTE_APROBACION') || [];
 
   const handleApprove = async (orderId: string) => {
+    setMutatingOrderId(orderId);
     try {
       await updateStatusMutation.mutateAsync({ id: orderId, action: 'APROBADA', level: 1, comments: 'Aprobación estándar' });
-    } catch (err) {
-      console.error(err);
+      toast.success('Orden de compra aprobada exitosamente');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      const msg = error?.response?.data?.message || 'Error al aprobar la orden de compra';
+      toast.error(msg);
+    } finally {
+      setMutatingOrderId(null);
     }
   };
 
   const handleReject = async (orderId: string) => {
+    setMutatingOrderId(orderId);
     try {
       await updateStatusMutation.mutateAsync({ id: orderId, action: 'RECHAZADA', level: 1, comments: 'Rechazado' });
-    } catch (err) {
-      console.error(err);
+      toast.info('Orden de compra rechazada');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      const msg = error?.response?.data?.message || 'Error al rechazar la orden de compra';
+      toast.error(msg);
+    } finally {
+      setMutatingOrderId(null);
     }
   };
 
@@ -56,7 +71,9 @@ export function AdminPage() {
   const handleSuperApprove = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!exceptionReason || !superKey) {
-      setErrorMsg('Debe ingresar motivo y clave de autorización.');
+      const msg = 'Debe ingresar motivo y clave de autorización.';
+      setErrorMsg(msg);
+      toast.warning(msg);
       return;
     }
     try {
@@ -69,9 +86,12 @@ export function AdminPage() {
         superKey 
       });
       setIsSuperUserModalOpen(false);
+      toast.success('Orden aprobada por excepción');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setErrorMsg(error?.response?.data?.message || 'Error en la autorización.');
+      const msg = error?.response?.data?.message || 'Error en la autorización.';
+      setErrorMsg(msg);
+      toast.error(msg);
     }
   };
 
@@ -107,8 +127,9 @@ export function AdminPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-emerald-600 hover:text-emerald-700"
+            className="text-emerald-600 hover:text-emerald-700 disabled:opacity-50"
             title="Aprobar OC"
+            disabled={updateStatusMutation.isPending && mutatingOrderId === item.id}
             onClick={() => handleApprove(item.id)}
           >
             <CheckCircle size={16} />
@@ -116,8 +137,9 @@ export function AdminPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-red-600 hover:text-red-700"
+            className="text-red-600 hover:text-red-700 disabled:opacity-50"
             title="Rechazar OC"
+            disabled={updateStatusMutation.isPending && mutatingOrderId === item.id}
             onClick={() => handleReject(item.id)}
           >
             <XCircle size={16} />
@@ -125,8 +147,9 @@ export function AdminPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-amber-600 hover:text-amber-700"
+            className="text-amber-600 hover:text-amber-700 disabled:opacity-50"
             title="Aprobación Especial Súper Usuario"
+            disabled={updateStatusMutation.isPending && mutatingOrderId === item.id}
             onClick={() => handleOpenSuperApprove(item.id)}
           >
             <AlertCircle size={16} />
@@ -191,7 +214,7 @@ export function AdminPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Shield className="text-blue-600" />
+            <Shield className="text-primary-600" />
             Panel de Administración
           </h1>
           <p className="text-slate-500">Configuración global, auditoría y aprobaciones</p>
@@ -204,7 +227,7 @@ export function AdminPage() {
             onClick={() => setActiveTab('aprobaciones')}
             className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'aprobaciones'
-                ? 'border-blue-500 text-blue-600'
+                ? 'border-primary-500 text-primary-600'
                 : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
             }`}
           >
@@ -214,7 +237,7 @@ export function AdminPage() {
             onClick={() => setActiveTab('auditoria')}
             className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'auditoria'
-                ? 'border-blue-500 text-blue-600'
+                ? 'border-primary-500 text-primary-600'
                 : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
             }`}
           >
@@ -224,7 +247,7 @@ export function AdminPage() {
             onClick={() => setActiveTab('usuarios')}
             className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'usuarios'
-                ? 'border-blue-500 text-blue-600'
+                ? 'border-primary-500 text-primary-600'
                 : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
             }`}
           >

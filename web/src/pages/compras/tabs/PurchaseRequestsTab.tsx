@@ -6,13 +6,16 @@ import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/DataTable';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { Modal } from '../../../components/ui/Modal';
+import { useToast } from '../../../components/ui/Toast';
 import { PurchaseRequest } from '../../../types/compras';
 import { Plus, Search, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 
 export function PurchaseRequestsTab() {
+  const toast = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [mutatingRequestId, setMutatingRequestId] = useState<string | null>(null);
 
   // Form State
   const [requestNumber, setRequestNumber] = useState('');
@@ -36,7 +39,9 @@ export function PurchaseRequestsTab() {
     e.preventDefault();
     const targetFaenaId = faenaId || (faenas && faenas.length > 0 ? faenas[0].id : '');
     if (!targetFaenaId || !justification.trim()) {
-      setErrorMsg('Debe seleccionar una faena válida e ingresar una justificación.');
+      const msg = 'Debe seleccionar una faena válida e ingresar una justificación.';
+      setErrorMsg(msg);
+      toast.warning(msg);
       return;
     }
 
@@ -47,25 +52,40 @@ export function PurchaseRequestsTab() {
         justification: justification.trim(),
       });
       setIsModalOpen(false);
+      toast.success('Solicitud de compra creada exitosamente');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setErrorMsg(error?.response?.data?.message || 'Error al crear la solicitud de compra.');
+      const msg = error?.response?.data?.message || 'Error al crear la solicitud de compra.';
+      setErrorMsg(msg);
+      toast.error(msg);
     }
   };
 
   const handleApprove = async (id: string) => {
+    setMutatingRequestId(id);
     try {
       await updateStatusMutation.mutateAsync({ id, status: 'APROBADA' });
-    } catch (err) {
-      console.error(err);
+      toast.success('Solicitud de compra aprobada exitosamente');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      const msg = error?.response?.data?.message || 'Error al aprobar la solicitud de compra.';
+      toast.error(msg);
+    } finally {
+      setMutatingRequestId(null);
     }
   };
 
   const handleReject = async (id: string) => {
+    setMutatingRequestId(id);
     try {
       await updateStatusMutation.mutateAsync({ id, status: 'RECHAZADA' });
-    } catch (err) {
-      console.error(err);
+      toast.info('Solicitud de compra rechazada');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      const msg = error?.response?.data?.message || 'Error al rechazar la solicitud de compra.';
+      toast.error(msg);
+    } finally {
+      setMutatingRequestId(null);
     }
   };
 
@@ -115,8 +135,9 @@ export function PurchaseRequestsTab() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-emerald-600 hover:text-emerald-700"
+                className="text-emerald-600 hover:text-emerald-700 disabled:opacity-50"
                 title="Aprobar Solicitud"
+                disabled={updateStatusMutation.isPending && mutatingRequestId === item.id}
                 onClick={() => handleApprove(item.id)}
               >
                 <CheckCircle size={16} />
@@ -124,8 +145,9 @@ export function PurchaseRequestsTab() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-red-600 hover:text-red-700"
+                className="text-red-600 hover:text-red-700 disabled:opacity-50"
                 title="Rechazar Solicitud"
+                disabled={updateStatusMutation.isPending && mutatingRequestId === item.id}
                 onClick={() => handleReject(item.id)}
               >
                 <XCircle size={16} />
@@ -184,7 +206,7 @@ export function PurchaseRequestsTab() {
               value={faenaId}
               onChange={(e) => setFaenaId(e.target.value)}
               required
-              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">-- Seleccione Faena --</option>
               {faenas?.map((f) => (

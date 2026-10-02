@@ -11,6 +11,7 @@ import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/DataTable';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { Modal } from '../../../components/ui/Modal';
+import { useToast } from '../../../components/ui/Toast';
 import { PurchaseOrder } from '../../../types/compras';
 import { Plus, Search, CheckCircle, XCircle, PackageCheck, AlertCircle, Trash2 } from 'lucide-react';
 
@@ -21,8 +22,10 @@ interface OrderLineForm {
 }
 
 export function PurchaseOrdersTab() {
+  const toast = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('TODOS');
+  const [mutatingOrderId, setMutatingOrderId] = useState<string | null>(null);
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -52,12 +55,16 @@ export function PurchaseOrdersTab() {
   const updateStatusMutation = useUpdateOrderStatus();
   const receiveOrderMutation = useReceivePurchaseOrder();
 
-  const handleOpenCreateModal = () => {
+  const resetForm = () => {
     setSupplierId(suppliers?.[0]?.id || '');
     setDeliveryTerms('30 dias contra factura');
     setEstimatedDeliveryDate('');
     setLines([{ itemId: items?.[0]?.id || '', quantity: 1, unitPrice: 0 }]);
     setErrorMsg('');
+  };
+
+  const handleOpenCreateModal = () => {
+    resetForm();
     setIsCreateModalOpen(true);
   };
 
@@ -117,32 +124,50 @@ export function PurchaseOrdersTab() {
         })),
       });
       setIsCreateModalOpen(false);
+      resetForm();
+      toast.success('Orden de compra emitida exitosamente');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setErrorMsg(error?.response?.data?.message || 'Error al emitir la orden de compra.');
+      const msg = error?.response?.data?.message || 'Error al emitir la orden de compra.';
+      setErrorMsg(msg);
+      toast.error(msg);
     }
   };
 
   const handleApprove = async (orderId: string) => {
+    setMutatingOrderId(orderId);
     try {
       await updateStatusMutation.mutateAsync({ id: orderId, action: 'APROBADA', level: 1, comments: 'Aprobación estándar' });
+      toast.success('Orden de compra aprobada exitosamente');
     } catch (err: unknown) {
-      console.error(err);
+      const error = err as { response?: { data?: { message?: string } } };
+      const msg = error?.response?.data?.message || 'Error al aprobar la orden de compra.';
+      toast.error(msg);
+    } finally {
+      setMutatingOrderId(null);
     }
   };
 
   const handleReject = async (orderId: string) => {
+    setMutatingOrderId(orderId);
     try {
       await updateStatusMutation.mutateAsync({ id: orderId, action: 'RECHAZADA', level: 1, comments: 'Rechazado' });
+      toast.info('Orden de compra rechazada');
     } catch (err: unknown) {
-      console.error(err);
+      const error = err as { response?: { data?: { message?: string } } };
+      const msg = error?.response?.data?.message || 'Error al rechazar la orden de compra.';
+      toast.error(msg);
+    } finally {
+      setMutatingOrderId(null);
     }
   };
 
   const handleSuperApprove = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!exceptionReason || !superKey) {
-      setErrorMsg('Debe ingresar motivo y clave de autorización.');
+      const msg = 'Debe ingresar motivo y clave de autorización.';
+      setErrorMsg(msg);
+      toast.warning(msg);
       return;
     }
     try {
@@ -155,9 +180,12 @@ export function PurchaseOrdersTab() {
         superKey 
       });
       setIsSuperUserModalOpen(false);
+      toast.success('Orden de compra aprobada por excepción');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setErrorMsg(error?.response?.data?.message || 'Error en la autorización.');
+      const msg = error?.response?.data?.message || 'Error en la autorización.';
+      setErrorMsg(msg);
+      toast.error(msg);
     }
   };
 
@@ -173,7 +201,9 @@ export function PurchaseOrdersTab() {
     e.preventDefault();
     const targetWarehouseId = receiveWarehouseId || (warehouses && warehouses.length > 0 ? warehouses[0].id : '');
     if (!selectedOrder || !targetWarehouseId) {
-      setErrorMsg('Debe seleccionar una bodega válida de destino.');
+      const msg = 'Debe seleccionar una bodega válida de destino.';
+      setErrorMsg(msg);
+      toast.warning(msg);
       return;
     }
 
@@ -184,9 +214,12 @@ export function PurchaseOrdersTab() {
         notes: 'Recepción completa de OC ' + selectedOrder.orderNumber,
       });
       setIsReceiveModalOpen(false);
+      toast.success('Recepción de materiales registrada exitosamente');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setErrorMsg(error?.response?.data?.message || 'Error al recepcionar la orden.');
+      const msg = error?.response?.data?.message || 'Error al recepcionar la orden.';
+      setErrorMsg(msg);
+      toast.error(msg);
     }
   };
 
@@ -250,8 +283,9 @@ export function PurchaseOrdersTab() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-emerald-600 hover:text-emerald-700"
+                className="text-emerald-600 hover:text-emerald-700 disabled:opacity-50"
                 title="Aprobar OC"
+                disabled={updateStatusMutation.isPending && mutatingOrderId === item.id}
                 onClick={() => handleApprove(item.id)}
               >
                 <CheckCircle size={16} />
@@ -259,8 +293,9 @@ export function PurchaseOrdersTab() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-red-600 hover:text-red-700"
+                className="text-red-600 hover:text-red-700 disabled:opacity-50"
                 title="Rechazar OC"
+                disabled={updateStatusMutation.isPending && mutatingOrderId === item.id}
                 onClick={() => handleReject(item.id)}
               >
                 <XCircle size={16} />
@@ -268,8 +303,9 @@ export function PurchaseOrdersTab() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-amber-600 hover:text-amber-700"
+                className="text-amber-600 hover:text-amber-700 disabled:opacity-50"
                 title="Súper Usuario (Aprobar por Excepción)"
+                disabled={updateStatusMutation.isPending && mutatingOrderId === item.id}
                 onClick={() => handleOpenSuperApprove(item.id)}
               >
                 <AlertCircle size={16} />
@@ -280,7 +316,7 @@ export function PurchaseOrdersTab() {
             <Button
               variant="outline"
               size="sm"
-              className="text-xs font-semibold text-blue-700 border-blue-300"
+              className="text-xs font-semibold text-primary-700 border-primary-300"
               onClick={() => handleOpenReceiveModal(item)}
             >
               <PackageCheck size={14} className="mr-1" /> Recepcionar
@@ -316,8 +352,8 @@ export function PurchaseOrdersTab() {
           <p className="text-2xl font-bold text-amber-700 mt-1">{pendingOrders}</p>
         </div>
         <div className="bg-white p-4 rounded-lg border border-slate-200">
-          <p className="text-xs text-blue-600 uppercase font-bold">Aprobadas</p>
-          <p className="text-2xl font-bold text-blue-700 mt-1">{approvedOrders}</p>
+          <p className="text-xs text-primary-600 uppercase font-bold">Aprobadas</p>
+          <p className="text-2xl font-bold text-primary-700 mt-1">{approvedOrders}</p>
         </div>
         <div className="bg-white p-4 rounded-lg border border-slate-200">
           <p className="text-xs text-emerald-600 uppercase font-bold">Recepcionadas</p>
@@ -339,7 +375,7 @@ export function PurchaseOrdersTab() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="TODOS">Todos los Estados</option>
             <option value="PENDIENTE_APROBACION">Pendiente Aprobacion</option>
