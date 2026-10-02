@@ -96,13 +96,18 @@ async function main() {
   });
 
   // 3. Warehouse
-  const centralWarehouse = await prisma.warehouse.create({
-    data: {
-      name: 'Bodega Central',
-      location: 'Santiago',
-      type: 'CENTRAL'
-    }
+  let centralWarehouse = await prisma.warehouse.findFirst({
+    where: { name: 'Bodega Central' },
   });
+  if (!centralWarehouse) {
+    centralWarehouse = await prisma.warehouse.create({
+      data: {
+        name: 'Bodega Central',
+        location: 'Santiago',
+        type: 'CENTRAL',
+      },
+    });
+  }
 
   // 4. Items
   const itemsData = [
