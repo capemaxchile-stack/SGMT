@@ -126,6 +126,36 @@ async function main() {
     });
   }
 
+  // 4.1 Initial Stock in Bodega Central
+  const stockSeed = [
+    { code: 'ITM-001', quantity: 15000, averageCost: 1050 }, // 15,000 Liters Diesel
+    { code: 'ITM-002', quantity: 800, averageCost: 4800 },   // 800 Liters Aceite Hidráulico
+    { code: 'ITM-003', quantity: 60, averageCost: 18500 },   // 60 Filtros de Aceite
+    { code: 'ITM-004', quantity: 250, averageCost: 3500 },   // 250 KG Grasa Multipropósito
+    { code: 'ITM-005', quantity: 1200, averageCost: 250 },   // 1,200 Pernos
+  ];
+
+  for (const s of stockSeed) {
+    const itm = await prisma.item.findUnique({ where: { code: s.code } });
+    if (itm && centralWarehouse) {
+      await prisma.stock.upsert({
+        where: {
+          itemId_warehouseId: {
+            itemId: itm.id,
+            warehouseId: centralWarehouse.id,
+          },
+        },
+        update: {},
+        create: {
+          itemId: itm.id,
+          warehouseId: centralWarehouse.id,
+          quantity: s.quantity,
+          averageCost: s.averageCost,
+        },
+      });
+    }
+  }
+
   // 5. Supplier
   await prisma.supplier.upsert({
     where: { rut: '76.543.210-K' },

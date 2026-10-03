@@ -23,6 +23,7 @@ import {
   Truck,
   Activity,
   Layers,
+  AlertCircle,
 } from 'lucide-react';
 import { Asset, Faena, Warehouse } from '../../types/models';
 
@@ -49,6 +50,7 @@ export function CombustiblePage() {
 
   // Mutation
   const createMutation = useCreateFuelLog();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Form State
   const [form, setForm] = useState({
@@ -82,36 +84,48 @@ export function CombustiblePage() {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     if (!form.assetId || form.liters <= 0) return;
 
-    await createMutation.mutateAsync({
-      assetId: form.assetId,
-      faenaId: form.faenaId || undefined,
-      warehouseId: form.warehouseId || undefined,
-      liters: Number(form.liters),
-      unitPrice: Number(form.unitPrice),
-      currentHourmeter: Number(form.currentHourmeter),
-      currentKilometrage: Number(form.currentKilometrage),
-      operatorName: form.operatorName || undefined,
-      fuelTruckPlate: form.fuelTruckPlate || undefined,
-      dispatchTicketNumber: form.dispatchTicketNumber || undefined,
-      notes: form.notes || undefined,
-    });
+    try {
+      await createMutation.mutateAsync({
+        assetId: form.assetId,
+        faenaId: form.faenaId.trim() ? form.faenaId : undefined,
+        warehouseId: form.warehouseId.trim() ? form.warehouseId : undefined,
+        liters: Number(form.liters),
+        unitPrice: form.unitPrice ? Number(form.unitPrice) : undefined,
+        currentHourmeter: form.currentHourmeter ? Number(form.currentHourmeter) : undefined,
+        currentKilometrage: form.currentKilometrage ? Number(form.currentKilometrage) : undefined,
+        operatorName: form.operatorName.trim() || undefined,
+        fuelTruckPlate: form.fuelTruckPlate.trim() || undefined,
+        dispatchTicketNumber: form.dispatchTicketNumber.trim() || undefined,
+        notes: form.notes.trim() || undefined,
+      });
 
-    setIsCreateOpen(false);
-    setForm({
-      assetId: '',
-      faenaId: '',
-      warehouseId: '',
-      liters: 100,
-      unitPrice: 1050,
-      currentHourmeter: 0,
-      currentKilometrage: 0,
-      operatorName: '',
-      fuelTruckPlate: '',
-      dispatchTicketNumber: '',
-      notes: '',
-    });
+      setIsCreateOpen(false);
+      setForm({
+        assetId: '',
+        faenaId: '',
+        warehouseId: '',
+        liters: 100,
+        unitPrice: 1050,
+        currentHourmeter: 0,
+        currentKilometrage: 0,
+        operatorName: '',
+        fuelTruckPlate: '',
+        dispatchTicketNumber: '',
+        notes: '',
+      });
+    } catch (err: any) {
+      const msg = err.response?.data?.message;
+      if (Array.isArray(msg)) {
+        setErrorMessage(msg.join('. '));
+      } else if (typeof msg === 'string') {
+        setErrorMessage(msg);
+      } else {
+        setErrorMessage(err.message || 'Error al registrar el despacho de combustible');
+      }
+    }
   };
 
   return (
@@ -455,8 +469,23 @@ export function CombustiblePage() {
       )}
 
       {/* Modal: Nueva Carga */}
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Registrar Carga de Combustible (Diésel)" size="lg">
+      <Modal
+        isOpen={isCreateOpen}
+        onClose={() => {
+          setIsCreateOpen(false);
+          setErrorMessage(null);
+        }}
+        title="Registrar Carga de Combustible (Diésel)"
+        size="lg"
+      >
         <form onSubmit={handleCreateSubmit} className="space-y-4">
+          {errorMessage && (
+            <div className="p-3 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 rounded-lg flex items-start gap-2 text-red-700 dark:text-red-300 text-xs">
+              <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-500" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Equipo Receptor *

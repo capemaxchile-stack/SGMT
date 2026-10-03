@@ -28,6 +28,7 @@ import {
   User,
   DollarSign,
   Layers,
+  AlertCircle,
 } from 'lucide-react';
 import {
   WorkOrder,
@@ -69,6 +70,10 @@ export function WorkOrdersTab() {
   const createMutation = useCreateWorkOrder();
   const consumeMutation = useConsumeWorkOrderItem();
   const completeMutation = useCompleteWorkOrder();
+
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [consumeError, setConsumeError] = useState<string | null>(null);
+  const [completeError, setCompleteError] = useState<string | null>(null);
 
   // Form states for Create OT
   const [createForm, setCreateForm] = useState({
@@ -119,71 +124,89 @@ export function WorkOrdersTab() {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCreateError(null);
     if (!createForm.assetId || !createForm.description) return;
 
-    await createMutation.mutateAsync({
-      assetId: createForm.assetId,
-      faenaId: createForm.faenaId || undefined,
-      maintenancePlanId: createForm.maintenancePlanId || undefined,
-      type: createForm.type,
-      priority: createForm.priority,
-      description: createForm.description,
-      failureReport: createForm.failureReport || undefined,
-      currentHourmeter: Number(createForm.currentHourmeter),
-      currentKilometrage: Number(createForm.currentKilometrage),
-      technicianName: createForm.technicianName || undefined,
-      notes: createForm.notes || undefined,
-    });
+    try {
+      await createMutation.mutateAsync({
+        assetId: createForm.assetId,
+        faenaId: createForm.faenaId.trim() ? createForm.faenaId : undefined,
+        maintenancePlanId: createForm.maintenancePlanId.trim() ? createForm.maintenancePlanId : undefined,
+        type: createForm.type,
+        priority: createForm.priority,
+        description: createForm.description.trim(),
+        failureReport: createForm.failureReport.trim() || undefined,
+        currentHourmeter: createForm.currentHourmeter ? Number(createForm.currentHourmeter) : undefined,
+        currentKilometrage: createForm.currentKilometrage ? Number(createForm.currentKilometrage) : undefined,
+        technicianName: createForm.technicianName.trim() || undefined,
+        notes: createForm.notes.trim() || undefined,
+      });
 
-    setIsCreateOpen(false);
-    setCreateForm({
-      assetId: '',
-      faenaId: '',
-      maintenancePlanId: '',
-      type: 'PREVENTIVO',
-      priority: 'MEDIA',
-      description: '',
-      failureReport: '',
-      technicianName: '',
-      currentHourmeter: 0,
-      currentKilometrage: 0,
-      notes: '',
-    });
+      setIsCreateOpen(false);
+      setCreateForm({
+        assetId: '',
+        faenaId: '',
+        maintenancePlanId: '',
+        type: 'PREVENTIVO',
+        priority: 'MEDIA',
+        description: '',
+        failureReport: '',
+        technicianName: '',
+        currentHourmeter: 0,
+        currentKilometrage: 0,
+        notes: '',
+      });
+    } catch (err: any) {
+      const msg = err.response?.data?.message;
+      setCreateError(Array.isArray(msg) ? msg.join('. ') : (msg || err.message || 'Error al crear la orden de trabajo'));
+    }
   };
 
   const handleConsumeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setConsumeError(null);
     if (!selectedWorkOrderId || !consumeForm.itemId || !consumeForm.warehouseId || consumeForm.quantity <= 0) return;
 
-    await consumeMutation.mutateAsync({
-      workOrderId: selectedWorkOrderId,
-      data: {
-        itemId: consumeForm.itemId,
-        warehouseId: consumeForm.warehouseId,
-        quantity: Number(consumeForm.quantity),
-      },
-    });
+    try {
+      await consumeMutation.mutateAsync({
+        workOrderId: selectedWorkOrderId,
+        data: {
+          itemId: consumeForm.itemId,
+          warehouseId: consumeForm.warehouseId,
+          quantity: Number(consumeForm.quantity),
+        },
+      });
 
-    setConsumeForm({ itemId: '', warehouseId: '', quantity: 1 });
-    setIsConsumeOpen(false);
+      setConsumeForm({ itemId: '', warehouseId: '', quantity: 1 });
+      setIsConsumeOpen(false);
+    } catch (err: any) {
+      const msg = err.response?.data?.message;
+      setConsumeError(Array.isArray(msg) ? msg.join('. ') : (msg || err.message || 'Error al consumir repuesto de bodega'));
+    }
   };
 
   const handleCompleteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCompleteError(null);
     if (!selectedWorkOrderId) return;
 
-    await completeMutation.mutateAsync({
-      id: selectedWorkOrderId,
-      data: {
-        notes: completeForm.notes || undefined,
-        technicianName: completeForm.technicianName || undefined,
-        finalHourmeter: completeForm.finalHourmeter ? Number(completeForm.finalHourmeter) : undefined,
-        finalKilometrage: completeForm.finalKilometrage ? Number(completeForm.finalKilometrage) : undefined,
-      },
-    });
+    try {
+      await completeMutation.mutateAsync({
+        id: selectedWorkOrderId,
+        data: {
+          notes: completeForm.notes.trim() || undefined,
+          technicianName: completeForm.technicianName.trim() || undefined,
+          finalHourmeter: completeForm.finalHourmeter ? Number(completeForm.finalHourmeter) : undefined,
+          finalKilometrage: completeForm.finalKilometrage ? Number(completeForm.finalKilometrage) : undefined,
+        },
+      });
 
-    setIsCompleteOpen(false);
-    setIsDetailOpen(false);
+      setIsCompleteOpen(false);
+      setIsDetailOpen(false);
+    } catch (err: any) {
+      const msg = err.response?.data?.message;
+      setCompleteError(Array.isArray(msg) ? msg.join('. ') : (msg || err.message || 'Error al finalizar la orden de trabajo'));
+    }
   };
 
   const openDetailModal = (order: WorkOrder) => {
@@ -439,8 +462,22 @@ export function WorkOrdersTab() {
       </div>
 
       {/* Modal: Crear Nueva OT */}
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Nueva Orden de Trabajo (OT)">
+      <Modal
+        isOpen={isCreateOpen}
+        onClose={() => {
+          setIsCreateOpen(false);
+          setCreateError(null);
+        }}
+        title="Nueva Orden de Trabajo (OT)"
+      >
         <form onSubmit={handleCreateSubmit} className="space-y-4">
+          {createError && (
+            <div className="p-3 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 rounded-lg flex items-start gap-2 text-red-700 dark:text-red-300 text-xs">
+              <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-500" />
+              <span>{createError}</span>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Equipo de Flota *
@@ -727,8 +764,22 @@ export function WorkOrdersTab() {
       </Modal>
 
       {/* Modal: Cargar Repuesto de Bodega */}
-      <Modal isOpen={isConsumeOpen} onClose={() => setIsConsumeOpen(false)} title="Consumir Repuesto de Bodega">
+      <Modal
+        isOpen={isConsumeOpen}
+        onClose={() => {
+          setIsConsumeOpen(false);
+          setConsumeError(null);
+        }}
+        title="Consumir Repuesto de Bodega"
+      >
         <form onSubmit={handleConsumeSubmit} className="space-y-4">
+          {consumeError && (
+            <div className="p-3 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 rounded-lg flex items-start gap-2 text-red-700 dark:text-red-300 text-xs">
+              <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-500" />
+              <span>{consumeError}</span>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Bodega Origen *
@@ -793,8 +844,22 @@ export function WorkOrdersTab() {
       </Modal>
 
       {/* Modal: Finalizar OT */}
-      <Modal isOpen={isCompleteOpen} onClose={() => setIsCompleteOpen(false)} title="Finalizar Orden de Trabajo">
+      <Modal
+        isOpen={isCompleteOpen}
+        onClose={() => {
+          setIsCompleteOpen(false);
+          setCompleteError(null);
+        }}
+        title="Finalizar Orden de Trabajo"
+      >
         <form onSubmit={handleCompleteSubmit} className="space-y-4">
+          {completeError && (
+            <div className="p-3 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 rounded-lg flex items-start gap-2 text-red-700 dark:text-red-300 text-xs">
+              <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-500" />
+              <span>{completeError}</span>
+            </div>
+          )}
+
           <p className="text-sm text-slate-600 dark:text-slate-300">
             Al finalizar la OT, el equipo retornará automáticamente a estado <strong>OPERATIVO</strong> y se guardará la fecha de cierre técnico.
           </p>

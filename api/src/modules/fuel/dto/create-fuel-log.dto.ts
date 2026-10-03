@@ -49,5 +49,6 @@ export class CreateFuelLogDto {
   notes?: string;
 
   @IsOptional()
+  @IsString()
   dispatchDate?: string;
 }
