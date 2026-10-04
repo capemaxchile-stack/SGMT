@@ -15,6 +15,8 @@ import { AuditModule } from './modules/audit/audit.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { FuelModule } from './modules/fuel/fuel.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { FuelModule } from './modules/fuel/fuel.module';
     DashboardModule,
     MaintenanceModule,
     FuelModule,
+    ReportsModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

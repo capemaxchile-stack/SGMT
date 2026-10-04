@@ -4,6 +4,7 @@ import { useThemeStore } from '../../stores/theme.store';
 import { LogOut, Menu, Sun, Moon, Settings } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { UserProfileModal } from './UserProfileModal';
+import { NotificationsPopover } from './NotificationsPopover';
 
 interface HeaderProps {
   onOpenMobileMenu?: () => void;
@@ -36,6 +37,9 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Notifications Popover */}
+          <NotificationsPopover />
+
           {/* Theme Toggle Button */}
           <button
             type="button"

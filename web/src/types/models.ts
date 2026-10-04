@@ -243,4 +243,156 @@ export interface FuelStats {
   recentLogs: FuelLog[];
 }
 
+export interface ExecutiveReportKPIs {
+  totalOperationalCost: number;
+  totalFuelCost: number;
+  totalFuelLiters: number;
+  avgFuelPricePerLiter: number;
+  totalMaintenanceCost: number;
+  totalLaborCost: number;
+  totalSparePartsCost: number;
+  directWarehouseMaterialsCost: number;
+  totalWorkOrders: number;
+  completedWorkOrders: number;
+}
+
+export interface FaenaReportSummary {
+  faenaId: string;
+  faenaName: string;
+  location: string;
+  status: FaenaStatus;
+  activeAssetsCount: number;
+  fuelLiters: number;
+  fuelCost: number;
+  maintenanceCost: number;
+  workOrdersCount: number;
+  totalCost: number;
+  totalContractAmount: number;
+  budgetBurnPercentage: number;
+}
+
+export interface AssetReportSummary {
+  assetId: string;
+  internalNumber: string;
+  brand: string;
+  model: string;
+  type: AssetType;
+  currentHourmeter: number;
+  currentKilometrage: number;
+  currentFaena: string;
+  hoursWorked: number;
+  kmTraveled: number;
+  fuelLiters: number;
+  fuelCost: number;
+  avgLitersPerHour: number;
+  maintenanceCost: number;
+  workOrdersCount: number;
+  totalCost: number;
+  costPerHour: number;
+  costPerKm: number;
+}
+
+export interface MonthlyTrend {
+  month: string;
+  label: string;
+  fuelCost: number;
+  maintenanceCost: number;
+  totalCost: number;
+}
+
+export interface ExecutiveReport {
+  period: {
+    startDate: string;
+    endDate: string;
+    label: string;
+  };
+  kpis: ExecutiveReportKPIs;
+  faenasSummary: FaenaReportSummary[];
+  assetsSummary: AssetReportSummary[];
+  monthlyTrends: MonthlyTrend[];
+}
+
+export interface WarehouseMovementLine extends BaseEntity {
+  movementId: string;
+  itemId: string;
+  quantity: number;
+  unitCost: number;
+  item?: Item;
+}
+
+export interface WarehouseMovement extends BaseEntity {
+  type: string;
+  movementNumber: string;
+  warehouseId: string;
+  faenaId?: string | null;
+  assetId?: string | null;
+  purchaseOrderId?: string | null;
+  userId: string;
+  notes?: string | null;
+  warehouse?: Warehouse;
+  faena?: Faena;
+  asset?: Asset;
+  user?: User;
+  lines?: WarehouseMovementLine[];
+}
+
+export interface FaenaClosingReport {
+  faena: {
+    id: string;
+    name: string;
+    location: string;
+    status: FaenaStatus;
+    chiefName: string;
+    chiefEmail: string;
+    contracts: Contract[];
+    activeAssets: Array<{
+      id: string;
+      internalNumber: string;
+      brand: string;
+      model: string;
+      type: AssetType;
+      licensePlate?: string;
+      currentHourmeter: number;
+    }>;
+  };
+  period: {
+    startDate: string;
+    endDate: string;
+    label: string;
+  };
+  totals: {
+    totalFuelLiters: number;
+    totalFuelCost: number;
+    totalMaintenanceCost: number;
+    totalLaborCost: number;
+    totalSparePartsCost: number;
+    totalWarehouseDispatchesCost: number;
+    grandTotalCost: number;
+    totalContractAmount: number;
+    budgetBurnPercentage: number;
+  };
+  fuelLogs: FuelLog[];
+  workOrders: WorkOrder[];
+  warehouseMovements: WarehouseMovement[];
+}
+
+export interface SystemNotification {
+  id: string;
+  category: 'COMPRAS' | 'STOCK' | 'MANTENIMIENTO' | 'FLOTA';
+  title: string;
+  description: string;
+  link: string;
+  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'INFO';
+  timestamp: string;
+  entityId?: string;
+}
+
+export interface NotificationsResponse {
+  notifications: SystemNotification[];
+  totalCount: number;
+  criticalCount: number;
+  highCount: number;
+}
+
+
 

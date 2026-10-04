@@ -10,6 +10,7 @@ import {
   Server,
   RefreshCw,
   Droplet,
+  BarChart3,
 } from 'lucide-react';
 import { useDashboardMetrics } from '../api/dashboard';
 import { APP_VERSION, BUILD_DATE } from '../components/layout/Sidebar';
@@ -152,20 +153,20 @@ export function DashboardPage() {
       </div>
 
       {/* Quick Action Shortcuts */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <Link
           to="/mantenimiento"
-          className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm"
+          className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs"
         >
           <div className="p-2 bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-lg">
             <Wrench size={16} />
           </div>
-          <span>Nueva Orden de Trabajo (OT)</span>
+          <span>Nueva Orden de Trabajo</span>
         </Link>
 
         <Link
           to="/combustible"
-          className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm"
+          className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs"
         >
           <div className="p-2 bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 rounded-lg">
             <Droplet size={16} />
@@ -175,7 +176,7 @@ export function DashboardPage() {
 
         <Link
           to="/bodega"
-          className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm"
+          className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs"
         >
           <div className="p-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-lg">
             <Box size={16} />
@@ -185,12 +186,22 @@ export function DashboardPage() {
 
         <Link
           to="/compras"
-          className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm"
+          className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs"
         >
           <div className="p-2 bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 rounded-lg">
             <FileText size={16} />
           </div>
           <span>Emitir Orden de Compra</span>
+        </Link>
+
+        <Link
+          to="/reportes"
+          className="col-span-2 sm:col-span-1 flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs"
+        >
+          <div className="p-2 bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 rounded-lg">
+            <BarChart3 size={16} />
+          </div>
+          <span>Reportes & Cierres</span>
         </Link>
       </div>
 

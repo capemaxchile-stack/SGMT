@@ -13,6 +13,7 @@ const BodegaPage = lazy(() => import('./pages/bodega/BodegaPage').then(m => ({ d
 const ComprasPage = lazy(() => import('./pages/compras/ComprasPage').then(m => ({ default: m.ComprasPage })));
 const MantenimientoPage = lazy(() => import('./pages/mantenimiento/MantenimientoPage').then(m => ({ default: m.MantenimientoPage })));
 const CombustiblePage = lazy(() => import('./pages/combustible/CombustiblePage').then(m => ({ default: m.CombustiblePage })));
+const ReportesPage = lazy(() => import('./pages/reportes/ReportesPage').then(m => ({ default: m.ReportesPage })));
 const DocumentacionPage = lazy(() => import('./pages/docs/DocumentacionPage').then(m => ({ default: m.DocumentacionPage })));
 const AdminPage = lazy(() => import('./pages/admin/AdminPage').then(m => ({ default: m.AdminPage })));
 
@@ -75,6 +76,10 @@ export const router = createBrowserRouter([
       {
         path: 'compras',
         element: withSuspense(ComprasPage),
+      },
+      {
+        path: 'reportes',
+        element: withSuspense(ReportesPage),
       },
       {
         path: 'documentacion',

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Factory, Truck, Wrench, Fuel, Box, ShoppingCart, BookOpen, Settings, X, Server } from 'lucide-react';
+import { LayoutDashboard, Factory, Truck, Wrench, Fuel, Box, ShoppingCart, BarChart3, BookOpen, Settings, X, Server } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useEffect } from 'react';
 import { Logo } from '../ui/Logo';
@@ -9,8 +9,8 @@ interface SidebarProps {
   onCloseMobile?: () => void;
 }
 
-export const APP_VERSION = 'v1.3.0';
-export const BUILD_DATE = '2026.10.02';
+export const APP_VERSION = 'v1.4.0';
+export const BUILD_DATE = '2026.10.04';
 
 export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   const navItems = [
@@ -21,6 +21,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
     { name: 'Combustible', path: '/combustible', icon: <Fuel size={20} /> },
     { name: 'Bodega', path: '/bodega', icon: <Box size={20} /> },
     { name: 'Compras', path: '/compras', icon: <ShoppingCart size={20} /> },
+    { name: 'Reportes y Cierres', path: '/reportes', icon: <BarChart3 size={20} /> },
     { name: 'Documentación', path: '/documentacion', icon: <BookOpen size={20} /> },
     { name: 'Administración', path: '/admin', icon: <Settings size={20} /> },
   ];
