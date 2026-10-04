@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { useAuthStore } from '../../stores/auth.store';
 import { useThemeStore } from '../../stores/theme.store';
-import { LogOut, Menu, Sun, Moon, Settings } from 'lucide-react';
+import { LogOut, Menu, Sun, Moon, Settings, Sparkles } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { UserProfileModal } from './UserProfileModal';
 import { NotificationsPopover } from './NotificationsPopover';
 
 interface HeaderProps {
   onOpenMobileMenu?: () => void;
+  onOpenCopilot?: () => void;
 }
 
-export function Header({ onOpenMobileMenu }: HeaderProps) {
+export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
   const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -37,6 +38,17 @@ export function Header({ onOpenMobileMenu }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* SGMT Copilot AI Shortcut */}
+          <button
+            type="button"
+            onClick={onOpenCopilot}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-amber-500/10 hover:from-blue-600/20 hover:to-amber-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 transition-all shadow-sm"
+            title="Abrir SGMT Copilot (Ctrl + K)"
+          >
+            <Sparkles size={16} className="text-amber-500 animate-pulse" />
+            <span className="text-xs font-bold hidden sm:inline">Copilot AI</span>
+          </button>
+
           {/* Notifications Popover */}
           <NotificationsPopover />
 

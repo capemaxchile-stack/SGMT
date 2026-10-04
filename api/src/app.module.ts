@@ -17,6 +17,7 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { FuelModule } from './modules/fuel/fuel.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { CopilotModule } from './modules/copilot/copilot.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     FuelModule,
     ReportsModule,
     NotificationsModule,
+    CopilotModule,
   ],
 })
 export class AppModule {}
