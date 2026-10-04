@@ -58,31 +58,16 @@ export function LoginPage() {
       t += 0.008;
       ctx.clearRect(0, 0, width, height);
 
-      // Deep radial gradient background
-      const bgGrad = ctx.createRadialGradient(
-        width * 0.5,
-        height * 0.4,
-        width * 0.1,
-        width * 0.5,
-        height * 0.5,
-        width * 0.8
-      );
-      bgGrad.addColorStop(0, '#0f172a'); // slate-900
-      bgGrad.addColorStop(0.6, '#090d16'); // slate-950
-      bgGrad.addColorStop(1, '#020617'); // darkest slate
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, width, height);
-
-      // Animated Topographic Elevation Contour Lines
+      // Subtle Topographic Elevation Contour Lines
       ctx.lineWidth = 1;
-      for (let layer = 1; layer <= 4; layer++) {
+      for (let layer = 1; layer <= 3; layer++) {
         ctx.beginPath();
-        const baseOffset = height * (0.55 + layer * 0.1);
-        ctx.strokeStyle = `rgba(59, 130, 246, ${0.08 - layer * 0.015})`; // Subtle blue glow
+        const baseOffset = height * (0.65 + layer * 0.1);
+        ctx.strokeStyle = `rgba(245, 158, 11, ${0.12 - layer * 0.03})`; // Warm amber dust contour glow
 
-        for (let x = 0; x <= width; x += 20) {
-          const wave1 = Math.sin(x * 0.003 + t + layer) * 35;
-          const wave2 = Math.cos(x * 0.006 - t * 0.8 + layer) * 20;
+        for (let x = 0; x <= width; x += 25) {
+          const wave1 = Math.sin(x * 0.003 + t + layer) * 25;
+          const wave2 = Math.cos(x * 0.005 - t * 0.6 + layer) * 15;
           const y = baseOffset + wave1 + wave2;
 
           if (x === 0) ctx.moveTo(x, y);
@@ -91,7 +76,7 @@ export function LoginPage() {
         ctx.stroke();
       }
 
-      // Floating Particle Nodes
+      // Floating Particle Nodes (Volumetric dust / quarry ambient motes)
       for (const p of particles) {
         p.x += p.vx;
         p.y += p.vy;
@@ -103,7 +88,7 @@ export function LoginPage() {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(147, 197, 253, ${p.alpha * 0.4})`; // Soft amber/blue speck
+        ctx.fillStyle = `rgba(251, 191, 36, ${p.alpha * 0.5})`; // Warm quarry glow
         ctx.fill();
       }
 
@@ -145,15 +130,20 @@ export function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-slate-950 select-none">
-      {/* 1. Base Canvas (Topographic Elevation Lines & Ambient Particles) */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 z-0 pointer-events-none w-full h-full"
-      />
+      {/* 1. Heavy Machinery & Quarry Background Image with Smooth Cinematic Ken Burns Motion */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <img
+          src="/images/earthmoving_bg.jpg"
+          alt="Operación Maquinaria y Movimiento de Tierras"
+          className={`w-full h-full object-cover object-center scale-100 transition-transform duration-1000 ${
+            isVideoActive ? 'animate-kenburns' : ''
+          }`}
+        />
+      </div>
 
-      {/* 2. Background Video Layer with Error Fallback */}
+      {/* 2. Optional Video Layer (Overlay) */}
       {isVideoActive && !hasVideoError && (
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none transition-opacity duration-1000">
+        <div className="absolute inset-0 z-1 overflow-hidden pointer-events-none transition-opacity duration-1000">
           <video
             ref={videoRef}
             autoPlay
@@ -161,7 +151,7 @@ export function LoginPage() {
             muted
             playsInline
             onError={() => setHasVideoError(true)}
-            className="absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto -translate-x-1/2 -translate-y-1/2 object-cover opacity-60 mix-blend-screen"
+            className="absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto -translate-x-1/2 -translate-y-1/2 object-cover opacity-30 mix-blend-screen"
           >
             <source src="/videos/earthmoving_bg.mp4" type="video/mp4" />
             <source src="/videos/earthmoving_bg.webm" type="video/webm" />
@@ -169,10 +159,16 @@ export function LoginPage() {
         </div>
       )}
 
-      {/* 3. Contrast & Focus Overlay */}
-      <div className="absolute inset-0 z-10 bg-slate-950/70 backdrop-blur-[1.5px]" />
+      {/* 3. Ambient Dust & Contour Canvas Overlay */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 z-2 pointer-events-none w-full h-full"
+      />
 
-      {/* 4. Foreground Login Card */}
+      {/* 4. Balanced Cinematic Vignette Overlay (Gives high contrast to the login card while showcasing machinery) */}
+      <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-slate-950/75 backdrop-blur-[0.5px] pointer-events-none" />
+
+      {/* 5. Foreground Login Card */}
       <Card className="relative z-20 w-full max-w-md shadow-2xl border border-slate-700/60 bg-slate-900/90 backdrop-blur-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Top Brand Accent Line */}
         <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-amber-500 to-blue-600" />
