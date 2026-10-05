@@ -40,6 +40,15 @@ export class CopilotToolsService {
     const underMaintenance = filtered.filter((a) => a.operationalStatus === 'EN_MANTENCION').length;
     const detained = filtered.filter((a) => a.operationalStatus === 'DETENIDO').length;
 
+    const byType: Record<string, number> = {};
+    const byFaena: Record<string, number> = {};
+
+    filtered.forEach((a) => {
+      byType[a.type] = (byType[a.type] || 0) + 1;
+      const faenaName = a.assignments[0]?.faena.name || 'Sin Asignación (Patio Central)';
+      byFaena[faenaName] = (byFaena[faenaName] || 0) + 1;
+    });
+
     return {
       summary: {
         total,
@@ -47,6 +56,8 @@ export class CopilotToolsService {
         underMaintenance,
         detained,
         operationalRate: total > 0 ? `${Math.round((operational / total) * 100)}%` : '0%',
+        byType,
+        byFaena,
       },
       assets: filtered.map((a) => ({
         internalNumber: a.internalNumber,

@@ -108,6 +108,15 @@ describe('CopilotService', () => {
     expect(res.cards![0].type).toBe('PENDING_APPROVALS');
   });
 
+  it('should route fleet and vehicle count queries correctly', async () => {
+    const res = await service.processChat({ message: '¿cuantos vehiculos tenemos?' }, { name: 'Admin' });
+    expect(res.toolsExecuted).toContain('get_fleet_status');
+    expect(res.cards).toBeDefined();
+    expect(res.cards![0].type).toBe('FLEET_STATUS');
+    expect(res.answer).toContain('5 vehículos y maquinarias');
+    expect(toolsService.getFleetStatus).toHaveBeenCalled();
+  });
+
   it('should return proactive suggestions based on live alerts', async () => {
     const suggestions = await service.getQuickSuggestions();
     expect(suggestions.length).toBeGreaterThan(0);

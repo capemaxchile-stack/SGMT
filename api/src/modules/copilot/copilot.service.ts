@@ -35,88 +35,201 @@ export class CopilotService {
   ) {}
 
   /**
-   * Process a user chat message with agentic tool calling
+   * Helper to normalize text: removes accents, lowercase, trims
+   */
+  private normalize(text: string): string {
+    return text
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  /**
+   * Process a user chat message with agentic tool calling and intelligent reasoning
    */
   async processChat(dto: ChatRequestDto, user: any): Promise<CopilotChatResponse> {
-    const rawMsg = dto.message.trim().toLowerCase();
+    const raw = dto.message.trim();
+    const msg = this.normalize(raw);
     const toolsExecuted: string[] = [];
     const cards: CopilotActionCard[] = [];
     let answer = '';
     const suggestedQuestions: string[] = [];
 
-    // 1. Intent: Critical Stock / Bodega / Repuestos / Insumos
-    if (
-      rawMsg.includes('stock') ||
-      rawMsg.includes('bodega') ||
-      rawMsg.includes('critico') ||
-      rawMsg.includes('crítico') ||
-      rawMsg.includes('repuesto') ||
-      rawMsg.includes('insumo') ||
-      rawMsg.includes('filtro') ||
-      rawMsg.includes('inventario')
-    ) {
-      toolsExecuted.push('get_critical_stock');
-      const stockData = await this.toolsService.getCriticalStock();
+    // Helper checks
+    const hasAny = (keywords: string[]) => keywords.some((k) => msg.includes(k));
+    const isAskingQuantity = hasAny(['cuanto', 'cuanta', 'cuantos', 'cuantas', 'total', 'cantidad', 'numero', 'que tenemos']);
 
-      if (stockData.criticalCount === 0) {
-        answer = `### 📦 Estado de Inventario & Bodegas\n\nTodos los materiales e insumos se encuentran **sobre el stock mínimo de seguridad**. No hay alertas de desabastecimiento en ninguna bodega.`;
-      } else {
-        answer = `### ⚠️ Alerta de Stock Crítico\n\nSe detectaron **${stockData.criticalCount} ítems** por debajo o en el límite de su stock mínimo de seguridad.\n\n` +
-          stockData.items
-            .map(
-              (i) =>
-                `- **${i.code} - ${i.description}**: Stock actual **${i.totalStock} ${i.unitOfMeasure}** (Mínimo requerido: **${i.minimumStock}**, Déficit: **${i.deficit}**)`,
-            )
-            .join('\n') +
-          `\n\n> Te sugiero generar solicitudes de compra para reabastecer las bodegas afectadas.`;
+    // 1. INTENT: Fleet, Vehicles, Machinery, Equipment
+    // Keywords: vehiculo, vehiculos, auto, camion, camioneta, maquina, maquinaria, flota, equipo, retro, excavadora, etc.
+    const isFleetIntent = hasAny([
+      'vehiculo',
+      'vehiculos',
+      'auto',
+      'autos',
+      'camion',
+      'camiones',
+      'camioneta',
+      'camionetas',
+      'maquina',
+      'maquinas',
+      'maquinaria',
+      'maquinarias',
+      'flota',
+      'equipo',
+      'equipos',
+      'retro',
+      'retroexcavadora',
+      'retroexcavadoras',
+      'excavadora',
+      'excavadoras',
+      'bulldozer',
+      'bulldozers',
+      'cargador',
+      'cargadores',
+      'motoniveladora',
+      'motoniveladoras',
+      'rodillo',
+      'rodillos',
+      'tolva',
+      'pluma',
+      'activo',
+      'activos',
+      'disponibilidad',
+      'operativo',
+      'operativos',
+      'detenido',
+      'detenidos',
+    ]);
 
-        cards.push({
-          type: 'CRITICAL_STOCK',
-          title: `Stock Crítico (${stockData.criticalCount} Ítems)`,
-          description: `Hay insumos esenciales por debajo del umbral mínimo de seguridad.`,
-          badge: `${stockData.criticalCount} Bajo Mínimo`,
-          badgeVariant: 'danger',
-          data: stockData.items,
-          actionButton: {
-            label: 'Gestionar en Bodega',
-            route: '/bodega',
-            variant: 'primary',
-          },
-        });
-      }
+    // 2. INTENT: Critical Stock, Bodega, Warehouse Inventory
+    const isStockIntent = hasAny([
+      'stock',
+      'bodega',
+      'bodegas',
+      'inventario',
+      'material',
+      'materiales',
+      'insumo',
+      'insumos',
+      'repuesto',
+      'repuestos',
+      'filtro',
+      'filtros',
+      'aceite',
+      'aceites',
+      'grasa',
+      'grasas',
+      'perno',
+      'pernos',
+      'critico',
+      'criticos',
+      'minimo',
+      'minimos',
+      'falta',
+      'faltante',
+      'reponer',
+      'kardex',
+    ]);
 
-      suggestedQuestions.push(
-        '¿Hay órdenes de compra pendientes para estos repuestos?',
-        '¿Cuáles son los costos de faena este mes?',
-        '¿Qué equipos están próximos a mantenimiento?',
-      );
-    }
+    // 3. INTENT: Maintenance, Radar, Work Orders, Hours
+    const isMaintenanceIntent = hasAny([
+      'manten',
+      'mantencion',
+      'mantenciones',
+      'mantenimiento',
+      'mantenimientos',
+      'radar',
+      'service',
+      'pauta',
+      'pautas',
+      'vencid',
+      'vencida',
+      'vencidas',
+      'vencido',
+      'vencidos',
+      'horometro',
+      'horometros',
+      'ot',
+      'ots',
+      'orden de trabajo',
+      'ordenes de trabajo',
+      'taller',
+      'reparar',
+      'reparacion',
+      'falla',
+      'fallas',
+      'preventivo',
+      'correctivo',
+    ]);
 
-    // 2. Intent: Maintenance / Radar / Horómetro / OT / Mantención
-    else if (
-      rawMsg.includes('manten') ||
-      rawMsg.includes('radar') ||
-      rawMsg.includes('horomet') ||
-      rawMsg.includes('horómet') ||
-      rawMsg.includes('service') ||
-      rawMsg.includes('vencid') ||
-      rawMsg.includes('ot')
-    ) {
+    // 4. INTENT: Purchase Orders, Approvals, Suppliers
+    const isPurchaseIntent = hasAny([
+      'compra',
+      'compras',
+      'orden',
+      'ordenes',
+      'oc',
+      'ocs',
+      'aprob',
+      'aprobacion',
+      'aprobaciones',
+      'autoriz',
+      'autorizacion',
+      'autorizaciones',
+      'proveedor',
+      'proveedores',
+      'adquisic',
+      'cotiz',
+      'pendiente',
+      'pendientes',
+      'super usuario',
+      'excepcion',
+    ]);
+
+    // 5. INTENT: Faenas, Financials, Budget, Fuel Spend
+    const isFinancialsIntent = hasAny([
+      'faena',
+      'faenas',
+      'costo',
+      'costos',
+      'gasto',
+      'gastos',
+      'finanz',
+      'plata',
+      'dinero',
+      'presupuesto',
+      'presupuestos',
+      'combustible',
+      'diesel',
+      'petroleo',
+      'litro',
+      'litros',
+      'consumo',
+      'rendimiento',
+      'quemado',
+      'cierre',
+      'cierres',
+      'liquidacion',
+    ]);
+
+    // ROUTING WITH PRIORITY
+    if (isMaintenanceIntent) {
       toolsExecuted.push('get_maintenance_radar');
       const radar = await this.toolsService.getMaintenanceRadar();
 
       if (radar.totalAlerts === 0) {
-        answer = `### 🛡️ Radar de Mantenimiento Preventivo\n\nLa flota completa se encuentra **al día en sus pautas preventivas**. Ninguna máquina está a menos de 50 horas de su próximo servicio.`;
+        answer = `### 🛡️ Radar de Mantenimiento Preventivo\n\nLa flota completa se encuentra **al día en sus pautas preventivas**. Ninguna máquina está a menos de 50 horas de su próximo ciclo de servicio.`;
       } else {
-        answer = `### 🚨 Radar de Mantenimiento Activo\n\nHay **${radar.totalAlerts} equipos** que requieren atención preventiva inmediata (**${radar.overdueCount} con pauta vencida**):\n\n` +
+        answer = `### 🚨 Radar de Mantenimiento Activo\n\nTenemos **${radar.totalAlerts} maquinarias con alerta preventiva**, de las cuales **${radar.overdueCount} tienen su pauta vencida**:\n\n` +
           radar.alerts
             .slice(0, 5)
             .map(
               (a) =>
-                `- **${a.assetNumber}** (${a.brandModel}, ${a.faena}): Pauta **${a.serviceInterval}** en ${a.nextServiceAt} hrs. (${a.isOverdue ? `🔴 **VENCIDA hace ${Math.abs(a.hoursRemaining)}h**` : `🟡 Restan **${a.hoursRemaining}h**`})`,
+                `- **${a.assetNumber}** (${a.brandModel} en ${a.faena}): Pauta **${a.serviceInterval}** en ${a.nextServiceAt} hrs. (${a.isOverdue ? `🔴 **VENCIDA hace ${Math.abs(a.hoursRemaining)}h**` : `🟡 Restan **${a.hoursRemaining}h**`})`,
             )
             .join('\n') +
-          `\n\n> Te recomiendo revisar el radar y emitir las Órdenes de Trabajo correspondientes.`;
+          `\n\n> Te sugiero abrir el módulo de mantenimiento para emitir las Órdenes de Trabajo pendientes.`;
 
         cards.push({
           type: 'MAINTENANCE_RADAR',
@@ -134,41 +247,67 @@ export class CopilotService {
       }
 
       suggestedQuestions.push(
-        '¿Qué equipos están operativos y cuáles detenidos?',
-        '¿Tenemos stock de filtros y aceites para estas mantenciones?',
-        '¿Hay consumo anómalo de combustible en algún equipo?',
+        '¿Cuántos vehículos y maquinarias tenemos en total?',
+        '¿Tenemos stock de filtros y repuestos para estas mantenciones?',
+        '¿Hay órdenes de compra pendientes?',
       );
-    }
+    } else if (isStockIntent) {
+      toolsExecuted.push('get_critical_stock');
+      const stockData = await this.toolsService.getCriticalStock();
 
-    // 3. Intent: Approvals / Purchase Orders / Autorizaciones / Compras
-    else if (
-      rawMsg.includes('compra') ||
-      rawMsg.includes('orden') ||
-      rawMsg.includes('oc') ||
-      rawMsg.includes('aprob') ||
-      rawMsg.includes('autoriz') ||
-      rawMsg.includes('pendiente')
-    ) {
+      if (stockData.criticalCount === 0) {
+        answer = `### 📦 Estado de Inventario & Bodegas\n\nTodos los materiales e insumos se encuentran **sobre el stock mínimo de seguridad**. No hay alertas de desabastecimiento registradas en bodega.`;
+      } else {
+        answer = `### ⚠️ Alerta de Stock Crítico\n\nActualmente tenemos **${stockData.criticalCount} ítems por debajo del stock mínimo** de seguridad:\n\n` +
+          stockData.items
+            .map(
+              (i) =>
+                `- **${i.code} - ${i.description}**: Stock actual **${i.totalStock} ${i.unitOfMeasure}** (Mínimo: **${i.minimumStock}**, Déficit: **${i.deficit}**)`,
+            )
+            .join('\n') +
+          `\n\n> Te recomiendo emitir una Solicitud u Orden de Compra para reponer estos materiales.`;
+
+        cards.push({
+          type: 'CRITICAL_STOCK',
+          title: `Stock Crítico (${stockData.criticalCount} Ítems)`,
+          description: `Hay insumos esenciales por debajo del umbral mínimo de seguridad.`,
+          badge: `${stockData.criticalCount} Bajo Mínimo`,
+          badgeVariant: 'danger',
+          data: stockData.items,
+          actionButton: {
+            label: 'Gestionar en Bodega',
+            route: '/bodega',
+            variant: 'primary',
+          },
+        });
+      }
+
+      suggestedQuestions.push(
+        '¿Hay órdenes de compra pendientes para estos insumos?',
+        '¿Cuántos vehículos tenemos en operación?',
+        '¿Cuáles son los costos operativos de las faenas?',
+      );
+    } else if (isPurchaseIntent) {
       toolsExecuted.push('get_pending_approvals');
       const approvals = await this.toolsService.getPendingApprovals();
 
       if (approvals.count === 0) {
-        answer = `### 📝 Aprobaciones de Compras\n\nNo hay **Órdenes de Compra pendientes de aprobación**. Todas las adquisiciones se encuentran autorizadas o emitidas a proveedores.`;
+        answer = `### 📝 Aprobaciones de Compras\n\nActualmente **no hay Órdenes de Compra pendientes** de aprobación. Todas se encuentran autorizadas o emitidas.`;
       } else {
         const totalPendingAmount = approvals.orders.reduce((sum, o) => sum + o.totalAmount, 0);
-        answer = `### 📋 Órdenes de Compra por Autorizar\n\nExisten **${approvals.count} órdenes de compra pendientes** de aprobación por un monto total de **$${totalPendingAmount.toLocaleString('es-CL')} CLP**:\n\n` +
+        answer = `### 📋 Órdenes de Compra por Autorizar\n\nTenemos **${approvals.count} órdenes de compra pendientes de aprobación**, sumando un total de **$${totalPendingAmount.toLocaleString('es-CL')} CLP**:\n\n` +
           approvals.orders
             .map(
               (o) =>
                 `- **${o.orderNumber}** | Proveedor: **${o.supplier}** | Monto: **$${o.totalAmount.toLocaleString('es-CL')} CLP** (${o.itemsCount} ítems)`,
             )
             .join('\n') +
-          `\n\n> Podés revisarlas y aprobarlas (o aplicar la excepción de Súper Usuario si excede el límite) en el módulo de Compras o Panel de Administración.`;
+          `\n\n> Podés autorizarlas directamente desde el módulo de Compras o desde el Panel de Administración.`;
 
         cards.push({
           type: 'PENDING_APPROVALS',
           title: `Órdenes por Aprobar (${approvals.count})`,
-          description: `Monto total acumulado: $${totalPendingAmount.toLocaleString('es-CL')} CLP`,
+          description: `Monto total pendiente: $${totalPendingAmount.toLocaleString('es-CL')} CLP`,
           badge: `${approvals.count} Pendientes`,
           badgeVariant: 'warning',
           data: approvals.orders,
@@ -181,45 +320,59 @@ export class CopilotService {
       }
 
       suggestedQuestions.push(
-        '¿Cuál es el stock crítico actual en bodega?',
-        '¿Cuáles son los costos operativos de las faenas?',
-        '¿Cómo está la disponibilidad de la flota?',
+        '¿Cuál es el stock de materiales en bodega?',
+        '¿Cuántas maquinarias tenemos operativas?',
+        '¿Cuáles son los gastos de combustible?',
       );
-    }
-
-    // 4. Intent: Fleet / Flota / Maquinarias / Equipos
-    else if (
-      rawMsg.includes('flota') ||
-      rawMsg.includes('maquinaria') ||
-      rawMsg.includes('equipo') ||
-      rawMsg.includes('operativ') ||
-      rawMsg.includes('camion') ||
-      rawMsg.includes('camión') ||
-      rawMsg.includes('excavadora') ||
-      rawMsg.includes('bulldozer')
-    ) {
+    } else if (isFleetIntent) {
       toolsExecuted.push('get_fleet_status');
       const fleet = await this.toolsService.getFleetStatus();
 
-      answer = `### 🚜 Estado General de la Flota SGMT\n\n` +
-        `- **Total de Equipos**: ${fleet.summary.total} unidades\n` +
-        `- **Disponibilidad Operativa**: **${fleet.summary.operationalRate}** (${fleet.summary.operational} operativos)\n` +
-        `- **En Mantención**: ${fleet.summary.underMaintenance} unidades\n` +
-        `- **Detenidos / Standby**: ${fleet.summary.detained} unidades\n\n` +
-        `**Distribución en terreno:**\n` +
-        fleet.assets
-          .slice(0, 6)
-          .map(
-            (a) =>
-              `- **${a.internalNumber}** (${a.type} ${a.brand} ${a.model}): ${a.status === 'OPERATIVO' ? '🟢 Operativo' : a.status === 'EN_MANTENCION' ? '🟡 Mantención' : '🔴 Detenido'} | Faena: **${a.currentFaena}** | Horómetro: **${a.hourmeter}h**`,
-          )
-          .join('\n');
+      const typeBreakdown = Object.entries(fleet.summary.byType || {})
+        .map(([type, count]) => `${count} ${type.toLowerCase()}(s)`)
+        .join(', ');
+
+      const faenaBreakdown = Object.entries(fleet.summary.byFaena || {})
+        .map(([faena, count]) => `**${faena}**: ${count} equipo(s)`)
+        .join(' | ');
+
+      if (isAskingQuantity) {
+        answer = `### 🚜 Total de Vehículos y Maquinarias en Flota\n\n` +
+          `Actualmente contamos con un total de **${fleet.summary.total} vehículos y maquinarias** registradas en el sistema:\n\n` +
+          `- **🟢 Operativos**: **${fleet.summary.operational} unidades** (${fleet.summary.operationalRate} de disponibilidad)\n` +
+          `- **🟡 En Mantenimiento**: **${fleet.summary.underMaintenance} unidades**\n` +
+          `- **🔴 Detenidos / Standby**: **${fleet.summary.detained} unidades**\n\n` +
+          `**Composición por tipo:** ${typeBreakdown || 'Sin desglose'}.\n\n` +
+          `**Distribución por Faena:**\n${faenaBreakdown || 'En patio central'}\n\n` +
+          `**Detalle de los principales equipos:**\n` +
+          fleet.assets
+            .slice(0, 6)
+            .map(
+              (a) =>
+                `- **${a.internalNumber}** (${a.type} ${a.brand} ${a.model} - Patente: \`${a.licensePlate || 'S/P'}\`): ${a.status === 'OPERATIVO' ? '🟢 Operativo' : a.status === 'EN_MANTENCION' ? '🟡 Mantención' : '🔴 Detenido'} en **${a.currentFaena}** (${a.hourmeter}h)`,
+            )
+            .join('\n');
+      } else {
+        answer = `### 🚜 Estado General de la Flota SGMT\n\n` +
+          `- **Total de Flota**: **${fleet.summary.total} unidades**\n` +
+          `- **Disponibilidad Operativa**: **${fleet.summary.operationalRate}** (${fleet.summary.operational} operativos)\n` +
+          `- **En Mantención**: ${fleet.summary.underMaintenance} equipos\n` +
+          `- **Detenidos**: ${fleet.summary.detained} equipos\n\n` +
+          `**Distribución en terreno:**\n` +
+          fleet.assets
+            .slice(0, 6)
+            .map(
+              (a) =>
+                `- **${a.internalNumber}** (${a.type} ${a.brand} ${a.model}): ${a.status === 'OPERATIVO' ? '🟢 Operativo' : a.status === 'EN_MANTENCION' ? '🟡 Mantención' : '🔴 Detenido'} | Faena: **${a.currentFaena}** | Horómetro: **${a.hourmeter}h**`,
+            )
+            .join('\n');
+      }
 
       cards.push({
         type: 'FLEET_STATUS',
-        title: `Disponibilidad de Flota: ${fleet.summary.operationalRate}`,
-        description: `${fleet.summary.operational} de ${fleet.summary.total} equipos operativos en faenas activas.`,
-        badge: `${fleet.summary.operationalRate} Operativo`,
+        title: `Flota Total: ${fleet.summary.total} Unidades (${fleet.summary.operationalRate} Operativo)`,
+        description: `${fleet.summary.operational} operativos, ${fleet.summary.underMaintenance} en mantención, ${fleet.summary.detained} detenidos.`,
+        badge: `${fleet.summary.total} Equipos`,
         badgeVariant: 'success',
         data: fleet,
         actionButton: {
@@ -230,22 +383,11 @@ export class CopilotService {
       });
 
       suggestedQuestions.push(
-        '¿Qué equipos están próximos a vencer su mantención?',
-        '¿Hay anomalías de consumo de combustible?',
-        '¿Cuál es el costo consolidado de las faenas?',
+        '¿Qué equipos están próximos a vencer su mantenimiento?',
+        '¿Hay consumo anómalo de combustible?',
+        '¿Cuáles son los costos operativos de las faenas?',
       );
-    }
-
-    // 5. Intent: Faenas / Costos / Finanzas / Combustible / Rendimiento
-    else if (
-      rawMsg.includes('faena') ||
-      rawMsg.includes('costo') ||
-      rawMsg.includes('gasto') ||
-      rawMsg.includes('combustible') ||
-      rawMsg.includes('diesel') ||
-      rawMsg.includes('litro') ||
-      rawMsg.includes('presupuesto')
-    ) {
+    } else if (isFinancialsIntent) {
       toolsExecuted.push('get_faenas_financial_summary');
       const faenasData = await this.toolsService.getFaenasFinancialSummary();
 
@@ -259,8 +401,8 @@ export class CopilotService {
         totalFuelLiters += f.fuel.totalLiters;
       });
 
-      answer = `### 💰 Resumen Operativo & Costos por Faena\n\n` +
-        `- **Presupuesto Total Contratado**: $${totalBudget.toLocaleString('es-CL')} CLP\n` +
+      answer = `### 💰 Resumen Financiero & Costos por Faena\n\n` +
+        `- **Presupuesto Total Contratado**: **$${totalBudget.toLocaleString('es-CL')} CLP**\n` +
         `- **Costo Operativo Acumulado**: **$${totalSpend.toLocaleString('es-CL')} CLP**\n` +
         `- **Consumo Total Diésel**: **${totalFuelLiters.toLocaleString('es-CL')} Litros**\n\n` +
         `**Detalle por Faena:**\n` +
@@ -274,7 +416,7 @@ export class CopilotService {
       cards.push({
         type: 'FAENA_COSTS',
         title: `Costos Consolidados de Faenas`,
-        description: `Gasto operativo acumulado de $${totalSpend.toLocaleString('es-CL')} CLP en ${faenasData.faenasCount} faenas activas.`,
+        description: `Gasto operativo de $${totalSpend.toLocaleString('es-CL')} CLP en ${faenasData.faenasCount} faenas activas.`,
         badge: `$${totalSpend.toLocaleString('es-CL')}`,
         badgeVariant: 'info',
         data: faenasData,
@@ -290,23 +432,20 @@ export class CopilotService {
         '¿Qué órdenes de compra están pendientes?',
         '¿Cómo está el stock de insumos críticos?',
       );
-    }
-
-    // 6. Default Fallback / General Assistant Overview
-    else {
-      answer = `Hola **${user?.name || 'Colega'}**, soy tu **Copiloto Agéntico de SGMT** 🚜🤖.\n\nTengo acceso en tiempo real a todas las operaciones del sistema para asistirte en:\n\n` +
-        `- 🚜 **Control de Flota**: Disponibilidad de maquinaria, horómetros y faenas asignadas.\n` +
-        `- 🛡️ **Radar de Mantenimiento**: Alertas preventivas (250h, 500h, 1000h) y OTs críticas.\n` +
-        `- 📦 **Bodega & Stock Crítico**: Detección inmediata de insumos bajo stock de seguridad.\n` +
-        `- 📝 **Compras & Aprobaciones**: Órdenes de compra pendientes de autorización y montos.\n` +
-        `- 💰 **Costos & Combustible**: Rendimiento L/hr, quemado presupuestario y cierres de faena.\n\n` +
-        `¿Qué querés consultar en este momento?`;
+    } else {
+      answer = `Hola **${user?.name || 'Colega'}**, soy tu **Copiloto Agéntico de SGMT** 🚜🤖.\n\nTengo acceso en tiempo real a todas las operaciones para responderte de forma precisa:\n\n` +
+        `- 🚜 **Flota & Vehículos**: Total de unidades, disponibilidad operativa, horómetros y faenas.\n` +
+        `- 🛡️ **Radar de Mantención**: Maquinarias con pauta vencida o próxima (250h, 500h, 1000h).\n` +
+        `- 📦 **Bodega & Stock**: Detección de insumos críticos bajo el mínimo de seguridad.\n` +
+        `- 📝 **Compras & Aprobaciones**: Órdenes de compra por autorizar y montos en CLP.\n` +
+        `- 💰 **Costos & Faenas**: Rendimiento de diésel L/hr, quemado presupuestario y cierres.\n\n` +
+        `¿Qué dato querés consultar?`;
 
       suggestedQuestions.push(
-        '🚨 ¿Qué equipos tienen mantención vencida o próxima?',
+        '🚜 ¿Cuántos vehículos y maquinarias tenemos?',
+        '🚨 ¿Qué equipos tienen mantención vencida?',
         '📦 ¿Cuáles ítems están bajo stock mínimo?',
         '📝 ¿Hay órdenes de compra pendientes de aprobación?',
-        '🚜 ¿Cuál es la disponibilidad actual de la flota?',
         '💰 ¿Cuánto se ha gastado en combustible y faenas?',
       );
     }
@@ -357,14 +496,14 @@ export class CopilotService {
     }
 
     suggestions.push({
-      text: '¿Cuál es el resumen de costos y combustible de este mes?',
-      category: 'Finanzas',
+      text: '¿Cuántos vehículos y maquinarias tenemos en total?',
+      category: 'Flota',
       priority: 'low',
     });
 
     suggestions.push({
-      text: '¿Cuál es el porcentaje de disponibilidad operativa de la flota?',
-      category: 'Flota',
+      text: '¿Cuál es el resumen de costos y combustible de este mes?',
+      category: 'Finanzas',
       priority: 'low',
     });
 
