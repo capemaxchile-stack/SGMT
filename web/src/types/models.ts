@@ -423,10 +423,18 @@ export interface WebhookConfig {
   events: NotificationEventsConfig;
 }
 
+export interface ScheduleRulesConfig {
+  digestFrequency: 'DAILY' | 'HOURLY' | 'REALTIME_ONLY' | 'DISABLED';
+  dailyDigestTime?: string;
+  enableRealtimeEvents: boolean;
+  cooldownPreventDuplicateDaily: boolean;
+}
+
 export interface NotificationChannelsConfig {
   telegram: TelegramConfig;
   brevo: BrevoConfig;
   webhook?: WebhookConfig;
+  scheduleRules?: ScheduleRulesConfig;
 }
 
 export interface TestChannelPayload {

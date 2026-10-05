@@ -17,6 +17,9 @@ import {
   Eye,
   EyeOff,
   BellRing,
+  Clock,
+  ShieldCheck,
+  Calendar,
 } from 'lucide-react';
 
 export function NotificationChannelsTab() {
@@ -44,6 +47,12 @@ export function NotificationChannelsTab() {
       url: '',
       events: { radarAlerts: false, lowStock: false, pendingApprovals: false, abnormalFuel: false },
     },
+    scheduleRules: {
+      digestFrequency: 'DAILY',
+      dailyDigestTime: '08:00',
+      enableRealtimeEvents: false,
+      cooldownPreventDuplicateDaily: true,
+    },
   });
 
   const [recipientEmailsText, setRecipientEmailsText] = useState('');
@@ -54,7 +63,15 @@ export function NotificationChannelsTab() {
 
   useEffect(() => {
     if (config) {
-      setFormData(config);
+      setFormData({
+        ...config,
+        scheduleRules: config.scheduleRules || {
+          digestFrequency: 'DAILY',
+          dailyDigestTime: '08:00',
+          enableRealtimeEvents: false,
+          cooldownPreventDuplicateDaily: true,
+        },
+      });
       setRecipientEmailsText(config.brevo?.recipientEmails?.join(', ') || '');
     }
   }, [config]);
@@ -171,6 +188,134 @@ export function NotificationChannelsTab() {
           </div>
         </div>
       )}
+
+      {/* SCHEDULE & ANTI-SPAM RULES CARD */}
+      <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <CardHeader className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20">
+              <Clock size={18} />
+            </div>
+            <div>
+              <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Reglas de Frecuencia y Anti-Spam (Programación de Envíos)
+              </CardTitle>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Controlá la periodicidad de los resúmenes operacionales y evitá saturación fuera de horario
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-semibold">
+            <ShieldCheck size={14} />
+            <span>Anti-Spam Activo</span>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                Frecuencia de Resumen Consolidado
+              </label>
+              <select
+                value={formData.scheduleRules?.digestFrequency || 'DAILY'}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    scheduleRules: {
+                      ...formData.scheduleRules!,
+                      digestFrequency: e.target.value as any,
+                    },
+                  })
+                }
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+              >
+                <option value="DAILY">🌅 Resumen Diario Consolidado (Recomendado - 1 vez al día)</option>
+                <option value="HOURLY">⏱️ Resumen Periódico (Cada hora)</option>
+                <option value="REALTIME_ONLY">⚡ Solo Eventos Inmediatos (Sin resumen programado)</option>
+                <option value="DISABLED">🚫 Desactivado (Silenciar resúmenes)</option>
+              </select>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                Agrupa las novedades de radar, stock crítico y aprobaciones pendientes en un único mensaje.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Calendar size={13} className="text-amber-500" />
+                Hora de Envío del Resumen Diario
+              </label>
+              <Input
+                type="time"
+                value={formData.scheduleRules?.dailyDigestTime || '08:00'}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    scheduleRules: {
+                      ...formData.scheduleRules!,
+                      dailyDigestTime: e.target.value,
+                    },
+                  })
+                }
+                disabled={formData.scheduleRules?.digestFrequency !== 'DAILY'}
+                helperText="Hora local (ej. 08:00) en que se despachará el consolidado matutino a todos los canales."
+              />
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.scheduleRules?.enableRealtimeEvents ?? false}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    scheduleRules: {
+                      ...formData.scheduleRules!,
+                      enableRealtimeEvents: e.target.checked,
+                    },
+                  })
+                }
+                className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
+              />
+              <div className="text-xs">
+                <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                  Despacho Inmediato en Tiempo Real
+                </span>
+                <span className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed block mt-0.5">
+                  Si está desactivado (recomendado), las alertas NO sonarán de noche ni interrumpirán durante la jornada, consolidándose solo en el reporte matutino.
+                </span>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.scheduleRules?.cooldownPreventDuplicateDaily ?? true}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    scheduleRules: {
+                      ...formData.scheduleRules!,
+                      cooldownPreventDuplicateDaily: e.target.checked,
+                    },
+                  })
+                }
+                className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500"
+              />
+              <div className="text-xs">
+                <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                  Protección Anti-Spam Estricta
+                </span>
+                <span className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed block mt-0.5">
+                  Garantiza con registro en base de datos que se emita como máximo 1 consolidado por día, previniendo duplicados ante reinicios del servidor.
+                </span>
+              </div>
+            </label>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 1. TELEGRAM BOT CHANNEL */}

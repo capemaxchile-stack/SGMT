@@ -71,6 +71,21 @@ export class WebhookConfigDto {
   events: NotificationEventsDto;
 }
 
+export class ScheduleRulesDto {
+  @IsString()
+  digestFrequency: 'DAILY' | 'HOURLY' | 'REALTIME_ONLY' | 'DISABLED';
+
+  @IsString()
+  @IsOptional()
+  dailyDigestTime?: string; // e.g. "08:00"
+
+  @IsBoolean()
+  enableRealtimeEvents: boolean;
+
+  @IsBoolean()
+  cooldownPreventDuplicateDaily: boolean;
+}
+
 export class NotificationChannelsConfigDto {
   @ValidateNested()
   @Type(() => TelegramConfigDto)
@@ -84,6 +99,11 @@ export class NotificationChannelsConfigDto {
   @Type(() => WebhookConfigDto)
   @IsOptional()
   webhook?: WebhookConfigDto;
+
+  @ValidateNested()
+  @Type(() => ScheduleRulesDto)
+  @IsOptional()
+  scheduleRules?: ScheduleRulesDto;
 }
 
 export class TestChannelDto {
@@ -100,3 +120,4 @@ export class TestChannelDto {
   @Type(() => BrevoEmailConfigDto)
   brevoConfig?: BrevoEmailConfigDto;
 }
+

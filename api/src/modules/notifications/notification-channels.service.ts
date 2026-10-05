@@ -42,6 +42,12 @@ const DEFAULT_CONFIG: NotificationChannelsConfigDto = {
       abnormalFuel: false,
     },
   },
+  scheduleRules: {
+    digestFrequency: 'DAILY',
+    dailyDigestTime: '08:00',
+    enableRealtimeEvents: false,
+    cooldownPreventDuplicateDaily: true,
+  },
 };
 
 @Injectable()
@@ -121,6 +127,7 @@ export class NotificationChannelsService {
         apiKey: finalBrevoApiKey,
       },
       webhook: dto.webhook || current.webhook,
+      scheduleRules: dto.scheduleRules || current.scheduleRules || DEFAULT_CONFIG.scheduleRules,
     };
 
     await this.prisma.systemSetting.upsert({
@@ -326,6 +333,12 @@ export class NotificationChannelsService {
   }) {
     try {
       const config = await this.getConfig(true);
+
+      // Check if immediate realtime event dispatch is active (otherwise captured in daily digest)
+      const allowRealtime = config.scheduleRules?.enableRealtimeEvents ?? false;
+      if (!allowRealtime) {
+        return;
+      }
 
       // 1. Dispatch to Telegram if enabled and event is subscribed
       if (config.telegram?.enabled && config.telegram.events?.[payload.event]) {
