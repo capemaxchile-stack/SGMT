@@ -313,4 +313,92 @@ export class NotificationChannelsService {
       throw new BadRequestException(err.message || 'Error al conectar con la API de Brevo');
     }
   }
+
+  /**
+   * Dispatch system alert to all enabled channels configured for this event type
+   */
+  async dispatchSystemAlert(payload: {
+    event: 'radarAlerts' | 'lowStock' | 'pendingApprovals' | 'abnormalFuel';
+    title: string;
+    summary: string;
+    details?: Record<string, any>;
+    link?: string;
+  }) {
+    try {
+      const config = await this.getConfig(true);
+
+      // 1. Dispatch to Telegram if enabled and event is subscribed
+      if (config.telegram?.enabled && config.telegram.events?.[payload.event]) {
+        const botToken = config.telegram.botToken;
+        const chatId = config.telegram.chatId;
+        if (botToken && chatId) {
+          const mdText =
+            `🚨 *SGMT PRO - Alerta Automática* 🔔\n\n` +
+            `📋 *${payload.title}*\n` +
+            `${payload.summary}\n\n` +
+            `📍 *Módulo:* \`${payload.link || '/dashboard'}\`\n` +
+            `📅 *Fecha:* ${new Date().toLocaleString('es-CL')}\n` +
+            `⚙️ *Servidor:* LXC Node 106`;
+
+          this.executeTelegramSend(botToken, chatId, mdText).catch((err) =>
+            this.logger.warn(`Failed async telegram dispatch: ${err.message}`),
+          );
+        }
+      }
+
+      // 2. Dispatch to Brevo Email if enabled and event is subscribed
+      if (config.brevo?.enabled && config.brevo.events?.[payload.event]) {
+        const apiKey = config.brevo.apiKey;
+        const senderEmail = config.brevo.senderEmail || 'alertas@sgmt.local';
+        const senderName = config.brevo.senderName || 'SGMT Alertas';
+        const recipients = config.brevo.recipientEmails || [];
+
+        if (apiKey && recipients.length > 0) {
+          const html = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+              <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 20px; text-align: center; color: white;">
+                <h2 style="margin: 0; font-size: 18px; font-weight: 800;">SGMT PRO &bull; Alerta Operacional</h2>
+                <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">${payload.title}</p>
+              </div>
+              <div style="padding: 24px; color: #1e293b; font-size: 14px; line-height: 1.6;">
+                <div style="background: #eff6ff; border-left: 4px solid #2563eb; padding: 12px 16px; margin-bottom: 16px; border-radius: 4px;">
+                  ${payload.summary.replace(/\n/g, '<br/>')}
+                </div>
+                <p style="font-size: 12px; color: #64748b; margin-top: 20px;">
+                  Fecha del evento: <strong>${new Date().toLocaleString('es-CL')}</strong> &bull; Servidor: <strong>LXC Node 106</strong>
+                </p>
+              </div>
+            </div>
+          `;
+
+          this.executeBrevoSend(
+            apiKey,
+            senderEmail,
+            senderName,
+            recipients,
+            `SGMT Alerta: ${payload.title}`,
+            html,
+          ).catch((err) => this.logger.warn(`Failed async brevo dispatch: ${err.message}`));
+        }
+      }
+
+      // 3. Dispatch to Webhook if enabled and event is subscribed
+      if (config.webhook?.enabled && config.webhook.url && config.webhook.events?.[payload.event]) {
+        fetch(config.webhook.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: payload.event,
+            title: payload.title,
+            summary: payload.summary,
+            details: payload.details,
+            link: payload.link,
+            timestamp: new Date().toISOString(),
+          }),
+        }).catch((err) => this.logger.warn(`Failed async webhook dispatch: ${err.message}`));
+      }
+    } catch (err: any) {
+      this.logger.error(`Error in dispatchSystemAlert: ${err.message}`);
+    }
+  }
 }

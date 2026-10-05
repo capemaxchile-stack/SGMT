@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException, Optional } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationChannelsService } from '../notifications/notification-channels.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { ReceiveOrderDto } from './dto/receive-order.dto';
@@ -25,7 +26,10 @@ const VALID_ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly channelsService?: NotificationChannelsService,
+  ) {}
 
   async findAll(status?: OrderStatus, supplierId?: string) {
     const where: Prisma.PurchaseOrderWhereInput = {};
@@ -73,7 +77,7 @@ export class OrdersService {
       }
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const order = await this.prisma.$transaction(async (tx) => {
       // 1. If linked to a purchase request, validate and convert it
       if (createOrderDto.purchaseRequestId) {
         const req = await tx.purchaseRequest.findUnique({
@@ -154,6 +158,22 @@ export class OrdersService {
 
       return order;
     });
+
+    // Realtime background alert dispatch to Telegram, Brevo, and Webhook
+    this.prisma.supplier
+      .findUnique({ where: { id: order.supplierId } })
+      .then((sup) => {
+        this.channelsService?.dispatchSystemAlert({
+          event: 'pendingApprovals',
+          title: `Nueva Orden de Compra Pendiente (${order.orderNumber})`,
+          summary: `Se ha emitido la orden ${order.orderNumber} por un monto de $${Number(order.totalAmount).toLocaleString('es-CL')} CLP con el proveedor ${sup?.businessName || 'Proveedor'}.\nRequiere autorización de gerencia.`,
+          link: '/compras',
+          details: { orderNumber: order.orderNumber, totalAmount: order.totalAmount },
+        });
+      })
+      .catch(() => {});
+
+    return order;
   }
 
   async updateStatus(id: string, updateDto: UpdateOrderStatusDto, userId: string) {
