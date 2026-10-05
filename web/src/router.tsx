@@ -15,6 +15,7 @@ const MantenimientoPage = lazy(() => import('./pages/mantenimiento/Mantenimiento
 const CombustiblePage = lazy(() => import('./pages/combustible/CombustiblePage').then(m => ({ default: m.CombustiblePage })));
 const ReportesPage = lazy(() => import('./pages/reportes/ReportesPage').then(m => ({ default: m.ReportesPage })));
 const DocumentacionPage = lazy(() => import('./pages/docs/DocumentacionPage').then(m => ({ default: m.DocumentacionPage })));
+const CertificacionesPage = lazy(() => import('./pages/certificaciones/CertificacionesPage').then(m => ({ default: m.CertificacionesPage })));
 const AdminPage = lazy(() => import('./pages/admin/AdminPage').then(m => ({ default: m.AdminPage })));
 
 const routeFallback = (
@@ -80,6 +81,10 @@ export const router = createBrowserRouter([
       {
         path: 'reportes',
         element: withSuspense(ReportesPage),
+      },
+      {
+        path: 'certificaciones',
+        element: withSuspense(CertificacionesPage),
       },
       {
         path: 'documentacion',

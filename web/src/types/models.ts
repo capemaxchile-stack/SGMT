@@ -443,6 +443,100 @@ export interface TestChannelPayload {
   brevoConfig?: BrevoConfig;
 }
 
+export type AssetDocType =
+  | 'REVISION_TECNICA'
+  | 'PERMISO_CIRCULACION'
+  | 'SEGURO_SOAP'
+  | 'SEGURO_DANOS'
+  | 'CERTIFICACION_ESTRUCTURAL'
+  | 'ANALISIS_GASES'
+  | 'CERTIFICADO_HOMOLOGACION'
+  | 'OTRO';
+
+export type OperatorDocType =
+  | 'LICENCIA_CONDUCIR'
+  | 'EXAMEN_OCUPACIONAL'
+  | 'INDUCCION_DAS'
+  | 'CERTIFICACION_MAQUINARIA'
+  | 'CONTRATO_TRABAJO'
+  | 'ENTREGA_EPP'
+  | 'OTRO';
+
+export type ExpirationStatus =
+  | 'VIGENTE'
+  | 'POR_VENCER_30'
+  | 'POR_VENCER_15'
+  | 'CRITICO_5'
+  | 'VENCIDO';
+
+export interface AssetDocument extends BaseEntity {
+  assetId: string;
+  docType: AssetDocType;
+  documentNumber?: string | null;
+  issuingEntity?: string | null;
+  issueDate?: string | null;
+  expirationDate: string;
+  fileUrl?: string | null;
+  notes?: string | null;
+  isMandatory: boolean;
+  createdById: string;
+  status: ExpirationStatus;
+  daysRemaining: number;
+  asset?: Asset;
+  createdBy?: User;
+}
+
+export interface OperatorCertification extends BaseEntity {
+  operatorName: string;
+  rut: string;
+  jobTitle?: string | null;
+  faenaId?: string | null;
+  docType: OperatorDocType;
+  documentNumber?: string | null;
+  issuingEntity?: string | null;
+  issueDate?: string | null;
+  expirationDate: string;
+  fileUrl?: string | null;
+  notes?: string | null;
+  createdById: string;
+  status: ExpirationStatus;
+  daysRemaining: number;
+  faena?: Faena | null;
+  createdBy?: User;
+}
+
+export interface RadarTimelineItem {
+  category: 'ASSET' | 'OPERATOR';
+  id: string;
+  targetId: string;
+  title: string;
+  subtitle: string;
+  docType: string;
+  documentNumber?: string | null;
+  issuingEntity?: string | null;
+  expirationDate: string;
+  status: ExpirationStatus;
+  daysRemaining: number;
+  fileUrl?: string | null;
+}
+
+export interface DocumentRadarResponse {
+  metrics: {
+    totalAssetDocs: number;
+    expiredAssetsCount: number;
+    criticalAssetsCount: number;
+    warningAssetsCount: number;
+    totalOperatorCerts: number;
+    expiredOperatorsCount: number;
+    criticalOperatorsCount: number;
+    warningOperatorsCount: number;
+    expiredTotal: number;
+    criticalTotal: number;
+    warningTotal: number;
+  };
+  radarItems: RadarTimelineItem[];
+}
+
 
 
 

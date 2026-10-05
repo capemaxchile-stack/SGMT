@@ -25,6 +25,8 @@ model User {
   workOrdersCreated WorkOrder[]
   fuelLogsCreated  FuelLog[]
   auditLogs        AuditLog[]
+  assetDocsCreated AssetDocument[]
+  operatorCertsCreated OperatorCertification[]
 }
 
 model Role {
@@ -72,6 +74,7 @@ model Faena {
   purchaseRequests   PurchaseRequest[]
   workOrders         WorkOrder[]
   fuelLogs           FuelLog[]
+  operatorCertifications OperatorCertification[]
 }
 
 model Contract {
@@ -133,6 +136,7 @@ model Asset {
   warehouseMovements WarehouseMovement[]
   workOrders         WorkOrder[]
   fuelLogs           FuelLog[]
+  documents          AssetDocument[]
 }
 
 model AssetAssignment {
@@ -482,6 +486,74 @@ model SystemSetting {
   value       String
   description String?
   updatedAt   DateTime @updatedAt
+}
+
+enum AssetDocType {
+  REVISION_TECNICA
+  PERMISO_CIRCULACION
+  SEGURO_SOAP
+  SEGURO_DANOS
+  CERTIFICACION_ESTRUCTURAL
+  ANALISIS_GASES
+  CERTIFICADO_HOMOLOGACION
+  OTRO
+}
+
+enum OperatorDocType {
+  LICENCIA_CONDUCIR
+  EXAMEN_OCUPACIONAL
+  INDUCCION_DAS
+  CERTIFICACION_MAQUINARIA
+  CONTRATO_TRABAJO
+  ENTREGA_EPP
+  OTRO
+}
+
+model AssetDocument {
+  id             String       @id @default(uuid())
+  assetId        String
+  docType        AssetDocType
+  documentNumber String?
+  issuingEntity  String?
+  issueDate      DateTime?
+  expirationDate DateTime
+  fileUrl        String?
+  notes          String?
+  isMandatory    Boolean      @default(true)
+  createdById    String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  asset          Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  createdBy      User         @relation(fields: [createdById], references: [id])
+
+  @@index([assetId, expirationDate])
+  @@index([expirationDate])
+}
+
+model OperatorCertification {
+  id             String          @id @default(uuid())
+  operatorName   String
+  rut            String
+  jobTitle       String?
+  faenaId        String?
+  docType        OperatorDocType
+  documentNumber String?
+  issuingEntity  String?
+  issueDate      DateTime?
+  expirationDate DateTime
+  fileUrl        String?
+  notes          String?
+  createdById    String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  faena          Faena?          @relation(fields: [faenaId], references: [id], onDelete: SetNull)
+  createdBy      User            @relation(fields: [createdById], references: [id])
+
+  @@index([rut, expirationDate])
+  @@index([faenaId])
+  @@index([expirationDate])
 }
 
 

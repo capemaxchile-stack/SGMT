@@ -1,5 +1,19 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Factory, Truck, Wrench, Fuel, Box, ShoppingCart, BarChart3, BookOpen, Settings, X, Server } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Factory,
+  Truck,
+  FileBadge,
+  Wrench,
+  Fuel,
+  Box,
+  ShoppingCart,
+  BarChart3,
+  BookOpen,
+  Settings,
+  X,
+  Server,
+} from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useEffect } from 'react';
 import { Logo } from '../ui/Logo';
@@ -9,14 +23,15 @@ interface SidebarProps {
   onCloseMobile?: () => void;
 }
 
-export const APP_VERSION = 'v1.5.0';
-export const BUILD_DATE = '2026.10.04';
+export const APP_VERSION = 'v1.6.0';
+export const BUILD_DATE = '2026.10.05';
 
 export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
     { name: 'Faenas', path: '/faenas', icon: <Factory size={20} /> },
     { name: 'Flota', path: '/flota', icon: <Truck size={20} /> },
+    { name: 'Certificaciones', path: '/certificaciones', icon: <FileBadge size={20} /> },
     { name: 'Mantenimiento', path: '/mantenimiento', icon: <Wrench size={20} /> },
     { name: 'Combustible', path: '/combustible', icon: <Fuel size={20} /> },
     { name: 'Bodega', path: '/bodega', icon: <Box size={20} /> },
