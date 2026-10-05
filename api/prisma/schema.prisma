@@ -477,4 +477,12 @@ model FuelLog {
   @@index([faenaId])
 }
 
+model SystemSetting {
+  key         String   @id
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+
 

@@ -18,6 +18,7 @@ import { useToast } from '../../components/ui/Toast';
 import { PurchaseOrder } from '../../types/compras';
 import { User } from '../../types/models';
 import { exportToCSV } from '../../lib/export';
+import { NotificationChannelsTab } from './NotificationChannelsTab';
 import {
   Shield,
   CheckCircle,
@@ -30,10 +31,11 @@ import {
   Download,
   UserCheck,
   UserX,
+  BellRing,
 } from 'lucide-react';
 
 export function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'aprobaciones' | 'auditoria' | 'usuarios'>('aprobaciones');
+  const [activeTab, setActiveTab] = useState<'aprobaciones' | 'auditoria' | 'usuarios' | 'alertas'>('aprobaciones');
   const toast = useToast();
 
   // Queries
@@ -549,6 +551,17 @@ export function AdminPage() {
           >
             Bitácora de Auditoría
           </button>
+          <button
+            onClick={() => setActiveTab('alertas')}
+            className={`whitespace-nowrap py-3.5 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-1.5 ${
+              activeTab === 'alertas'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400 font-bold'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+          >
+            <BellRing size={15} />
+            <span>Canales de Alerta (Telegram / Brevo)</span>
+          </button>
         </nav>
       </div>
 
@@ -579,6 +592,8 @@ export function AdminPage() {
           emptyMessage="No hay registros de auditoría"
         />
       )}
+
+      {activeTab === 'alertas' && <NotificationChannelsTab />}
 
       {/* Modal: Super User Approval */}
       <Modal

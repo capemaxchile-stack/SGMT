@@ -394,5 +394,47 @@ export interface NotificationsResponse {
   highCount: number;
 }
 
+export interface NotificationEventsConfig {
+  radarAlerts: boolean;
+  lowStock: boolean;
+  pendingApprovals: boolean;
+  abnormalFuel: boolean;
+}
+
+export interface TelegramConfig {
+  enabled: boolean;
+  botToken?: string;
+  chatId?: string;
+  events: NotificationEventsConfig;
+}
+
+export interface BrevoConfig {
+  enabled: boolean;
+  apiKey?: string;
+  senderEmail?: string;
+  senderName?: string;
+  recipientEmails?: string[];
+  events: NotificationEventsConfig;
+}
+
+export interface WebhookConfig {
+  enabled: boolean;
+  url?: string;
+  events: NotificationEventsConfig;
+}
+
+export interface NotificationChannelsConfig {
+  telegram: TelegramConfig;
+  brevo: BrevoConfig;
+  webhook?: WebhookConfig;
+}
+
+export interface TestChannelPayload {
+  channel: 'TELEGRAM' | 'BREVO' | 'WEBHOOK';
+  telegramConfig?: TelegramConfig;
+  brevoConfig?: BrevoConfig;
+}
+
+
 
 
