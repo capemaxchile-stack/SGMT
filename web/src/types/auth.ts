@@ -1,3 +1,4 @@
+/** Action permissions matrix available per domain module */
 export interface ModulePermission {
   canRead: boolean;
   canWrite: boolean;
