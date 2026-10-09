@@ -21,10 +21,74 @@ export class AuthService {
     return secret;
   }
 
+  private formatUserWithPermissions(user: any) {
+    const { passwordHash, superKeyHash, ...result } = user;
+    const roles = (result.roles || []).map((r: any) => r.role?.name || r.name);
+    const isSuperOrAdmin = roles.includes('ADMIN_SISTEMA') || roles.includes('SUPER_USUARIO');
+
+    const modulesList = [
+      'DASHBOARD',
+      'FAENAS',
+      'FLOTA',
+      'CERTIFICACIONES',
+      'MANTENIMIENTO',
+      'COMBUSTIBLE',
+      'BODEGA',
+      'COMPRAS',
+      'REPORTES',
+      'ADMINISTRACION',
+    ];
+
+    const permissions: Record<
+      string,
+      { canRead: boolean; canWrite: boolean; canApprove: boolean; canAdmin: boolean }
+    > = {};
+
+    for (const mod of modulesList) {
+      permissions[mod] = {
+        canRead: isSuperOrAdmin,
+        canWrite: isSuperOrAdmin,
+        canApprove: isSuperOrAdmin,
+        canAdmin: isSuperOrAdmin,
+      };
+    }
+
+    if (!isSuperOrAdmin && Array.isArray(result.roles)) {
+      for (const ur of result.roles) {
+        if (ur.role?.permissions) {
+          for (const p of ur.role.permissions) {
+            if (!permissions[p.module]) {
+              permissions[p.module] = {
+                canRead: false,
+                canWrite: false,
+                canApprove: false,
+                canAdmin: false,
+              };
+            }
+            permissions[p.module].canRead = permissions[p.module].canRead || p.canRead;
+            permissions[p.module].canWrite = permissions[p.module].canWrite || p.canWrite;
+            permissions[p.module].canApprove = permissions[p.module].canApprove || p.canApprove;
+            permissions[p.module].canAdmin = permissions[p.module].canAdmin || p.canAdmin;
+          }
+        }
+      }
+    }
+
+    return { ...result, roles, permissions };
+  }
+
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.prisma.user.findUnique({
       where: { email },
-      include: { roles: { include: { role: true } } },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: { permissions: true },
+            },
+          },
+        },
+      },
     });
     
     if (!user) {
@@ -40,9 +104,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const { passwordHash, superKeyHash, ...result } = user;
-    const roles = result.roles.map(r => r.role.name);
-    return { ...result, roles };
+    return this.formatUserWithPermissions(user);
   }
 
   async login(user: any): Promise<AuthResponseDto> {
@@ -85,7 +147,15 @@ export class AuthService {
   async validateUserBySub(userId: string): Promise<any> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { roles: { include: { role: true } } },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: { permissions: true },
+            },
+          },
+        },
+      },
     });
     if (!user) {
       throw new UnauthorizedException('User not found');
@@ -93,9 +163,7 @@ export class AuthService {
     if (!user.isActive) {
       throw new UnauthorizedException('Usuario inactivo o deshabilitado');
     }
-    const { passwordHash, superKeyHash, ...result } = user;
-    const roles = result.roles.map(r => r.role.name);
-    return { ...result, roles };
+    return this.formatUserWithPermissions(user);
   }
 
   async getProfile(userId: string) {

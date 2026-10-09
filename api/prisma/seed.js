@@ -29,6 +29,112 @@ async function main() {
     });
   }
 
+  // Baseline Modules
+  const modulesList = [
+    'DASHBOARD',
+    'FAENAS',
+    'FLOTA',
+    'CERTIFICACIONES',
+    'MANTENIMIENTO',
+    'COMBUSTIBLE',
+    'BODEGA',
+    'COMPRAS',
+    'REPORTES',
+    'ADMINISTRACION',
+  ];
+
+  const getDefaultPerms = (roleName, mod) => {
+    if (roleName === 'ADMIN_SISTEMA' || roleName === 'SUPER_USUARIO') {
+      return { canRead: true, canWrite: true, canApprove: true, canAdmin: true };
+    }
+    if (roleName === 'GERENTE_OPERACIONES') {
+      if (mod === 'ADMINISTRACION') return { canRead: false, canWrite: false, canApprove: false, canAdmin: false };
+      return { canRead: true, canWrite: true, canApprove: true, canAdmin: false };
+    }
+    if (roleName === 'GERENTE_ADMIN_FINANZAS') {
+      if (['DASHBOARD', 'COMPRAS', 'REPORTES', 'BODEGA'].includes(mod)) {
+        return { canRead: true, canWrite: true, canApprove: true, canAdmin: false };
+      }
+      return { canRead: true, canWrite: false, canApprove: false, canAdmin: false };
+    }
+    if (roleName === 'JEFE_FAENA') {
+      if (['DASHBOARD', 'FAENAS', 'CERTIFICACIONES', 'MANTENIMIENTO', 'COMBUSTIBLE'].includes(mod)) {
+        return { canRead: true, canWrite: true, canApprove: true, canAdmin: false };
+      }
+      if (['BODEGA', 'COMPRAS'].includes(mod)) {
+        return { canRead: true, canWrite: true, canApprove: true, canAdmin: false };
+      }
+      if (mod === 'REPORTES' || mod === 'FLOTA') {
+        return { canRead: true, canWrite: false, canApprove: false, canAdmin: false };
+      }
+      return { canRead: false, canWrite: false, canApprove: false, canAdmin: false };
+    }
+    if (roleName === 'BODEGUERO') {
+      if (['DASHBOARD', 'BODEGA', 'COMBUSTIBLE'].includes(mod)) {
+        return { canRead: true, canWrite: true, canApprove: false, canAdmin: false };
+      }
+      if (mod === 'COMPRAS') {
+        return { canRead: true, canWrite: false, canApprove: false, canAdmin: false };
+      }
+      return { canRead: false, canWrite: false, canApprove: false, canAdmin: false };
+    }
+    if (roleName === 'SUPERVISOR_BODEGA') {
+      if (['DASHBOARD', 'BODEGA', 'COMBUSTIBLE'].includes(mod)) {
+        return { canRead: true, canWrite: true, canApprove: true, canAdmin: false };
+      }
+      if (mod === 'COMPRAS') {
+        return { canRead: true, canWrite: true, canApprove: false, canAdmin: false };
+      }
+      return { canRead: false, canWrite: false, canApprove: false, canAdmin: false };
+    }
+    if (roleName === 'COMPRADOR') {
+      if (mod === 'COMPRAS' || mod === 'DASHBOARD') {
+        return { canRead: true, canWrite: true, canApprove: false, canAdmin: false };
+      }
+      if (mod === 'BODEGA') {
+        return { canRead: true, canWrite: false, canApprove: false, canAdmin: false };
+      }
+      return { canRead: false, canWrite: false, canApprove: false, canAdmin: false };
+    }
+    if (roleName === 'CONTADOR') {
+      if (['DASHBOARD', 'REPORTES', 'COMPRAS', 'BODEGA'].includes(mod)) {
+        return { canRead: true, canWrite: false, canApprove: false, canAdmin: false };
+      }
+      return { canRead: false, canWrite: false, canApprove: false, canAdmin: false };
+    }
+    if (roleName === 'SOLICITANTE_TERRENO') {
+      if (mod === 'COMPRAS') {
+        return { canRead: true, canWrite: true, canApprove: false, canAdmin: false };
+      }
+      if (mod === 'BODEGA') {
+        return { canRead: true, canWrite: false, canApprove: false, canAdmin: false };
+      }
+      return { canRead: false, canWrite: false, canApprove: false, canAdmin: false };
+    }
+    return { canRead: false, canWrite: false, canApprove: false, canAdmin: false };
+  };
+
+  for (const r of rolesData) {
+    const roleRecord = roles[r.name];
+    for (const mod of modulesList) {
+      const perms = getDefaultPerms(r.name, mod);
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_module: {
+            roleId: roleRecord.id,
+            module: mod,
+          },
+        },
+        update: perms,
+        create: {
+          roleId: roleRecord.id,
+          module: mod,
+          ...perms,
+        },
+      });
+    }
+  }
+
   // 2. Users
   const adminPassword = await bcrypt.hash('admin123', 12);
   await prisma.user.upsert({

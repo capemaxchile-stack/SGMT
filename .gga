@@ -1,0 +1,7 @@
+# Gentleman Guardian Angel Configuration for SGMT
+PROVIDER="opencode"
+FILE_PATTERNS="*.ts,*.tsx,*.js,*.jsx"
+EXCLUDE_PATTERNS="*.test.*,*.spec.*,*.d.ts,dist/*,build/*,node_modules/*,.agents/*"
+RULES_FILE="AGENTS.md"
+STRICT_MODE="true"
+TIMEOUT="300"

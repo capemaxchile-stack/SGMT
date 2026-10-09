@@ -26,3 +26,4 @@ api/prisma/migrations/**/migration_lock.toml
 .agents/
 SGMT/
 *.tsbuildinfo
+.codegraph/

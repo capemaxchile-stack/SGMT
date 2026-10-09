@@ -36,7 +36,23 @@ model Role {
   maxApprovalAmount  Decimal?
   level              Int
   users              UserRole[]
-  // attributionRules Relation not specified in user prompt fully, left stubbed if needed
+  permissions        RolePermission[]
+}
+
+model RolePermission {
+  id         String   @id @default(uuid())
+  roleId     String
+  module     String
+  canRead    Boolean  @default(false)
+  canWrite   Boolean  @default(false)
+  canApprove Boolean  @default(false)
+  canAdmin   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, module])
+  @@index([roleId])
 }
 
 model UserRole {

@@ -12,6 +12,7 @@ interface AuthState {
   refreshAccessToken: () => Promise<void>;
   isAuthenticated: () => boolean;
   hasRole: (roleName: string) => boolean;
+  can: (module: string, action?: 'read' | 'write' | 'approve' | 'admin') => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -36,6 +37,28 @@ export const useAuthStore = create<AuthState>()(
       },
       isAuthenticated: () => !!get().accessToken,
       hasRole: (roleName) => get().user?.roles?.includes(roleName) ?? false,
+      can: (module, action = 'read') => {
+        const user = get().user;
+        if (!user) return false;
+        const roles = user.roles || [];
+        if (roles.includes('ADMIN_SISTEMA') || roles.includes('SUPER_USUARIO')) {
+          return true;
+        }
+        const perm = user.permissions?.[module];
+        if (!perm) return false;
+        switch (action) {
+          case 'read':
+            return perm.canRead;
+          case 'write':
+            return perm.canWrite;
+          case 'approve':
+            return perm.canApprove;
+          case 'admin':
+            return perm.canAdmin;
+          default:
+            return false;
+        }
+      },
     }),
     {
       name: 'auth-storage',

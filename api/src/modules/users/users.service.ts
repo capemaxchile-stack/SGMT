@@ -168,7 +168,115 @@ export class UsersService {
 
   async findRoles() {
     return this.prisma.role.findMany({
+      include: {
+        permissions: {
+          orderBy: { module: 'asc' },
+        },
+      },
       orderBy: { level: 'asc' },
+    });
+  }
+
+  async createRole(dto: {
+    name: string;
+    displayName: string;
+    level: number;
+    maxApprovalAmount?: number;
+  }) {
+    const normalizedName = dto.name.toUpperCase().trim().replace(/\s+/g, '_');
+    const existing = await this.prisma.role.findUnique({
+      where: { name: normalizedName },
+    });
+    if (existing) {
+      throw new ConflictException(`Ya existe un rol con el identificador ${normalizedName}`);
+    }
+
+    const modulesList = [
+      'DASHBOARD',
+      'FAENAS',
+      'FLOTA',
+      'CERTIFICACIONES',
+      'MANTENIMIENTO',
+      'COMBUSTIBLE',
+      'BODEGA',
+      'COMPRAS',
+      'REPORTES',
+      'ADMINISTRACION',
+    ];
+
+    return this.prisma.role.create({
+      data: {
+        name: normalizedName,
+        displayName: dto.displayName.trim(),
+        level: dto.level,
+        maxApprovalAmount: dto.maxApprovalAmount,
+        permissions: {
+          create: modulesList.map((mod) => ({
+            module: mod,
+            canRead: false,
+            canWrite: false,
+            canApprove: false,
+            canAdmin: false,
+          })),
+        },
+      },
+      include: {
+        permissions: {
+          orderBy: { module: 'asc' },
+        },
+      },
+    });
+  }
+
+  async updateRolePermissions(
+    roleId: string,
+    permissions: Array<{
+      module: string;
+      canRead: boolean;
+      canWrite: boolean;
+      canApprove: boolean;
+      canAdmin: boolean;
+    }>,
+  ) {
+    const role = await this.prisma.role.findUnique({ where: { id: roleId } });
+    if (!role) {
+      throw new NotFoundException(`Rol con ID ${roleId} no encontrado`);
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      for (const p of permissions) {
+        await tx.rolePermission.upsert({
+          where: {
+            roleId_module: {
+              roleId,
+              module: p.module,
+            },
+          },
+          update: {
+            canRead: p.canRead,
+            canWrite: p.canWrite,
+            canApprove: p.canApprove,
+            canAdmin: p.canAdmin,
+          },
+          create: {
+            roleId,
+            module: p.module,
+            canRead: p.canRead,
+            canWrite: p.canWrite,
+            canApprove: p.canApprove,
+            canAdmin: p.canAdmin,
+          },
+        });
+      }
+
+      return tx.role.findUnique({
+        where: { id: roleId },
+        include: {
+          permissions: {
+            orderBy: { module: 'asc' },
+          },
+        },
+      });
     });
   }
 }

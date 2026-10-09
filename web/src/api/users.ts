@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/axios';
-import { User, Role } from '../types/models';
+import { User, Role, RolePermission } from '../types/models';
 
 export interface CreateUserData {
   email: string;
@@ -78,6 +78,25 @@ export const usersApi = {
     const { data } = await api.patch('/auth/change-password', passwordData);
     return data;
   },
+  createRole: async (roleData: {
+    name: string;
+    displayName: string;
+    level: number;
+    maxApprovalAmount?: number;
+  }): Promise<Role> => {
+    const { data } = await api.post('/users/roles', roleData);
+    return data;
+  },
+  updateRolePermissions: async ({
+    roleId,
+    permissions,
+  }: {
+    roleId: string;
+    permissions: RolePermission[];
+  }): Promise<Role> => {
+    const { data } = await api.put(`/users/roles/${roleId}/permissions`, { permissions });
+    return data;
+  },
 };
 
 // React Query Hooks
@@ -99,6 +118,26 @@ export function useRoles() {
   return useQuery({
     queryKey: ['roles'],
     queryFn: usersApi.getRoles,
+  });
+}
+
+export function useCreateRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: usersApi.createRole,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+    },
+  });
+}
+
+export function useUpdateRolePermissions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: usersApi.updateRolePermissions,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+    },
   });
 }
 

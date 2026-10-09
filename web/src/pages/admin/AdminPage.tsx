@@ -19,8 +19,10 @@ import { PurchaseOrder } from '../../types/compras';
 import { User } from '../../types/models';
 import { exportToCSV } from '../../lib/export';
 import { NotificationChannelsTab } from './NotificationChannelsTab';
+import { RolePermissionsTab } from './RolePermissionsTab';
 import {
   Shield,
+  ShieldCheck,
   CheckCircle,
   XCircle,
   AlertCircle,
@@ -35,7 +37,7 @@ import {
 } from 'lucide-react';
 
 export function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'aprobaciones' | 'auditoria' | 'usuarios' | 'alertas'>('aprobaciones');
+  const [activeTab, setActiveTab] = useState<'aprobaciones' | 'usuarios' | 'perfiles' | 'auditoria' | 'alertas'>('aprobaciones');
   const toast = useToast();
 
   // Queries
@@ -542,6 +544,17 @@ export function AdminPage() {
             Gestión de Usuarios & Roles ({users?.length || 0})
           </button>
           <button
+            onClick={() => setActiveTab('perfiles')}
+            className={`whitespace-nowrap py-3.5 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-1.5 ${
+              activeTab === 'perfiles'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400 font-bold'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+          >
+            <ShieldCheck size={15} />
+            <span>Perfiles & Matriz de Accesos</span>
+          </button>
+          <button
             onClick={() => setActiveTab('auditoria')}
             className={`whitespace-nowrap py-3.5 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'auditoria'
@@ -583,6 +596,8 @@ export function AdminPage() {
           emptyMessage="No hay usuarios registrados"
         />
       )}
+
+      {activeTab === 'perfiles' && <RolePermissionsTab />}
 
       {activeTab === 'auditoria' && (
         <DataTable

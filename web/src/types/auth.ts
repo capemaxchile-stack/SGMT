@@ -1,8 +1,16 @@
+export interface ModulePermission {
+  canRead: boolean;
+  canWrite: boolean;
+  canApprove: boolean;
+  canAdmin: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
   name: string;
   roles: string[];
+  permissions?: Record<string, ModulePermission>;
 }
 
 export interface LoginRequest {

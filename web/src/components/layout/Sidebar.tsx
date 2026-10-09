@@ -17,6 +17,7 @@ import {
 import { cn } from '../../lib/utils';
 import { useEffect } from 'react';
 import { Logo } from '../ui/Logo';
+import { useAuthStore } from '../../stores/auth.store';
 
 interface SidebarProps {
   isMobileOpen?: boolean;
@@ -27,19 +28,26 @@ export const APP_VERSION = 'v1.6.0';
 export const BUILD_DATE = '2026.10.05';
 
 export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
+  const { can } = useAuthStore();
+
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: 'Faenas', path: '/faenas', icon: <Factory size={20} /> },
-    { name: 'Flota', path: '/flota', icon: <Truck size={20} /> },
-    { name: 'Certificaciones', path: '/certificaciones', icon: <FileBadge size={20} /> },
-    { name: 'Mantenimiento', path: '/mantenimiento', icon: <Wrench size={20} /> },
-    { name: 'Combustible', path: '/combustible', icon: <Fuel size={20} /> },
-    { name: 'Bodega', path: '/bodega', icon: <Box size={20} /> },
-    { name: 'Compras', path: '/compras', icon: <ShoppingCart size={20} /> },
-    { name: 'Reportes y Cierres', path: '/reportes', icon: <BarChart3 size={20} /> },
-    { name: 'Documentación', path: '/documentacion', icon: <BookOpen size={20} /> },
-    { name: 'Administración', path: '/admin', icon: <Settings size={20} /> },
+    { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} />, module: 'DASHBOARD' },
+    { name: 'Faenas', path: '/faenas', icon: <Factory size={20} />, module: 'FAENAS' },
+    { name: 'Flota', path: '/flota', icon: <Truck size={20} />, module: 'FLOTA' },
+    { name: 'Certificaciones', path: '/certificaciones', icon: <FileBadge size={20} />, module: 'CERTIFICACIONES' },
+    { name: 'Mantenimiento', path: '/mantenimiento', icon: <Wrench size={20} />, module: 'MANTENIMIENTO' },
+    { name: 'Combustible', path: '/combustible', icon: <Fuel size={20} />, module: 'COMBUSTIBLE' },
+    { name: 'Bodega', path: '/bodega', icon: <Box size={20} />, module: 'BODEGA' },
+    { name: 'Compras', path: '/compras', icon: <ShoppingCart size={20} />, module: 'COMPRAS' },
+    { name: 'Reportes y Cierres', path: '/reportes', icon: <BarChart3 size={20} />, module: 'REPORTES' },
+    { name: 'Documentación', path: '/documentacion', icon: <BookOpen size={20} />, module: 'PUBLIC' },
+    { name: 'Administración', path: '/admin', icon: <Settings size={20} />, module: 'ADMINISTRACION' },
   ];
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.module === 'PUBLIC') return true;
+    return can(item.module, 'read');
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -58,7 +66,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   const navContent = (
     <div className="flex flex-col h-full justify-between">
       <ul className="space-y-1 px-3">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <li key={item.path}>
             <NavLink
               to={item.path}
