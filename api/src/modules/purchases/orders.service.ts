@@ -4,7 +4,7 @@ import { NotificationChannelsService } from '../notifications/notification-chann
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { ReceiveOrderDto } from './dto/receive-order.dto';
-import { OrderStatus, AuthorizationAction, AuthorizationEntityType, MovementType, RequestStatus, Prisma } from '@prisma/client';
+import { OrderStatus, AuthorizationAction, AuthorizationEntityType, MovementType, RequestStatus, ReceptionDestination, QuotationStatus, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const VALID_ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -43,7 +43,15 @@ export class OrdersService {
         lines: {
           include: { item: true },
         },
-        purchaseRequest: true,
+        purchaseRequest: {
+          include: { faena: true, requester: { select: { id: true, name: true, email: true } } },
+        },
+        quotation: true,
+        targetAsset: { select: { id: true, internalNumber: true, type: true } },
+        workOrder: { select: { id: true, otNumber: true } },
+        warehouseMovements: {
+          select: { id: true, movementNumber: true, destination: true, type: true, createdAt: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -55,7 +63,22 @@ export class OrdersService {
       include: {
         supplier: true,
         lines: { include: { item: true } },
-        purchaseRequest: true,
+        purchaseRequest: {
+          include: { faena: true, requester: { select: { id: true, name: true, email: true } } },
+        },
+        quotation: {
+          include: { supplier: true, lines: { include: { item: true } } },
+        },
+        targetAsset: true,
+        workOrder: true,
+        warehouseMovements: {
+          include: {
+            warehouse: true,
+            targetWarehouse: true,
+            asset: true,
+            lines: { include: { item: true } },
+          },
+        },
       },
     });
 
@@ -90,10 +113,17 @@ export class OrdersService {
           throw new BadRequestException('Only APROBADA field requests can be converted to purchase order');
         }
 
-        // Mark as CONVERTIDA
         await tx.purchaseRequest.update({
           where: { id: req.id },
           data: { status: RequestStatus.CONVERTIDA },
+        });
+      }
+
+      // 1.1 If linked to quotation, mark quotation as SELECCIONADA
+      if (createOrderDto.quotationId) {
+        await tx.quotation.update({
+          where: { id: createOrderDto.quotationId },
+          data: { status: QuotationStatus.SELECCIONADA },
         });
       }
 
@@ -129,17 +159,21 @@ export class OrdersService {
       const orderNumber = `OC-${dateStr}-${seqStr}`;
 
       // 4. Create Order
-      const order = await tx.purchaseOrder.create({
+      return tx.purchaseOrder.create({
         data: {
           orderNumber,
           supplierId: createOrderDto.supplierId,
           purchaseRequestId: createOrderDto.purchaseRequestId,
+          quotationId: createOrderDto.quotationId,
+          receptionDestination: createOrderDto.receptionDestination || ReceptionDestination.BODEGA,
+          targetAssetId: createOrderDto.targetAssetId,
+          workOrderId: createOrderDto.workOrderId,
           deliveryTerms: createOrderDto.deliveryTerms,
           estimatedDeliveryDate: createOrderDto.estimatedDeliveryDate ? new Date(createOrderDto.estimatedDeliveryDate) : null,
           totalAmount,
           status: OrderStatus.PENDIENTE_APROBACION,
           lines: {
-            create: createOrderDto.lines.map(line => {
+            create: createOrderDto.lines.map((line) => {
               const qty = new Prisma.Decimal(line.quantity);
               const price = new Prisma.Decimal(line.unitPrice);
               return {
@@ -155,11 +189,9 @@ export class OrdersService {
           lines: true,
         },
       });
-
-      return order;
     });
 
-    // Realtime background alert dispatch to Telegram, Brevo, and Webhook
+    // Realtime background alert dispatch
     this.prisma.supplier
       .findUnique({ where: { id: order.supplierId } })
       .then((sup) => {
@@ -183,7 +215,6 @@ export class OrdersService {
         throw new NotFoundException(`Purchase order with id ${id} not found`);
       }
 
-      // Determine target status
       let newStatus: OrderStatus;
       if (updateDto.action === AuthorizationAction.APROBADA) {
         newStatus = OrderStatus.APROBADA;
@@ -197,7 +228,6 @@ export class OrdersService {
         throw new BadRequestException('Invalid transition: No action or status provided');
       }
 
-      // 1. Strict FSM validations
       if (
         order.status === OrderStatus.RECHAZADA ||
         order.status === OrderStatus.RECEPCION_TOTAL ||
@@ -211,7 +241,6 @@ export class OrdersService {
         throw new BadRequestException(`Cannot move Purchase Order from ${order.status} to ${newStatus}`);
       }
 
-      // 2. Validate Monetary Approval Limit for APROBADA
       if (newStatus === OrderStatus.APROBADA) {
         const user = await tx.user.findUnique({
           where: { id: userId },
@@ -247,7 +276,6 @@ export class OrdersService {
         }
       }
 
-      // 3. Validate superKey for APROBADA_EXCEPCION
       if (newStatus === OrderStatus.APROBADA_EXCEPCION) {
         if (!updateDto.superKey || !updateDto.superKey.trim()) {
           throw new UnauthorizedException('Invalid or missing superKey');
@@ -262,7 +290,6 @@ export class OrdersService {
         }
       }
 
-      // 4. Create Authorization Record
       const action = updateDto.action || (
         newStatus === OrderStatus.APROBADA
           ? AuthorizationAction.APROBADA
@@ -283,7 +310,6 @@ export class OrdersService {
         },
       });
 
-      // 5. Update Order Status
       return tx.purchaseOrder.update({
         where: { id },
         data: { status: newStatus },
@@ -293,7 +319,7 @@ export class OrdersService {
 
   async receiveOrder(id: string, receiveDto: ReceiveOrderDto, userId: string) {
     return this.prisma.$transaction(async (tx) => {
-      // 1. Lock the PurchaseOrder row to prevent concurrent duplicate receptions
+      // 1. Lock PurchaseOrder row
       const [orderRow] = await tx.$queryRaw<Array<{ id: string; status: OrderStatus }>>`
         SELECT id, status FROM "PurchaseOrder" WHERE id = ${id} FOR UPDATE
       `;
@@ -316,17 +342,19 @@ export class OrdersService {
         orderRow.status !== OrderStatus.EMITIDA &&
         orderRow.status !== OrderStatus.RECEPCION_PARCIAL
       ) {
-        throw new BadRequestException(`Cannot move Purchase Order from ${orderRow.status} to RECEPCION_TOTAL`);
+        throw new BadRequestException(`Cannot move Purchase Order from ${orderRow.status} to reception`);
       }
 
       const order = await tx.purchaseOrder.findUnique({
         where: { id },
-        include: { lines: true },
+        include: { lines: true, purchaseRequest: true },
       });
 
       if (!order) {
         throw new NotFoundException(`Purchase order with id ${id} not found`);
       }
+
+      const targetDestination = receiveDto.destination || order.receptionDestination || ReceptionDestination.BODEGA;
 
       // 2. Concurrency-safe folio generation for Movement
       const dateStr = new Date().toISOString().slice(0, 7).replace('-', '');
@@ -353,15 +381,115 @@ export class OrdersService {
       const seqStr = nextNum >= 10000 ? nextNum.toString() : nextNum.toString().padStart(4, '0');
       const movementNumber = `MOV-${dateStr}-${seqStr}`;
 
-      // 3. Create Movement (INGRESO)
+      // Resolve warehouse fallback if not supplied (for direct to asset or garita)
+      let resolvedWarehouseId = receiveDto.warehouseId;
+      if (!resolvedWarehouseId) {
+        const defaultWh = await tx.warehouse.findFirst({ where: { isActive: true } });
+        if (!defaultWh && targetDestination === ReceptionDestination.BODEGA) {
+          throw new BadRequestException('A valid warehouseId is required for warehouse bin reception');
+        }
+        resolvedWarehouseId = defaultWh?.id || '00000000-0000-0000-0000-000000000000';
+      }
+
+      // ==========================================
+      // Scenario A: Garita de Entrada (Transit checkpoint)
+      // ==========================================
+      if (targetDestination === ReceptionDestination.GARITA_TRANSITO) {
+        const gateTicket = receiveDto.gateTicketNumber || `GT-${dateStr}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+        const movement = await tx.warehouseMovement.create({
+          data: {
+            type: MovementType.INGRESO,
+            destination: ReceptionDestination.GARITA_TRANSITO,
+            movementNumber,
+            warehouseId: resolvedWarehouseId,
+            purchaseOrderId: order.id,
+            userId,
+            gateTicketNumber: gateTicket,
+            receivedAtGateAt: new Date(),
+            notes: receiveDto.notes || `Recepción en garita de faena (Ticket: ${gateTicket}) para OC ${order.orderNumber}. En tránsito a bodega.`,
+            lines: {
+              create: order.lines.map((line) => ({
+                itemId: line.itemId,
+                quantity: line.quantity,
+                unitCost: line.unitPrice,
+              })),
+            },
+          },
+          include: { lines: true },
+        });
+
+        await tx.purchaseOrder.update({
+          where: { id },
+          data: {
+            receptionDestination: ReceptionDestination.GARITA_TRANSITO,
+            gateTicketNumber: gateTicket,
+            gateEntryDate: new Date(),
+            status: OrderStatus.RECEPCION_PARCIAL,
+          },
+        });
+
+        return movement;
+      }
+
+      // ==========================================
+      // Scenario B: Entrega Directa a Activo / OT en Terreno
+      // ==========================================
+      if (targetDestination === ReceptionDestination.ACTIVO_DIRECTO) {
+        const targetAssetId = receiveDto.targetAssetId || order.targetAssetId;
+        if (!targetAssetId) {
+          throw new BadRequestException('Direct terrain reception requires targetAssetId for the designated machinery');
+        }
+
+        const workOrderId = receiveDto.workOrderId || order.workOrderId;
+
+        const movement = await tx.warehouseMovement.create({
+          data: {
+            type: MovementType.SALIDA,
+            destination: ReceptionDestination.ACTIVO_DIRECTO,
+            movementNumber,
+            warehouseId: resolvedWarehouseId,
+            assetId: targetAssetId,
+            workOrderId: workOrderId || undefined,
+            purchaseOrderId: order.id,
+            userId,
+            notes: receiveDto.notes || `Entrega directa a maquinaria/activo ${targetAssetId} en terreno para OC ${order.orderNumber}`,
+            lines: {
+              create: order.lines.map((line) => ({
+                itemId: line.itemId,
+                quantity: line.quantity,
+                unitCost: line.unitPrice,
+              })),
+            },
+          },
+          include: { lines: true },
+        });
+
+        await tx.purchaseOrder.update({
+          where: { id },
+          data: {
+            receptionDestination: ReceptionDestination.ACTIVO_DIRECTO,
+            targetAssetId,
+            workOrderId: workOrderId || undefined,
+            status: OrderStatus.RECEPCION_TOTAL,
+          },
+        });
+
+        return movement;
+      }
+
+      // ==========================================
+      // Scenario C: Ingreso Estándar a Bodega Central o Faena
+      // ==========================================
       const movement = await tx.warehouseMovement.create({
         data: {
           type: MovementType.INGRESO,
+          destination: ReceptionDestination.BODEGA,
           movementNumber,
-          warehouseId: receiveDto.warehouseId,
+          warehouseId: resolvedWarehouseId,
           purchaseOrderId: order.id,
           userId,
-          notes: receiveDto.notes || `Recepción automática de OC ${order.orderNumber}`,
+          notes: receiveDto.notes || `Recepción en bodega de OC ${order.orderNumber}`,
           lines: {
             create: order.lines.map((line) => ({
               itemId: line.itemId,
@@ -373,9 +501,8 @@ export class OrdersService {
         include: { lines: true },
       });
 
-      // 4. Update Stock with Row-Level Lock & Decimal Precision
+      // Update Stock with Row-Level Lock & Weighted Average Cost
       for (const line of movement.lines) {
-        // Lock stock row with SELECT ... FOR UPDATE
         const rows = await tx.$queryRaw<Array<{ id: string; quantity: Prisma.Decimal; averageCost: Prisma.Decimal }>>`
           SELECT id, quantity, "averageCost"
           FROM "Stock"
@@ -437,13 +564,207 @@ export class OrdersService {
         });
       }
 
-      // 5. Update Order Status to terminal RECEPCION_TOTAL
       await tx.purchaseOrder.update({
         where: { id },
-        data: { status: OrderStatus.RECEPCION_TOTAL },
+        data: {
+          receptionDestination: ReceptionDestination.BODEGA,
+          status: OrderStatus.RECEPCION_TOTAL,
+        },
       });
 
       return movement;
+    });
+  }
+
+  async getTimeline(orderId: string) {
+    const order = await this.findOne(orderId);
+
+    // Retrieve authorizations for this PO
+    const authorizations = await this.prisma.authorization.findMany({
+      where: {
+        entityType: AuthorizationEntityType.PURCHASE_ORDER,
+        entityId: orderId,
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const events: Array<{
+      step: number;
+      phase: string;
+      title: string;
+      description: string;
+      timestamp: Date;
+      status: 'COMPLETED' | 'IN_PROGRESS' | 'PENDING' | 'REJECTED';
+      badge?: string;
+      meta?: Record<string, any>;
+    }> = [];
+
+    // 1. Solicitud de Pedido (if linked)
+    if (order.purchaseRequest) {
+      events.push({
+        step: 1,
+        phase: 'SOLICITUD',
+        title: `Solicitud de Pedido ${order.purchaseRequest.requestNumber}`,
+        description: `Creada por ${order.purchaseRequest.requester?.name || 'Usuario'} en faena ${order.purchaseRequest.faena?.name || 'Faena'}. Justificación: "${order.purchaseRequest.justification}"`,
+        timestamp: order.purchaseRequest.createdAt,
+        status: 'COMPLETED',
+        badge: order.purchaseRequest.status,
+      });
+    }
+
+    // 2. Cotización (if linked)
+    if (order.quotation) {
+      events.push({
+        step: 2,
+        phase: 'COTIZACIONES',
+        title: `Cotización ${order.quotation.quotationNumber}`,
+        description: `Cotizado por proveedor ${order.quotation.supplier.businessName}. Monto total: $${Number(order.quotation.totalAmount).toLocaleString('es-CL')}`,
+        timestamp: order.quotation.createdAt,
+        status: 'COMPLETED',
+        badge: order.quotation.status,
+      });
+    }
+
+    // 3. Emisión de Orden de Compra
+    events.push({
+      step: 3,
+      phase: 'ORDEN_COMPRA',
+      title: `Orden de Compra ${order.orderNumber} creada`,
+      description: `Monto total: $${Number(order.totalAmount).toLocaleString('es-CL')} CLP con proveedor ${order.supplier.businessName}. Términos: ${order.deliveryTerms || 'N/A'}`,
+      timestamp: order.createdAt,
+      status: 'COMPLETED',
+      badge: order.status,
+    });
+
+    // 4. Aprobación y Autorizaciones
+    if (authorizations.length > 0) {
+      for (const auth of authorizations) {
+        events.push({
+          step: 4,
+          phase: 'AUTORIZACION',
+          title: `Autorización Nivel ${auth.level} (${auth.action})`,
+          description: `Evaluada por ${auth.user.name}. ${auth.comments ? 'Comentarios: "' + auth.comments + '".' : ''} ${auth.exceptionReason ? 'Razón de excepción: "' + auth.exceptionReason + '".' : ''}`,
+          timestamp: auth.createdAt,
+          status: auth.action === AuthorizationAction.RECHAZADA ? 'REJECTED' : 'COMPLETED',
+          badge: auth.action,
+        });
+      }
+    } else {
+      events.push({
+        step: 4,
+        phase: 'AUTORIZACION',
+        title: 'Revisión y Aprobación Gerencial',
+        description: order.status === OrderStatus.PENDIENTE_APROBACION ? 'Pendiente de autorización según umbrales de monto' : 'Aprobada sin registro previo',
+        timestamp: order.updatedAt,
+        status: order.status === OrderStatus.PENDIENTE_APROBACION ? 'IN_PROGRESS' : 'COMPLETED',
+      });
+    }
+
+    // 5. Recepción en Garita de Faena
+    if (order.gateTicketNumber || order.warehouseMovements.some((m) => m.destination === ReceptionDestination.GARITA_TRANSITO)) {
+      events.push({
+        step: 5,
+        phase: 'GARITA_TRANSITO',
+        title: `Control de Acceso en Garita (Ticket: ${order.gateTicketNumber || 'S/N'})`,
+        description: `Carga ingresó a la faena por garita. Fecha de control: ${order.gateEntryDate ? order.gateEntryDate.toLocaleDateString('es-CL') : 'Registrada'}`,
+        timestamp: order.gateEntryDate || order.updatedAt,
+        status: 'COMPLETED',
+        badge: 'GARITA_REGISTRADA',
+      });
+    }
+
+    // 6. Ingreso a Bodega o Despacho a Activo
+    const completedMovements = order.warehouseMovements.filter(
+      (m) => m.destination === ReceptionDestination.BODEGA || m.destination === ReceptionDestination.ACTIVO_DIRECTO,
+    );
+
+    if (completedMovements.length > 0) {
+      for (const m of completedMovements) {
+        const isDirect = m.destination === ReceptionDestination.ACTIVO_DIRECTO;
+        events.push({
+          step: 6,
+          phase: isDirect ? 'ENTREGA_TERRENO' : 'INGRESO_BODEGA',
+          title: isDirect ? `Entrega Directa a Terreno (${m.movementNumber})` : `Ingreso a Bodega Central/Faena (${m.movementNumber})`,
+          description: isDirect
+            ? `Repuestos entregados directamente a la máquina ${m.asset?.internalNumber || 'Asignada'} en faena sin almacenaje intermedio.`
+            : `Mercadería recepcionada en ${m.warehouse.name}. Kardex y costo promedio ponderado actualizados.`,
+          timestamp: m.createdAt,
+          status: 'COMPLETED',
+          badge: m.destination,
+        });
+      }
+    } else {
+      events.push({
+        step: 6,
+        phase: 'INGRESO_BODEGA',
+        title: 'Recepción y Entrada a Bodega / Activo',
+        description: order.status === OrderStatus.EMITIDA || order.status === OrderStatus.RECEPCION_PARCIAL
+          ? 'Mercadería en camino o en garita de control pendiente de ingreso físico'
+          : 'A la espera de emisión y despacho del proveedor',
+        timestamp: order.updatedAt,
+        status: order.status === OrderStatus.EMITIDA || order.status === OrderStatus.RECEPCION_PARCIAL ? 'IN_PROGRESS' : 'PENDING',
+      });
+    }
+
+    return {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      supplier: order.supplier.businessName,
+      status: order.status,
+      totalAmount: Number(order.totalAmount),
+      estimatedDeliveryDate: order.estimatedDeliveryDate,
+      destination: order.receptionDestination,
+      timeline: events,
+    };
+  }
+
+  async getPendingWarehouseReception() {
+    const orders = await this.prisma.purchaseOrder.findMany({
+      where: {
+        OR: [
+          { status: OrderStatus.EMITIDA },
+          { status: OrderStatus.RECEPCION_PARCIAL },
+          { receptionDestination: ReceptionDestination.GARITA_TRANSITO },
+        ],
+      },
+      include: {
+        supplier: true,
+        lines: { include: { item: true } },
+        purchaseRequest: { include: { faena: true } },
+        warehouseMovements: { select: { movementNumber: true, destination: true, createdAt: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const now = new Date();
+    return orders.map((o) => {
+      const isOverdue = o.estimatedDeliveryDate ? new Date(o.estimatedDeliveryDate) < now : false;
+      const daysSinceCreation = Math.floor((now.getTime() - new Date(o.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+      return {
+        id: o.id,
+        orderNumber: o.orderNumber,
+        supplierName: o.supplier.businessName,
+        supplierRut: o.supplier.rut,
+        status: o.status,
+        receptionDestination: o.receptionDestination,
+        gateTicketNumber: o.gateTicketNumber,
+        gateEntryDate: o.gateEntryDate,
+        totalAmount: Number(o.totalAmount),
+        estimatedDeliveryDate: o.estimatedDeliveryDate,
+        isOverdue,
+        daysSinceCreation,
+        faenaName: o.purchaseRequest?.faena?.name || 'Faena Central',
+        itemCount: o.lines.length,
+        lines: o.lines.map((l) => ({
+          itemCode: l.item.code,
+          itemDescription: l.item.description,
+          quantity: Number(l.quantity),
+          unitPrice: Number(l.unitPrice),
+        })),
+      };
     });
   }
 }

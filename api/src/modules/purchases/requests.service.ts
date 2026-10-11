@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestStatusDto } from './dto/update-request-status.dto';
-import { RequestStatus } from '@prisma/client';
+import { RequestStatus, RequestUrgency, Prisma } from '@prisma/client';
 
 const ALLOWED_REQUEST_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   [RequestStatus.BORRADOR]: [RequestStatus.PENDIENTE, RequestStatus.RECHAZADA],
@@ -21,6 +21,18 @@ export class RequestsService {
       include: {
         faena: true,
         requester: { select: { id: true, name: true, email: true } },
+        lines: {
+          include: {
+            item: true,
+            targetAsset: { select: { id: true, internalNumber: true, type: true } },
+          },
+        },
+        quotations: {
+          select: { id: true, quotationNumber: true, status: true, totalAmount: true },
+        },
+        purchaseOrder: {
+          select: { id: true, orderNumber: true, status: true, totalAmount: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -32,7 +44,24 @@ export class RequestsService {
       include: {
         faena: true,
         requester: { select: { id: true, name: true, email: true } },
-        purchaseOrder: true,
+        lines: {
+          include: {
+            item: true,
+            targetAsset: { select: { id: true, internalNumber: true, type: true } },
+          },
+        },
+        quotations: {
+          include: {
+            supplier: true,
+            lines: { include: { item: true } },
+          },
+        },
+        purchaseOrder: {
+          include: {
+            supplier: true,
+            lines: { include: { item: true } },
+          },
+        },
       },
     });
     if (!request) {
@@ -77,6 +106,14 @@ export class RequestsService {
         requestNumber = `ST-${dateStr}-${seqStr}`;
       }
 
+      const linesCreate = (createRequestDto.lines || []).map((line) => ({
+        itemId: line.itemId,
+        quantity: new Prisma.Decimal(line.quantity),
+        targetAssetId: line.targetAssetId || null,
+        urgency: line.urgency || RequestUrgency.NORMAL,
+        notes: line.notes || null,
+      }));
+
       return tx.purchaseRequest.create({
         data: {
           requestNumber,
@@ -84,6 +121,17 @@ export class RequestsService {
           justification: createRequestDto.justification.trim(),
           requesterId,
           status: createRequestDto.status || RequestStatus.BORRADOR,
+          lines: linesCreate.length > 0 ? { create: linesCreate } : undefined,
+        },
+        include: {
+          faena: true,
+          requester: { select: { id: true, name: true, email: true } },
+          lines: {
+            include: {
+              item: true,
+              targetAsset: true,
+            },
+          },
         },
       });
     });
@@ -113,6 +161,113 @@ export class RequestsService {
       data: {
         status: updateDto.status,
       },
+      include: {
+        faena: true,
+        requester: { select: { id: true, name: true, email: true } },
+        lines: { include: { item: true } },
+      },
     });
+  }
+
+  async getTimeline(id: string) {
+    const req = await this.findOne(id);
+
+    const timelineEvents: Array<{
+      step: number;
+      phase: string;
+      title: string;
+      description: string;
+      timestamp: Date;
+      status: 'COMPLETED' | 'IN_PROGRESS' | 'PENDING' | 'REJECTED';
+      badge?: string;
+      meta?: Record<string, any>;
+    }> = [];
+
+    // Phase 1: Solicitud de Terreno
+    timelineEvents.push({
+      step: 1,
+      phase: 'SOLICITUD',
+      title: `Solicitud de Pedido ${req.requestNumber}`,
+      description: `Generada por ${req.requester.name} en faena ${req.faena.name}. Justificación: "${req.justification}"`,
+      timestamp: req.createdAt,
+      status: req.status === RequestStatus.RECHAZADA ? 'REJECTED' : 'COMPLETED',
+      badge: req.status,
+      meta: {
+        totalLines: req.lines.length,
+        items: req.lines.map((l) => ({
+          code: l.item.code,
+          name: l.item.description,
+          qty: Number(l.quantity),
+          unit: l.item.unitOfMeasure,
+          urgency: l.urgency,
+        })),
+      },
+    });
+
+    // Phase 2: Cotizaciones
+    if (req.quotations && req.quotations.length > 0) {
+      const selected = req.quotations.find((q) => q.status === 'SELECCIONADA');
+      timelineEvents.push({
+        step: 2,
+        phase: 'COTIZACIONES',
+        title: `Proceso de Cotizaciones (${req.quotations.length} proveedores consultados)`,
+        description: selected
+          ? `Cotización ${selected.quotationNumber} seleccionada con proveedor ${selected.supplier.businessName} por $${Number(selected.totalAmount).toLocaleString('es-CL')}`
+          : `${req.quotations.length} cotización(es) en evaluación o trámite.`,
+        timestamp: selected ? selected.updatedAt : req.quotations[0].createdAt,
+        status: selected ? 'COMPLETED' : 'IN_PROGRESS',
+        badge: selected ? 'SELECCIONADA' : 'EN_EVALUACION',
+        meta: {
+          quotes: req.quotations.map((q) => ({
+            number: q.quotationNumber,
+            supplier: q.supplier.businessName,
+            status: q.status,
+            amount: Number(q.totalAmount),
+          })),
+        },
+      });
+    } else {
+      timelineEvents.push({
+        step: 2,
+        phase: 'COTIZACIONES',
+        title: 'Cotizaciones de Proveedores',
+        description: req.status === RequestStatus.APROBADA ? 'Pendiente de solicitar cotizaciones' : 'A la espera de aprobación de solicitud',
+        timestamp: req.updatedAt,
+        status: req.status === RequestStatus.APROBADA ? 'IN_PROGRESS' : 'PENDING',
+      });
+    }
+
+    // Phase 3: Orden de Compra
+    if (req.purchaseOrder && req.purchaseOrder.length > 0) {
+      for (const po of req.purchaseOrder) {
+        timelineEvents.push({
+          step: 3,
+          phase: 'ORDEN_COMPRA',
+          title: `Orden de Compra ${po.orderNumber}`,
+          description: `Emitida a ${po.supplier.businessName} por $${Number(po.totalAmount).toLocaleString('es-CL')}. Estado: ${po.status}`,
+          timestamp: po.createdAt,
+          status: po.status === 'CANCELADA' || po.status === 'RECHAZADA' ? 'REJECTED' : po.status === 'RECEPCION_TOTAL' ? 'COMPLETED' : 'IN_PROGRESS',
+          badge: po.status,
+        });
+      }
+    } else {
+      timelineEvents.push({
+        step: 3,
+        phase: 'ORDEN_COMPRA',
+        title: 'Emisión de Orden de Compra',
+        description: 'Pendiente de emisión de OC',
+        timestamp: req.updatedAt,
+        status: 'PENDING',
+      });
+    }
+
+    return {
+      requestId: req.id,
+      requestNumber: req.requestNumber,
+      status: req.status,
+      faena: req.faena.name,
+      requester: req.requester.name,
+      timeline: timelineEvents,
+    };
   }
 }

@@ -153,6 +153,8 @@ model Asset {
   workOrders         WorkOrder[]
   fuelLogs           FuelLog[]
   documents          AssetDocument[]
+  purchaseRequestLines PurchaseRequestLine[]
+  directPurchaseOrders PurchaseOrder[]        @relation("DirectAssetOrders")
 }
 
 model AssetAssignment {
@@ -201,6 +203,9 @@ model Item {
   movementLines      WarehouseMovementLine[]
   purchaseOrderLines PurchaseOrderLine[]
   workOrderItems     WorkOrderItem[]
+  supplierCatalogs   SupplierCatalog[]
+  requestLines       PurchaseRequestLine[]
+  quotationLines     QuotationLine[]
 }
 
 model Stock {
@@ -241,6 +246,11 @@ model WarehouseMovement {
   asset             Asset?                  @relation(fields: [assetId], references: [id])
   purchaseOrder     PurchaseOrder?          @relation(fields: [purchaseOrderId], references: [id])
   user              User                    @relation(fields: [userId], references: [id])
+  destination       ReceptionDestination   @default(BODEGA)
+  gateTicketNumber  String?
+  receivedAtGateAt  DateTime?
+  workOrderId       String?
+  workOrder         WorkOrder?             @relation("DirectWorkOrderMovements", fields: [workOrderId], references: [id])
   lines             WarehouseMovementLine[]
   workOrderItems    WorkOrderItem[]
   fuelLogs          FuelLog[]
@@ -257,18 +267,27 @@ model WarehouseMovementLine {
 }
 
 model Supplier {
-  id             String          @id @default(uuid())
+  id             String            @id @default(uuid())
   businessName   String
-  rut            String          @unique
+  rut            String            @unique
   contactName    String?
   contactEmail   String?
   contactPhone   String?
   address        String?
-  isActive       Boolean         @default(true)
+  isActive       Boolean           @default(true)
   deletedAt      DateTime?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
   purchaseOrders PurchaseOrder[]
+  catalogEntries SupplierCatalog[]
+  quotations     Quotation[]
+}
+
+enum RequestUrgency {
+  BAJA
+  NORMAL
+  ALTA
+  DETIENE_EQUIPO
 }
 
 enum RequestStatus {
@@ -280,17 +299,112 @@ enum RequestStatus {
 }
 
 model PurchaseRequest {
-  id            String          @id @default(uuid())
-  requestNumber String          @unique
+  id            String                @id @default(uuid())
+  requestNumber String                @unique
   faenaId       String
   requesterId   String
   status        RequestStatus
   justification String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  faena         Faena           @relation(fields: [faenaId], references: [id])
-  requester     User            @relation(fields: [requesterId], references: [id])
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  faena         Faena                 @relation(fields: [faenaId], references: [id])
+  requester     User                  @relation(fields: [requesterId], references: [id])
+  lines         PurchaseRequestLine[]
+  quotations    Quotation[]
   purchaseOrder PurchaseOrder[]
+}
+
+model PurchaseRequestLine {
+  id                String         @id @default(uuid())
+  purchaseRequestId String
+  itemId            String
+  quantity          Decimal
+  targetAssetId     String?
+  urgency           RequestUrgency @default(NORMAL)
+  notes             String?
+  createdAt         DateTime       @default(now())
+
+  purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id], onDelete: Cascade)
+  item              Item            @relation(fields: [itemId], references: [id])
+  targetAsset       Asset?          @relation(fields: [targetAssetId], references: [id])
+
+  @@index([purchaseRequestId])
+  @@index([itemId])
+  @@index([targetAssetId])
+}
+
+model SupplierCatalog {
+  id                 String   @id @default(uuid())
+  supplierId         String
+  itemId             String
+  isExclusive        Boolean  @default(false)
+  supplierPartNumber String?
+  lastPrice          Decimal  @default(0)
+  leadTimeDays       Int      @default(1)
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  supplier           Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  item               Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([supplierId, itemId])
+  @@index([itemId])
+  @@index([supplierId])
+}
+
+enum QuotationStatus {
+  SOLICITADA
+  RECIBIDA
+  SELECCIONADA
+  DESCARTADA
+  VENCIDA
+}
+
+model Quotation {
+  id                String          @id @default(uuid())
+  quotationNumber   String          @unique
+  purchaseRequestId String?
+  supplierId        String
+  status            QuotationStatus @default(SOLICITADA)
+  requestedDate     DateTime        @default(now())
+  validUntil        DateTime?
+  totalAmount       Decimal         @default(0)
+  notes             String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  purchaseRequest   PurchaseRequest? @relation(fields: [purchaseRequestId], references: [id])
+  supplier          Supplier         @relation(fields: [supplierId], references: [id])
+  lines             QuotationLine[]
+  purchaseOrders    PurchaseOrder[]
+
+  @@index([purchaseRequestId])
+  @@index([supplierId])
+  @@index([status])
+}
+
+model QuotationLine {
+  id               String    @id @default(uuid())
+  quotationId      String
+  itemId           String
+  quantity         Decimal
+  unitPrice        Decimal   @default(0)
+  totalPrice       Decimal   @default(0)
+  availabilityDays Int?
+  comments         String?
+
+  quotation        Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  item             Item      @relation(fields: [itemId], references: [id])
+
+  @@index([quotationId])
+  @@index([itemId])
+}
+
+enum ReceptionDestination {
+  BODEGA
+  GARITA_TRANSITO
+  ACTIVO_DIRECTO
 }
 
 enum OrderStatus {
@@ -306,18 +420,27 @@ enum OrderStatus {
 }
 
 model PurchaseOrder {
-  id                    String              @id @default(uuid())
-  orderNumber           String              @unique
+  id                    String                @id @default(uuid())
+  orderNumber           String                @unique
   purchaseRequestId     String?
   supplierId            String
+  quotationId           String?
   totalAmount           Decimal
   status                OrderStatus
+  receptionDestination  ReceptionDestination  @default(BODEGA)
+  targetAssetId         String?
+  workOrderId           String?
+  gateTicketNumber      String?
+  gateEntryDate         DateTime?
   deliveryTerms         String?
   estimatedDeliveryDate DateTime?
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  purchaseRequest       PurchaseRequest?    @relation(fields: [purchaseRequestId], references: [id])
-  supplier              Supplier            @relation(fields: [supplierId], references: [id])
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  purchaseRequest       PurchaseRequest?      @relation(fields: [purchaseRequestId], references: [id])
+  supplier              Supplier              @relation(fields: [supplierId], references: [id])
+  quotation             Quotation?            @relation(fields: [quotationId], references: [id])
+  targetAsset           Asset?                @relation("DirectAssetOrders", fields: [targetAssetId], references: [id])
+  workOrder             WorkOrder?            @relation("DirectWorkOrderOrders", fields: [workOrderId], references: [id])
   lines                 PurchaseOrderLine[]
   warehouseMovements    WarehouseMovement[]
 }
@@ -436,6 +559,8 @@ model WorkOrder {
   maintenancePlan    MaintenancePlan?  @relation(fields: [maintenancePlanId], references: [id])
   createdBy          User              @relation(fields: [createdById], references: [id])
   items              WorkOrderItem[]
+  directMovements      WarehouseMovement[] @relation("DirectWorkOrderMovements")
+  directPurchaseOrders PurchaseOrder[]     @relation("DirectWorkOrderOrders")
 
   @@index([assetId, status])
   @@index([faenaId])

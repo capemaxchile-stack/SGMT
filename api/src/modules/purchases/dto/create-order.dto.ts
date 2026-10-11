@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsDateString, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested } from 'class-validator';
+import { ReceptionDestination } from '@prisma/client';
 
 export class OrderLineDto {
   @IsUUID()
@@ -21,6 +22,22 @@ export class CreateOrderDto {
   @IsOptional()
   @IsUUID()
   purchaseRequestId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  quotationId?: string;
+
+  @IsOptional()
+  @IsEnum(ReceptionDestination)
+  receptionDestination?: ReceptionDestination;
+
+  @IsOptional()
+  @IsUUID()
+  targetAssetId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  workOrderId?: string;
 
   @IsOptional()
   @IsString()

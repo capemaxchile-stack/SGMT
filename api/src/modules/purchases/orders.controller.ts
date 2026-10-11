@@ -17,7 +17,7 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
-  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'COMPRADOR', 'BODEGUERO')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'COMPRADOR', 'BODEGUERO', 'JEFE_FAENA')
   findAll(
     @Query('status') status?: OrderStatus,
     @Query('supplierId') supplierId?: string,
@@ -25,8 +25,20 @@ export class OrdersController {
     return this.ordersService.findAll(status, supplierId);
   }
 
+  @Get('pending-reception')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'COMPRADOR', 'BODEGUERO', 'JEFE_FAENA')
+  getPendingReception() {
+    return this.ordersService.getPendingWarehouseReception();
+  }
+
+  @Get(':id/timeline')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'COMPRADOR', 'BODEGUERO', 'JEFE_FAENA', 'SOLICITANTE_TERRENO')
+  getTimeline(@Param('id') id: string) {
+    return this.ordersService.getTimeline(id);
+  }
+
   @Get(':id')
-  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'COMPRADOR', 'BODEGUERO')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'COMPRADOR', 'BODEGUERO', 'JEFE_FAENA')
   findOne(@Param('id') id: string) {
     return this.ordersService.findOne(id);
   }
@@ -48,7 +60,7 @@ export class OrdersController {
   }
 
   @Post(':id/receive')
-  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'BODEGUERO')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'BODEGUERO', 'JEFE_FAENA')
   receiveOrder(
     @Param('id') id: string,
     @Body() receiveDto: ReceiveOrderDto,

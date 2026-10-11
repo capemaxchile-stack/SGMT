@@ -262,8 +262,8 @@ async function main() {
     }
   }
 
-  // 5. Supplier
-  await prisma.supplier.upsert({
+  // 5. Suppliers & Catalog
+  const sup1 = await prisma.supplier.upsert({
     where: { rut: '76.543.210-K' },
     update: {},
     create: {
@@ -273,6 +273,72 @@ async function main() {
       contactEmail: 'ventas@maquinarias.cl'
     }
   });
+
+  const sup2 = await prisma.supplier.upsert({
+    where: { rut: '77.123.456-7' },
+    update: {},
+    create: {
+      businessName: 'Filtros & Repuestos Mineros Ltda.',
+      rut: '77.123.456-7',
+      contactName: 'Claudio Repuestos',
+      contactEmail: 'ventas@filtrosmineros.cl'
+    }
+  });
+
+  const itemFiltro = await prisma.item.findUnique({ where: { code: 'ITM-003' } });
+  const itemAceite = await prisma.item.findUnique({ where: { code: 'ITM-002' } });
+
+  if (itemFiltro && sup1 && sup2) {
+    await prisma.supplierCatalog.upsert({
+      where: {
+        supplierId_itemId: { supplierId: sup1.id, itemId: itemFiltro.id },
+      },
+      update: {},
+      create: {
+        supplierId: sup1.id,
+        itemId: itemFiltro.id,
+        isExclusive: false,
+        supplierPartNumber: 'FILT-MAQ-250',
+        lastPrice: 19500,
+        leadTimeDays: 3,
+        notes: 'Distribuidor estándar de filtros pesados',
+      },
+    });
+
+    await prisma.supplierCatalog.upsert({
+      where: {
+        supplierId_itemId: { supplierId: sup2.id, itemId: itemFiltro.id },
+      },
+      update: {},
+      create: {
+        supplierId: sup2.id,
+        itemId: itemFiltro.id,
+        isExclusive: false,
+        supplierPartNumber: 'FM-OF-33',
+        lastPrice: 18200,
+        leadTimeDays: 2,
+        notes: 'Proveedor especializado con stock local',
+      },
+    });
+  }
+
+  if (itemAceite && sup1) {
+    await prisma.supplierCatalog.upsert({
+      where: {
+        supplierId_itemId: { supplierId: sup1.id, itemId: itemAceite.id },
+      },
+      update: {},
+      create: {
+        supplierId: sup1.id,
+        itemId: itemAceite.id,
+        isExclusive: true, // Exclusive supplier
+        supplierPartNumber: 'OIL-HIDRO-ISO68',
+        lastPrice: 4800,
+        leadTimeDays: 5,
+        notes: 'Proveedor exclusivo autorizado por fabricante de maquinaria',
+      },
+    });
+  }
 
   // 6. Maintenance Plans
   const plansData = [

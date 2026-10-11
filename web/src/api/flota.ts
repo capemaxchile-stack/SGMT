@@ -81,6 +81,8 @@ export const useFlota = (params?: { type?: string; operationalStatus?: string; s
   });
 };
 
+export const useAssets = useFlota;
+
 export const useAsset = (id: string) => {
   return useQuery({
     queryKey: flotaKeys.detail(id),

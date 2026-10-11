@@ -11,6 +11,7 @@ const FaenasPage = lazy(() => import('./pages/faenas/FaenasPage').then(m => ({ d
 const FlotaPage = lazy(() => import('./pages/flota/FlotaPage').then(m => ({ default: m.FlotaPage })));
 const BodegaPage = lazy(() => import('./pages/bodega/BodegaPage').then(m => ({ default: m.BodegaPage })));
 const ComprasPage = lazy(() => import('./pages/compras/ComprasPage').then(m => ({ default: m.ComprasPage })));
+const TerrainRequestMobileView = lazy(() => import('./pages/compras/TerrainRequestMobileView').then(m => ({ default: m.TerrainRequestMobileView })));
 const MantenimientoPage = lazy(() => import('./pages/mantenimiento/MantenimientoPage').then(m => ({ default: m.MantenimientoPage })));
 const CombustiblePage = lazy(() => import('./pages/combustible/CombustiblePage').then(m => ({ default: m.CombustiblePage })));
 const ReportesPage = lazy(() => import('./pages/reportes/ReportesPage').then(m => ({ default: m.ReportesPage })));
@@ -77,6 +78,10 @@ export const router = createBrowserRouter([
       {
         path: 'compras',
         element: withSuspense(ComprasPage),
+      },
+      {
+        path: 'compras/terreno',
+        element: withSuspense(TerrainRequestMobileView),
       },
       {
         path: 'reportes',

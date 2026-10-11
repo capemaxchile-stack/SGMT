@@ -4,16 +4,19 @@ import {
   useCreatePurchaseOrder,
   useUpdateOrderStatus,
   useReceivePurchaseOrder,
+  useOrderTimeline,
 } from '../../../api/compras';
 import { useSuppliers, useItems, useWarehouses } from '../../../api/bodega';
+import { useAssets } from '../../../api/flota';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/DataTable';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { Modal } from '../../../components/ui/Modal';
 import { useToast } from '../../../components/ui/Toast';
-import { PurchaseOrder } from '../../../types/compras';
-import { Plus, Search, CheckCircle, XCircle, PackageCheck, AlertCircle, Trash2 } from 'lucide-react';
+import { ProcurementTimelineModal } from '../../../components/procurement/ProcurementTimelineModal';
+import { PurchaseOrder, ReceptionDestination } from '../../../types/compras';
+import { Plus, Search, CheckCircle, XCircle, PackageCheck, AlertCircle, Trash2, History } from 'lucide-react';
 
 interface OrderLineForm {
   itemId: string;
@@ -36,7 +39,15 @@ export function PurchaseOrdersTab() {
   const [superKey, setSuperKey] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
   const [receiveWarehouseId, setReceiveWarehouseId] = useState('');
+  const [receptionDestination, setReceptionDestination] = useState<ReceptionDestination>('BODEGA');
+  const [receiveTargetAssetId, setReceiveTargetAssetId] = useState('');
+  const [receiveGateTicketNumber, setReceiveGateTicketNumber] = useState('');
+  const [receiveNotes, setReceiveNotes] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Timeline Modal State
+  const [selectedOrderForTimeline, setSelectedOrderForTimeline] = useState<string | null>(null);
+  const { data: timelineData, isLoading: isTimelineLoading } = useOrderTimeline(selectedOrderForTimeline);
 
   // Form: Create OC
   const [supplierId, setSupplierId] = useState('');
@@ -50,6 +61,7 @@ export function PurchaseOrdersTab() {
   const { data: suppliers } = useSuppliers();
   const { data: items } = useItems();
   const { data: warehouses } = useWarehouses();
+  const { data: assets } = useAssets();
 
   const createOrderMutation = useCreatePurchaseOrder();
   const updateStatusMutation = useUpdateOrderStatus();
@@ -70,7 +82,11 @@ export function PurchaseOrdersTab() {
 
   const handleOpenReceiveModal = (order: PurchaseOrder) => {
     setSelectedOrder(order);
+    setReceptionDestination(order.receptionDestination || 'BODEGA');
     setReceiveWarehouseId(warehouses?.[0]?.id || '');
+    setReceiveTargetAssetId(order.targetAssetId || assets?.[0]?.id || '');
+    setReceiveGateTicketNumber(order.gateTicketNumber || '');
+    setReceiveNotes('');
     setErrorMsg('');
     setIsReceiveModalOpen(true);
   };
@@ -199,9 +215,17 @@ export function PurchaseOrdersTab() {
 
   const handleReceiveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const targetWarehouseId = receiveWarehouseId || (warehouses && warehouses.length > 0 ? warehouses[0].id : '');
-    if (!selectedOrder || !targetWarehouseId) {
+    if (!selectedOrder) return;
+
+    if (receptionDestination === 'BODEGA' && !receiveWarehouseId && (!warehouses || warehouses.length === 0)) {
       const msg = 'Debe seleccionar una bodega válida de destino.';
+      setErrorMsg(msg);
+      toast.warning(msg);
+      return;
+    }
+
+    if (receptionDestination === 'ACTIVO_DIRECTO' && !receiveTargetAssetId) {
+      const msg = 'Debe seleccionar la maquinaria en terreno para entrega directa.';
       setErrorMsg(msg);
       toast.warning(msg);
       return;
@@ -210,8 +234,11 @@ export function PurchaseOrdersTab() {
     try {
       await receiveOrderMutation.mutateAsync({
         id: selectedOrder.id,
-        warehouseId: targetWarehouseId,
-        notes: 'Recepción completa de OC ' + selectedOrder.orderNumber,
+        destination: receptionDestination,
+        warehouseId: receptionDestination === 'BODEGA' ? receiveWarehouseId || warehouses?.[0]?.id : undefined,
+        targetAssetId: receptionDestination === 'ACTIVO_DIRECTO' ? receiveTargetAssetId : undefined,
+        gateTicketNumber: receptionDestination === 'GARITA_TRANSITO' ? receiveGateTicketNumber : undefined,
+        notes: receiveNotes || 'Recepción de OC ' + selectedOrder.orderNumber,
       });
       setIsReceiveModalOpen(false);
       toast.success('Recepción de materiales registrada exitosamente');
@@ -312,7 +339,16 @@ export function PurchaseOrdersTab() {
               </Button>
             </>
           )}
-          {(item.status === 'APROBADA' || item.status === 'EMITIDA') && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-600 hover:text-slate-900"
+            title="Ver Trazabilidad"
+            onClick={() => setSelectedOrderForTimeline(item.id)}
+          >
+            <History size={16} />
+          </Button>
+          {(item.status === 'APROBADA' || item.status === 'EMITIDA' || item.status === 'RECEPCION_PARCIAL') && (
             <Button
               variant="outline"
               size="sm"
@@ -529,25 +565,116 @@ export function PurchaseOrdersTab() {
             </p>
           </div>
 
-          <div className="flex flex-col w-full">
-            <label className="mb-1 text-sm font-medium text-slate-700">Bodega de Destino *</label>
-            <select
-              value={receiveWarehouseId}
-              onChange={(e) => setReceiveWarehouseId(e.target.value)}
-              required
-              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="">-- Seleccione Bodega de Destino --</option>
-              {warehouses?.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name} ({w.location})
-                </option>
-              ))}
-            </select>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Destino de Recepción *</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReceptionDestination('BODEGA')}
+                  className={`p-2 text-xs font-semibold rounded-lg border text-center transition-all ${
+                    receptionDestination === 'BODEGA'
+                      ? 'border-primary-600 bg-primary-50 text-primary-700 ring-2 ring-primary-100'
+                      : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Bodega
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReceptionDestination('GARITA_TRANSITO')}
+                  className={`p-2 text-xs font-semibold rounded-lg border text-center transition-all ${
+                    receptionDestination === 'GARITA_TRANSITO'
+                      ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-100'
+                      : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Garita Entrada
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReceptionDestination('ACTIVO_DIRECTO')}
+                  className={`p-2 text-xs font-semibold rounded-lg border text-center transition-all ${
+                    receptionDestination === 'ACTIVO_DIRECTO'
+                      ? 'border-emerald-600 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-100'
+                      : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Directo a Terreno
+                </button>
+              </div>
+            </div>
+
+            {receptionDestination === 'BODEGA' && (
+              <div className="flex flex-col w-full">
+                <label className="mb-1 text-sm font-medium text-slate-700">Bodega de Destino *</label>
+                <select
+                  value={receiveWarehouseId}
+                  onChange={(e) => setReceiveWarehouseId(e.target.value)}
+                  required
+                  className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">-- Seleccione Bodega de Destino --</option>
+                  {warehouses?.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name} ({w.location})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {receptionDestination === 'GARITA_TRANSITO' && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Ticket / Guía de Garita *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: GT-2026-8812"
+                  value={receiveGateTicketNumber}
+                  onChange={(e) => setReceiveGateTicketNumber(e.target.value)}
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5"
+                />
+              </div>
+            )}
+
+            {receptionDestination === 'ACTIVO_DIRECTO' && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Maquinaria en Terreno *</label>
+                <select
+                  required
+                  value={receiveTargetAssetId}
+                  onChange={(e) => setReceiveTargetAssetId(e.target.value)}
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 bg-white"
+                >
+                  <option value="">Seleccione equipo...</option>
+                  {assets?.map((a: any) => (
+                    <option key={a.id} value={a.id}>
+                      {a.internalNumber} ({a.brand} {a.model})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Observaciones</label>
+              <input
+                type="text"
+                placeholder="Observaciones de recepción / guía de despacho"
+                value={receiveNotes}
+                onChange={(e) => setReceiveNotes(e.target.value)}
+                className="w-full text-xs border border-slate-300 rounded-lg p-2.5"
+              />
+            </div>
           </div>
 
           <p className="text-xs text-slate-500">
-            Al confirmar la recepcion, el sistema creara automaticamente un movimiento de ingreso en bodega y aumentara el stock disponible de todos los materiales incluidos en la orden.
+            {receptionDestination === 'BODEGA'
+              ? 'Se aumentará el stock disponible en bodega y se actualizará el costo promedio ponderado.'
+              : receptionDestination === 'GARITA_TRANSITO'
+              ? 'Se registrará el ingreso por garita de acceso, manteniendo la alerta de ingreso pendiente a bodega.'
+              : 'Se asociará el consumo directamente al equipo en terreno sin inflar el inventario de bodega.'}
           </p>
 
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
@@ -555,7 +682,7 @@ export function PurchaseOrdersTab() {
               Cancelar
             </Button>
             <Button type="submit" isLoading={receiveOrderMutation.isPending}>
-              Confirmar Recepcion e Ingresar Stock
+              Confirmar Recepción
             </Button>
           </div>
         </form>
@@ -594,6 +721,18 @@ export function PurchaseOrdersTab() {
           </div>
         </form>
       </Modal>
+
+      {/* Timeline Modal */}
+      {selectedOrderForTimeline && (
+        <ProcurementTimelineModal
+          isOpen={!!selectedOrderForTimeline}
+          onClose={() => setSelectedOrderForTimeline(null)}
+          title={`Trazabilidad: ${timelineData?.orderNumber || 'Orden de Compra'}`}
+          subtitle={`Proveedor: ${timelineData?.supplier || ''} • Total: $${Number(timelineData?.totalAmount || 0).toLocaleString('es-CL')} CLP`}
+          events={timelineData?.timeline || []}
+          isLoading={isTimelineLoading}
+        />
+      )}
     </div>
   );
 }

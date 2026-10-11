@@ -132,4 +132,98 @@ describe('OrdersService', () => {
       ).rejects.toThrow('Invalid or missing superKey');
     });
   });
+
+  describe('receiveOrder logistics destinations', () => {
+    it('handles GARITA_TRANSITO reception correctly without closing the order', async () => {
+      mockPrisma.$queryRaw.mockResolvedValueOnce([{ id: 'po-1', status: OrderStatus.EMITIDA }]);
+      mockPrisma.purchaseOrder.findUnique.mockResolvedValue({
+        id: 'po-1',
+        orderNumber: 'OC-202610-0001',
+        status: OrderStatus.EMITIDA,
+        lines: [{ itemId: 'i-1', quantity: new Prisma.Decimal(5), unitPrice: new Prisma.Decimal(1000) }],
+      });
+      mockPrisma.warehouseMovement = {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({
+          id: 'mov-1',
+          movementNumber: 'MOV-202610-0001',
+          destination: 'GARITA_TRANSITO',
+        }),
+      };
+      mockPrisma.warehouse = {
+        findFirst: jest.fn().mockResolvedValue({ id: 'wh-1' }),
+      };
+
+      const result = await service.receiveOrder(
+        'po-1',
+        { destination: 'GARITA_TRANSITO' as any, gateTicketNumber: 'GT-9999' },
+        'user-1',
+      );
+
+      expect(mockPrisma.warehouseMovement.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            destination: 'GARITA_TRANSITO',
+            gateTicketNumber: 'GT-9999',
+          }),
+        }),
+      );
+
+      expect(mockPrisma.purchaseOrder.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'po-1' },
+          data: expect.objectContaining({
+            status: OrderStatus.RECEPCION_PARCIAL,
+            gateTicketNumber: 'GT-9999',
+          }),
+        }),
+      );
+    });
+
+    it('handles ACTIVO_DIRECTO terrain reception directly linking to asset', async () => {
+      mockPrisma.$queryRaw.mockResolvedValueOnce([{ id: 'po-2', status: OrderStatus.EMITIDA }]);
+      mockPrisma.purchaseOrder.findUnique.mockResolvedValue({
+        id: 'po-2',
+        orderNumber: 'OC-202610-0002',
+        status: OrderStatus.EMITIDA,
+        lines: [{ itemId: 'i-1', quantity: new Prisma.Decimal(2), unitPrice: new Prisma.Decimal(5000) }],
+      });
+      mockPrisma.warehouseMovement = {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({
+          id: 'mov-2',
+          movementNumber: 'MOV-202610-0002',
+          destination: 'ACTIVO_DIRECTO',
+        }),
+      };
+      mockPrisma.warehouse = {
+        findFirst: jest.fn().mockResolvedValue({ id: 'wh-1' }),
+      };
+
+      await service.receiveOrder(
+        'po-2',
+        { destination: 'ACTIVO_DIRECTO' as any, targetAssetId: 'asset-99' },
+        'user-1',
+      );
+
+      expect(mockPrisma.warehouseMovement.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            destination: 'ACTIVO_DIRECTO',
+            assetId: 'asset-99',
+          }),
+        }),
+      );
+
+      expect(mockPrisma.purchaseOrder.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'po-2' },
+          data: expect.objectContaining({
+            status: OrderStatus.RECEPCION_TOTAL,
+            targetAssetId: 'asset-99',
+          }),
+        }),
+      );
+    });
+  });
 });
