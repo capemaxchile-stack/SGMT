@@ -25,31 +25,73 @@ interface SidebarProps {
   onCloseMobile?: () => void;
 }
 
-export const APP_VERSION = 'v1.6.0';
-export const BUILD_DATE = '2026.10.05';
+export const APP_VERSION = 'v1.6.1' as const;
+export const BUILD_DATE = '2026.10.11' as const;
 
 export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   const { can } = useAuthStore();
 
-  const navItems = [
-    { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} />, module: 'DASHBOARD', end: true },
-    { name: 'Faenas', path: '/faenas', icon: <Factory size={20} />, module: 'FAENAS' },
-    { name: 'Flota', path: '/flota', icon: <Truck size={20} />, module: 'FLOTA' },
-    { name: 'Certificaciones', path: '/certificaciones', icon: <FileBadge size={20} />, module: 'CERTIFICACIONES' },
-    { name: 'Mantenimiento', path: '/mantenimiento', icon: <Wrench size={20} />, module: 'MANTENIMIENTO' },
-    { name: 'Combustible', path: '/combustible', icon: <Fuel size={20} />, module: 'COMBUSTIBLE' },
-    { name: 'Bodega', path: '/bodega', icon: <Box size={20} />, module: 'BODEGA' },
-    { name: 'Compras', path: '/compras', icon: <ShoppingCart size={20} />, module: 'COMPRAS', end: true },
-    { name: 'Pedidos Terreno (Móvil)', path: '/terreno', icon: <Smartphone size={20} />, module: 'COMPRAS', end: true },
-    { name: 'Reportes y Cierres', path: '/reportes', icon: <BarChart3 size={20} />, module: 'REPORTES' },
-    { name: 'Documentación', path: '/documentacion', icon: <BookOpen size={20} />, module: 'PUBLIC' },
-    { name: 'Administración', path: '/admin', icon: <Settings size={20} />, module: 'ADMINISTRACION' },
+  interface NavItem {
+    name: string;
+    path: string;
+    icon: React.ReactNode;
+    module: string;
+    end?: boolean;
+  }
+
+  interface NavSection {
+    title: string;
+    items: NavItem[];
+  }
+
+  const navSections: NavSection[] = [
+    {
+      title: 'Dashboard',
+      items: [
+        { name: 'Dashboard General', path: '/', icon: <LayoutDashboard size={18} />, module: 'DASHBOARD', end: true },
+      ],
+    },
+    {
+      title: 'Gestión Operativa',
+      items: [
+        { name: 'Compras & Abastecimiento', path: '/compras', icon: <ShoppingCart size={18} />, module: 'COMPRAS', end: true },
+        { name: 'Pedidos Terreno (Móvil)', path: '/terreno', icon: <Smartphone size={18} />, module: 'COMPRAS', end: true },
+        { name: 'Bodega & Inventario', path: '/bodega', icon: <Box size={18} />, module: 'BODEGA' },
+        { name: 'Mantenimiento & OTs', path: '/mantenimiento', icon: <Wrench size={18} />, module: 'MANTENIMIENTO' },
+        { name: 'Combustible & Cargas', path: '/combustible', icon: <Fuel size={18} />, module: 'COMBUSTIBLE' },
+      ],
+    },
+    {
+      title: 'Control & Reportes',
+      items: [
+        { name: 'Certificaciones Flota', path: '/certificaciones', icon: <FileBadge size={18} />, module: 'CERTIFICACIONES' },
+        { name: 'Reportes y Cierres', path: '/reportes', icon: <BarChart3 size={18} />, module: 'REPORTES' },
+      ],
+    },
+    {
+      title: 'Mantenedores',
+      items: [
+        { name: 'Faenas & Contratos', path: '/faenas', icon: <Factory size={18} />, module: 'FAENAS' },
+        { name: 'Flota & Maquinaria', path: '/flota', icon: <Truck size={18} />, module: 'FLOTA' },
+      ],
+    },
+    {
+      title: 'Administración',
+      items: [
+        { name: 'Manual & Operación', path: '/documentacion', icon: <BookOpen size={18} />, module: 'PUBLIC' },
+        { name: 'Configuración & Permisos', path: '/admin', icon: <Settings size={18} />, module: 'ADMINISTRACION' },
+      ],
+    },
   ];
 
-  const visibleNavItems = navItems.filter((item) => {
-    if (item.module === 'PUBLIC') return true;
-    return can(item.module, 'read');
-  });
+  const visibleSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) =>
+        item.module === 'PUBLIC' ? true : can(item.module, 'read')
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -67,30 +109,39 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
 
   const navContent = (
     <div className="flex flex-col h-full justify-between">
-      <ul className="space-y-1 px-3">
-        {visibleNavItems.map((item) => (
-          <li key={item.path}>
-            <NavLink
-              to={item.path}
-              end={item.end}
-              onClick={() => {
-                if (onCloseMobile) onCloseMobile();
-              }}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium',
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                )
-              }
-            >
-              {item.icon}
-              <span>{item.name}</span>
-            </NavLink>
-          </li>
+      <div className="space-y-4 px-3">
+        {visibleSections.map((section) => (
+          <div key={section.title} className="space-y-1">
+            <div className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              {section.title}
+            </div>
+            <ul className="space-y-0.5">
+              {section.items.map((item) => (
+                <li key={item.path}>
+                  <NavLink
+                    to={item.path}
+                    end={item.end}
+                    onClick={() => {
+                      if (onCloseMobile) onCloseMobile();
+                    }}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-xs font-medium',
+                        isActive
+                          ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                          : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                      )
+                    }
+                  >
+                    {item.icon}
+                    <span className="truncate">{item.name}</span>
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
-      </ul>
+      </div>
 
       {/* Version Footer */}
       <div className="p-4 mx-3 mb-3 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-400 text-xs">

@@ -12,8 +12,8 @@ SGMT (Sistema de Gestión de Maquinaria y Transporte) is an enterprise equipment
 - **Strict Typing**: Never use `any`. Use strongly typed interfaces, DTOs, and utility types.
 - **Immutability & Declarative Code**: Prefer `const` over `let`. Never use `var`.
 - **Naming Conventions**:
-  - Files: kebab-case (`stock-movement.service.ts`, `data-table.tsx`).
-  - Classes and Interfaces: PascalCase (`StockMovementService`, `UserSummaryDto`).
+  - Files: kebab-case for backend (`stock-movement.service.ts`), PascalCase for React components and pages (`Sidebar.tsx`, `DocumentacionPage.tsx`).
+  - Classes and Interfaces: PascalCase (`StockMovementService`, `UserSummaryDto`, `NavSection`).
   - Variables, functions, and methods: camelCase.
   - Constants: UPPER_SNAKE_CASE.
 
