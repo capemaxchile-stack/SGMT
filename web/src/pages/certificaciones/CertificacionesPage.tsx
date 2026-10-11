@@ -195,18 +195,30 @@ export function CertificacionesPage() {
       return;
     }
 
+    const payload: any = {
+      assetId: assetFormData.assetId,
+      docType: assetFormData.docType,
+      expirationDate: new Date(assetFormData.expirationDate + 'T00:00:00').toISOString(),
+    };
+    if (assetFormData.documentNumber?.trim()) payload.documentNumber = assetFormData.documentNumber.trim();
+    if (assetFormData.issuingEntity?.trim()) payload.issuingEntity = assetFormData.issuingEntity.trim();
+    if (assetFormData.issueDate) payload.issueDate = new Date(assetFormData.issueDate + 'T00:00:00').toISOString();
+    if (assetFormData.fileUrl?.trim()) payload.fileUrl = assetFormData.fileUrl.trim();
+    if (assetFormData.notes?.trim()) payload.notes = assetFormData.notes.trim();
+
     try {
       if (editingAssetDoc) {
         await updateAssetDocMut.mutateAsync({
           id: editingAssetDoc.id,
-          data: assetFormData,
+          data: payload,
         });
       } else {
-        await createAssetDocMut.mutateAsync(assetFormData);
+        await createAssetDocMut.mutateAsync(payload);
       }
       setIsAssetModalOpen(false);
-    } catch {
-      alert('Error al guardar el documento de maquinaria');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Error al guardar el documento de maquinaria';
+      alert(`Error al guardar documento: ${Array.isArray(msg) ? msg.join(', ') : msg}`);
     }
   };
 
@@ -260,18 +272,33 @@ export function CertificacionesPage() {
       return;
     }
 
+    const payload: any = {
+      operatorName: opFormData.operatorName.trim(),
+      rut: opFormData.rut.trim(),
+      docType: opFormData.docType,
+      expirationDate: new Date(opFormData.expirationDate + 'T00:00:00').toISOString(),
+    };
+    if (opFormData.faenaId?.trim()) payload.faenaId = opFormData.faenaId.trim();
+    if (opFormData.jobTitle?.trim()) payload.jobTitle = opFormData.jobTitle.trim();
+    if (opFormData.documentNumber?.trim()) payload.documentNumber = opFormData.documentNumber.trim();
+    if (opFormData.issuingEntity?.trim()) payload.issuingEntity = opFormData.issuingEntity.trim();
+    if (opFormData.issueDate) payload.issueDate = new Date(opFormData.issueDate + 'T00:00:00').toISOString();
+    if (opFormData.fileUrl?.trim()) payload.fileUrl = opFormData.fileUrl.trim();
+    if (opFormData.notes?.trim()) payload.notes = opFormData.notes.trim();
+
     try {
       if (editingOpCert) {
         await updateOpCertMut.mutateAsync({
           id: editingOpCert.id,
-          data: opFormData,
+          data: payload,
         });
       } else {
-        await createOpCertMut.mutateAsync(opFormData);
+        await createOpCertMut.mutateAsync(payload);
       }
       setIsOpModalOpen(false);
-    } catch {
-      alert('Error al guardar la acreditación del operador');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Error al guardar la acreditación del operador';
+      alert(`Error al guardar acreditación: ${Array.isArray(msg) ? msg.join(', ') : msg}`);
     }
   };
 

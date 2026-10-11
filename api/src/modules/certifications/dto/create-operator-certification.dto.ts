@@ -1,4 +1,5 @@
 import { IsString, IsEnum, IsOptional, IsDateString } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { OperatorDocType } from '@prisma/client';
 
 export class CreateOperatorCertificationDto {
@@ -9,10 +10,12 @@ export class CreateOperatorCertificationDto {
   rut: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   jobTitle?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   faenaId?: string;
 
@@ -20,14 +23,17 @@ export class CreateOperatorCertificationDto {
   docType: OperatorDocType;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   documentNumber?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   issuingEntity?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsDateString()
   issueDate?: string;
 

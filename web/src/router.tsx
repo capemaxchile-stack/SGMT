@@ -40,6 +40,14 @@ export const router = createBrowserRouter([
     element: withSuspense(LoginPage),
   },
   {
+    path: '/terreno',
+    element: (
+      <ProtectedRoute>
+        {withSuspense(TerrainRequestMobileView)}
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: '/',
     element: (
       <ProtectedRoute>

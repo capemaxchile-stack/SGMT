@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationChannelsService } from '../notifications/notification-channels.service';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestStatusDto } from './dto/update-request-status.dto';
 import { RequestStatus, RequestUrgency, Prisma } from '@prisma/client';
@@ -14,7 +15,10 @@ const ALLOWED_REQUEST_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
 
 @Injectable()
 export class RequestsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly channelsService?: NotificationChannelsService,
+  ) {}
 
   async findAll() {
     return this.prisma.purchaseRequest.findMany({
@@ -78,7 +82,7 @@ export class RequestsService {
       throw new BadRequestException('Justification is required');
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const request = await this.prisma.$transaction(async (tx) => {
       let requestNumber = createRequestDto.requestNumber;
       if (!requestNumber) {
         const dateStr = new Date().toISOString().slice(0, 7).replace('-', '');
@@ -135,6 +139,29 @@ export class RequestsService {
         },
       });
     });
+
+    // Asynchronous notification dispatch (Telegram / Brevo Email)
+    if (this.channelsService) {
+      const itemsSummary = (request.lines || [])
+        .map((l: any) => `• ${l.item.code}: ${Number(l.quantity)} un (${l.urgency || 'NORMAL'})`)
+        .join('\n');
+
+      this.channelsService
+        .dispatchSystemAlert({
+          event: 'pendingApprovals',
+          title: `Nuevo Pedido de Terreno: ${request.requestNumber}`,
+          summary: `📍 Faena: ${request.faena?.name || 'N/A'}\n👤 Solicitante: ${request.requester?.name || 'Operador Terreno'}\n📝 Motivo: ${request.justification}\n\n📦 Repuestos solicitados:\n${itemsSummary}`,
+          details: {
+            requestNumber: request.requestNumber,
+            faena: request.faena?.name,
+            itemsCount: request.lines?.length || 0,
+          },
+          link: '/compras',
+        })
+        .catch(() => {});
+    }
+
+    return request;
   }
 
   async updateStatus(id: string, updateDto: UpdateRequestStatusDto) {

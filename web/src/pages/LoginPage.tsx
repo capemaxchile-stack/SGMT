@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../components/ui/Card';
 import { Logo } from '../components/ui/Logo';
-import { Mail, Lock, ShieldCheck, Video, VideoOff, Eye, EyeOff, Activity } from 'lucide-react';
+import { Mail, Lock, ShieldCheck, Video, VideoOff, Eye, EyeOff, Activity, Smartphone } from 'lucide-react';
 import { APP_VERSION } from '../components/layout/Sidebar';
 
 export function LoginPage() {
@@ -250,6 +250,15 @@ export function LoginPage() {
             >
               Ingresar al Sistema
             </Button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/terreno')}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-amber-300 hover:text-amber-200 text-xs font-semibold transition shadow-sm"
+            >
+              <Smartphone size={15} className="text-amber-400" />
+              <span>Acceso Móvil / Pedidos Terreno (Offline)</span>
+            </button>
 
             {/* Footer Security Badge */}
             <div className="w-full flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] text-slate-400">

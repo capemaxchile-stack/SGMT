@@ -32,15 +32,15 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   const { can } = useAuthStore();
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} />, module: 'DASHBOARD' },
+    { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} />, module: 'DASHBOARD', end: true },
     { name: 'Faenas', path: '/faenas', icon: <Factory size={20} />, module: 'FAENAS' },
     { name: 'Flota', path: '/flota', icon: <Truck size={20} />, module: 'FLOTA' },
     { name: 'Certificaciones', path: '/certificaciones', icon: <FileBadge size={20} />, module: 'CERTIFICACIONES' },
     { name: 'Mantenimiento', path: '/mantenimiento', icon: <Wrench size={20} />, module: 'MANTENIMIENTO' },
     { name: 'Combustible', path: '/combustible', icon: <Fuel size={20} />, module: 'COMBUSTIBLE' },
     { name: 'Bodega', path: '/bodega', icon: <Box size={20} />, module: 'BODEGA' },
-    { name: 'Compras', path: '/compras', icon: <ShoppingCart size={20} />, module: 'COMPRAS' },
-    { name: 'Pedidos Terreno (Offline)', path: '/compras/terreno', icon: <Smartphone size={20} />, module: 'COMPRAS' },
+    { name: 'Compras', path: '/compras', icon: <ShoppingCart size={20} />, module: 'COMPRAS', end: true },
+    { name: 'Pedidos Terreno (Móvil)', path: '/terreno', icon: <Smartphone size={20} />, module: 'COMPRAS', end: true },
     { name: 'Reportes y Cierres', path: '/reportes', icon: <BarChart3 size={20} />, module: 'REPORTES' },
     { name: 'Documentación', path: '/documentacion', icon: <BookOpen size={20} />, module: 'PUBLIC' },
     { name: 'Administración', path: '/admin', icon: <Settings size={20} />, module: 'ADMINISTRACION' },
@@ -72,6 +72,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           <li key={item.path}>
             <NavLink
               to={item.path}
+              end={item.end}
               onClick={() => {
                 if (onCloseMobile) onCloseMobile();
               }}

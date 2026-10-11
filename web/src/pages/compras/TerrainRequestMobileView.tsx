@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Wifi,
   WifiOff,
@@ -12,6 +13,7 @@ import {
   Package,
   Send,
   CloudOff,
+  ArrowLeft,
 } from 'lucide-react';
 import { useFaenas } from '../../api/faenas';
 import { useItems } from '../../api/bodega';
@@ -28,6 +30,7 @@ import {
 import { RequestUrgency } from '../../types/compras';
 
 export function TerrainRequestMobileView() {
+  const navigate = useNavigate();
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [offlineQueue, setOfflineQueue] = useState<OfflineRequestItem[]>(getOfflineQueue());
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
@@ -214,20 +217,31 @@ export function TerrainRequestMobileView() {
           </div>
         </div>
 
-        {offlineQueue.length > 0 && (
+        <div className="flex items-center gap-2">
+          {offlineQueue.length > 0 && (
+            <button
+              onClick={handleSync}
+              disabled={!isOnline || isSyncing}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                isOnline
+                  ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-xs'
+                  : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+              }`}
+            >
+              <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
+              {isSyncing ? 'Sincronizando' : `Sincronizar (${offlineQueue.length})`}
+            </button>
+          )}
+
           <button
-            onClick={handleSync}
-            disabled={!isOnline || isSyncing}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              isOnline
-                ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-xs'
-                : 'bg-slate-200 text-slate-500 cursor-not-allowed'
-            }`}
+            onClick={() => navigate('/')}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition shadow-xs"
+            title="Volver al Portal ERP"
           >
-            <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
-            {isSyncing ? 'Sincronizando' : `Sincronizar (${offlineQueue.length})`}
+            <ArrowLeft size={13} />
+            <span>ERP</span>
           </button>
-        )}
+        </div>
       </div>
 
       {/* Sync Banner */}

@@ -215,7 +215,7 @@ export class CertificationsService {
         operatorName: dto.operatorName,
         rut: dto.rut.trim(),
         jobTitle: dto.jobTitle,
-        faenaId: dto.faenaId,
+        faenaId: dto.faenaId ? dto.faenaId : null,
         docType: dto.docType,
         documentNumber: dto.documentNumber,
         issuingEntity: dto.issuingEntity,

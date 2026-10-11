@@ -1,4 +1,5 @@
 import { IsString, IsEnum, IsOptional, IsBoolean, IsDateString } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { AssetDocType } from '@prisma/client';
 
 export class CreateAssetDocumentDto {
@@ -9,14 +10,17 @@ export class CreateAssetDocumentDto {
   docType: AssetDocType;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   documentNumber?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   issuingEntity?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsDateString()
   issueDate?: string;
 
