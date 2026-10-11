@@ -255,3 +255,138 @@ export interface UpdateQuotationDto {
     comments?: string;
   }>;
 }
+
+// Budget Tracking Types
+export interface BudgetSummary {
+  faena: {
+    id: string;
+    name: string;
+    location: string;
+  };
+  period: {
+    year: number;
+    month: number | null;
+    startDate: string;
+    endDate: string;
+  };
+  metrics: {
+    budgetTotal: number;
+    committedQuotations: number;
+    committedOrders: number;
+    executedOrders: number;
+    totalCommittedAndExecuted: number;
+    availableBudget: number;
+    percentageUsed: number;
+    alertLevel: 'HEALTHY' | 'WARNING' | 'CRITICAL';
+    isOverBudget: boolean;
+  };
+  costCenters: Array<{
+    id: string;
+    code: string;
+    name: string;
+    allocatedBudget: number;
+  }>;
+  recentOrders: Array<{
+    id: string;
+    orderNumber: string;
+    supplierName: string;
+    totalAmount: number;
+    status: OrderStatus;
+    createdAt: string;
+  }>;
+  openQuotations: Array<{
+    id: string;
+    quotationNumber: string;
+    supplierName: string;
+    requestNumber?: string;
+    totalAmount: number;
+    status: QuotationStatus;
+    createdAt: string;
+  }>;
+}
+
+export interface UpsertBudgetPayload {
+  faenaId: string;
+  costCenterId?: string;
+  year: number;
+  month?: number;
+  amount: number;
+  notes?: string;
+}
+
+// AI & Replenishment Suggestions Types
+export interface PurchaseSuggestion {
+  itemId: string;
+  itemCode: string;
+  itemDescription: string;
+  category: string;
+  unitOfMeasure: string;
+  currentStock: number;
+  minimumStock: number;
+  totalOutbound60Days: number;
+  dailyBurnRate: number;
+  runwayDays: number | null;
+  suggestedQuantity: number;
+  urgency: RequestUrgency;
+  reasons: string[];
+  recommendedSupplier: {
+    id: string;
+    businessName: string;
+    rut: string;
+    isExclusive: boolean;
+    lastPrice: number;
+    leadTimeDays: number;
+  } | null;
+  estimatedTotalCost: number;
+}
+
+export interface SuggestionsResponse {
+  suggestions: PurchaseSuggestion[];
+  summary: {
+    totalCriticalItems: number;
+    totalHighTurnoverItems: number;
+    estimatedReplenishmentCost: number;
+  };
+}
+
+export interface GenerateRequestFromSuggestionPayload {
+  faenaId: string;
+  justification: string;
+  items: Array<{
+    itemId: string;
+    quantity: number;
+    targetAssetId?: string;
+    urgency?: RequestUrgency;
+    notes?: string;
+  }>;
+}
+
+// Anti-Fraud & Audit Radar Types
+export interface AuditAnomaly {
+  id: string;
+  ruleCode: 'SPLIT_PURCHASE' | 'PRICE_SPIKE' | 'INACTIVE_ASSET' | 'OVERSTOCK_PURCHASE' | 'SOLE_SOURCE_UNJUSTIFIED';
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  title: string;
+  description: string;
+  detectedAt: string;
+  evidence: {
+    orders?: string[];
+    requests?: string[];
+    supplier?: string;
+    items?: string[];
+    asset?: string;
+    amounts?: Record<string, any>;
+  };
+  recommendedAction: string;
+}
+
+export interface FraudRadarResponse {
+  anomalies: AuditAnomaly[];
+  summary: {
+    totalAnomalies: number;
+    criticalCount: number;
+    highCount: number;
+    mediumCount: number;
+  };
+}
+

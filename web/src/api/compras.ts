@@ -12,6 +12,11 @@ import {
   CreateQuotationDto,
   UpdateQuotationDto,
   ReceptionDestination,
+  BudgetSummary,
+  UpsertBudgetPayload,
+  SuggestionsResponse,
+  GenerateRequestFromSuggestionPayload,
+  FraudRadarResponse,
 } from '../types/compras';
 
 export const comprasKeys = {
@@ -26,6 +31,9 @@ export const comprasKeys = {
   quotations: () => [...comprasKeys.all, 'quotations'] as const,
   quotation: (id: string) => [...comprasKeys.quotations(), id] as const,
   itemInsights: (itemId: string) => [...comprasKeys.all, 'insights', itemId] as const,
+  budgetSummary: (faenaId: string, year?: number, month?: number) => [...comprasKeys.all, 'budget', faenaId, year, month] as const,
+  suggestions: (faenaId?: string) => [...comprasKeys.all, 'suggestions', faenaId] as const,
+  fraudRadar: (faenaId?: string) => [...comprasKeys.all, 'fraudRadar', faenaId] as const,
 };
 
 // Purchase Orders
@@ -299,3 +307,87 @@ export const useItemProcurementInsights = (itemId: string | null) => {
     enabled: !!itemId,
   });
 };
+
+// Budget Management
+export const fetchBudgetSummary = async (
+  faenaId: string,
+  year?: number,
+  month?: number,
+): Promise<BudgetSummary> => {
+  const { data } = await api.get<BudgetSummary>(`/purchases/budgets/summary/${faenaId}`, {
+    params: { year, month },
+  });
+  return data;
+};
+
+export const upsertBudget = async (payload: UpsertBudgetPayload): Promise<any> => {
+  const { data } = await api.post('/purchases/budgets', payload);
+  return data;
+};
+
+export const useBudgetSummary = (faenaId: string | null, year?: number, month?: number) => {
+  return useQuery({
+    queryKey: comprasKeys.budgetSummary(faenaId || '', year, month),
+    queryFn: () => fetchBudgetSummary(faenaId!, year, month),
+    enabled: !!faenaId,
+  });
+};
+
+export const useUpsertBudget = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: upsertBudget,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...comprasKeys.all, 'budget'] });
+    },
+  });
+};
+
+// Replenishment & AI Suggestions
+export const fetchPurchaseSuggestions = async (faenaId?: string): Promise<SuggestionsResponse> => {
+  const { data } = await api.get<SuggestionsResponse>('/purchases/suggestions', {
+    params: faenaId ? { faenaId } : undefined,
+  });
+  return data;
+};
+
+export const generateRequestFromSuggestion = async (
+  payload: GenerateRequestFromSuggestionPayload,
+): Promise<PurchaseRequest> => {
+  const { data } = await api.post<PurchaseRequest>('/purchases/suggestions/generate-request', payload);
+  return data;
+};
+
+export const usePurchaseSuggestions = (faenaId?: string) => {
+  return useQuery({
+    queryKey: comprasKeys.suggestions(faenaId),
+    queryFn: () => fetchPurchaseSuggestions(faenaId),
+  });
+};
+
+export const useGenerateRequestFromSuggestion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: generateRequestFromSuggestion,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: comprasKeys.requests() });
+      queryClient.invalidateQueries({ queryKey: [...comprasKeys.all, 'suggestions'] });
+    },
+  });
+};
+
+// Anti-Fraud & Audit Radar
+export const fetchFraudRadar = async (faenaId?: string): Promise<FraudRadarResponse> => {
+  const { data } = await api.get<FraudRadarResponse>('/purchases/audit/fraud-radar', {
+    params: faenaId ? { faenaId } : undefined,
+  });
+  return data;
+};
+
+export const useFraudRadar = (faenaId?: string) => {
+  return useQuery({
+    queryKey: comprasKeys.fraudRadar(faenaId),
+    queryFn: () => fetchFraudRadar(faenaId),
+  });
+};
+

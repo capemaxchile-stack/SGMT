@@ -40,6 +40,10 @@ export class CreateOrderDto {
   workOrderId?: string;
 
   @IsOptional()
+  @IsUUID()
+  faenaId?: string;
+
+  @IsOptional()
   @IsString()
   deliveryTerms?: string;
 

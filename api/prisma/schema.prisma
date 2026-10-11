@@ -91,6 +91,8 @@ model Faena {
   workOrders         WorkOrder[]
   fuelLogs           FuelLog[]
   operatorCertifications OperatorCertification[]
+  purchaseOrders     PurchaseOrder[]       @relation("FaenaPurchaseOrders")
+  budgets            Budget[]
 }
 
 model Contract {
@@ -111,6 +113,7 @@ model CostCenter {
   name       String
   contractId String
   contract   Contract @relation(fields: [contractId], references: [id])
+  budgets    Budget[]
 }
 
 enum AssetType {
@@ -430,6 +433,7 @@ model PurchaseOrder {
   receptionDestination  ReceptionDestination  @default(BODEGA)
   targetAssetId         String?
   workOrderId           String?
+  faenaId               String?
   gateTicketNumber      String?
   gateEntryDate         DateTime?
   deliveryTerms         String?
@@ -441,6 +445,7 @@ model PurchaseOrder {
   quotation             Quotation?            @relation(fields: [quotationId], references: [id])
   targetAsset           Asset?                @relation("DirectAssetOrders", fields: [targetAssetId], references: [id])
   workOrder             WorkOrder?            @relation("DirectWorkOrderOrders", fields: [workOrderId], references: [id])
+  faena                 Faena?                @relation("FaenaPurchaseOrders", fields: [faenaId], references: [id])
   lines                 PurchaseOrderLine[]
   warehouseMovements    WarehouseMovement[]
 }
@@ -695,6 +700,24 @@ model OperatorCertification {
   @@index([rut, expirationDate])
   @@index([faenaId])
   @@index([expirationDate])
+}
+
+model Budget {
+  id           String      @id @default(uuid())
+  faenaId      String
+  costCenterId String?
+  year         Int
+  month        Int?
+  amount       Decimal     @default(0)
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  faena        Faena       @relation(fields: [faenaId], references: [id], onDelete: Cascade)
+  costCenter   CostCenter? @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([faenaId, costCenterId, year, month])
+  @@index([faenaId])
 }
 
 

@@ -101,6 +101,8 @@ export class OrdersService {
     }
 
     const order = await this.prisma.$transaction(async (tx) => {
+      let faenaId: string | null = createOrderDto.faenaId || null;
+
       // 1. If linked to a purchase request, validate and convert it
       if (createOrderDto.purchaseRequestId) {
         const req = await tx.purchaseRequest.findUnique({
@@ -111,6 +113,10 @@ export class OrdersService {
         }
         if (req.status !== RequestStatus.APROBADA) {
           throw new BadRequestException('Only APROBADA field requests can be converted to purchase order');
+        }
+
+        if (!faenaId && req.faenaId) {
+          faenaId = req.faenaId;
         }
 
         await tx.purchaseRequest.update({
@@ -165,6 +171,7 @@ export class OrdersService {
           supplierId: createOrderDto.supplierId,
           purchaseRequestId: createOrderDto.purchaseRequestId,
           quotationId: createOrderDto.quotationId,
+          faenaId,
           receptionDestination: createOrderDto.receptionDestination || ReceptionDestination.BODEGA,
           targetAssetId: createOrderDto.targetAssetId,
           workOrderId: createOrderDto.workOrderId,
