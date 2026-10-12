@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Put, Param, Body, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Put, Delete, Param, Body, UseGuards, UseInterceptors } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -6,7 +6,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { AuditInterceptor } from '../../common/interceptors/audit.interceptor';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto, ResetPasswordDto, SetSuperKeyDto } from './dto/update-user.dto';
-import { CreateRoleDto, UpdateRolePermissionsDto } from './dto/role.dto';
+import { CreateRoleDto, UpdateRoleDto, UpdateRolePermissionsDto } from './dto/role.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @UseInterceptors(AuditInterceptor)
@@ -51,6 +51,18 @@ export class UsersController {
     @Body() dto: UpdateRolePermissionsDto,
   ) {
     return this.usersService.updateRolePermissions(id, dto.permissions);
+  }
+
+  @Patch('roles/:id')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO')
+  updateRole(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
+    return this.usersService.updateRole(id, dto);
+  }
+
+  @Delete('roles/:id')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO')
+  deleteRole(@Param('id') id: string) {
+    return this.usersService.deleteRole(id);
   }
 
   @Get(':id')

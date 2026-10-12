@@ -34,6 +34,8 @@ import {
   UserCheck,
   UserX,
   BellRing,
+  Eye,
+  Search,
 } from 'lucide-react';
 
 export function AdminPage() {
@@ -89,6 +91,53 @@ export function AdminPage() {
 
   // SuperKey state
   const [adminSuperKey, setAdminSuperKey] = useState('');
+
+  // Audit Inspection & Filter States
+  const [selectedLogDetail, setSelectedLogDetail] = useState<AuditLog | null>(null);
+  const [auditSearchTerm, setAuditSearchTerm] = useState('');
+  const [auditEntityFilter, setAuditEntityFilter] = useState('');
+
+  const formatAuditDate = (dateVal?: string | Date | null) => {
+    if (!dateVal) return '-';
+    const d = new Date(dateVal);
+    return isNaN(d.getTime()) ? '-' : d.toLocaleString('es-CL');
+  };
+
+  const uniqueEntities = React.useMemo(() => {
+    if (!auditLogs) return [];
+    const set = new Set<string>();
+    auditLogs.forEach((l) => {
+      if (l.entity) set.add(l.entity);
+    });
+    return Array.from(set).sort();
+  }, [auditLogs]);
+
+  const filteredAuditLogs = React.useMemo(() => {
+    if (!auditLogs) return [];
+    return auditLogs.filter((log) => {
+      if (auditEntityFilter && log.entity !== auditEntityFilter) {
+        return false;
+      }
+      if (auditSearchTerm.trim()) {
+        const term = auditSearchTerm.toLowerCase();
+        const userStr = (log.user?.name || log.userId || '').toLowerCase();
+        const entityStr = (log.entity || '').toLowerCase();
+        const actionStr = (log.action || '').toLowerCase();
+        const ipStr = (log.ipAddress || '').toLowerCase();
+        const entityIdStr = (log.entityId || '').toLowerCase();
+        const detailStr = JSON.stringify(log.detail ?? log.details ?? '').toLowerCase();
+        return (
+          userStr.includes(term) ||
+          entityStr.includes(term) ||
+          actionStr.includes(term) ||
+          ipStr.includes(term) ||
+          entityIdStr.includes(term) ||
+          detailStr.includes(term)
+        );
+      }
+      return true;
+    });
+  }, [auditLogs, auditEntityFilter, auditSearchTerm]);
 
   const pendingOrders = orders?.filter((o) => o.status === 'PENDIENTE_APROBACION') || [];
 
@@ -271,19 +320,22 @@ export function AdminPage() {
   };
 
   const handleExportAuditLogs = () => {
-    if (!auditLogs || auditLogs.length === 0) {
+    const logsToExport = filteredAuditLogs.length > 0 ? filteredAuditLogs : (auditLogs || []);
+    if (!logsToExport || logsToExport.length === 0) {
       toast.info('No hay registros para exportar');
       return;
     }
     exportToCSV(
-      auditLogs,
+      logsToExport,
       [
         { header: 'ID', key: 'id' },
-        { header: 'Fecha', key: (l) => new Date(l.createdAt).toLocaleString('es-CL') },
+        { header: 'Fecha', key: (l) => formatAuditDate(l.timestamp || l.createdAt) },
         { header: 'Usuario', key: (l) => l.user?.name || l.userId || 'Sistema' },
         { header: 'Acción', key: 'action' },
         { header: 'Entidad', key: 'entity' },
+        { header: 'ID Entidad', key: (l) => l.entityId || '-' },
         { header: 'IP', key: (l) => l.ipAddress || '' },
+        { header: 'Detalle', key: (l) => JSON.stringify(l.detail ?? l.details ?? '') },
       ],
       'SGMT_Bitacora_Auditoria'
     );
@@ -371,10 +423,37 @@ export function AdminPage() {
     {
       header: 'Fecha',
       cell: (log: AuditLog) => (
-        <span className="text-xs text-slate-600 dark:text-slate-400">
-          {new Date(log.createdAt).toLocaleString('es-CL')}
+        <span className="text-xs text-slate-600 dark:text-slate-400 font-mono whitespace-nowrap">
+          {formatAuditDate(log.timestamp || log.createdAt)}
         </span>
       ),
+    },
+    {
+      header: 'Entidad',
+      cell: (log: AuditLog) => (
+        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          {log.entity}
+        </span>
+      ),
+    },
+    {
+      header: 'Acción',
+      cell: (log: AuditLog) => {
+        const actionUpper = (log.action || '').toUpperCase();
+        let badgeColor = 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+        if (actionUpper.includes('DELETE') || actionUpper.includes('FAILED')) {
+          badgeColor = 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800';
+        } else if (actionUpper.includes('POST') || actionUpper.includes('CREATE')) {
+          badgeColor = 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
+        } else if (actionUpper.includes('PUT') || actionUpper.includes('PATCH') || actionUpper.includes('UPDATE')) {
+          badgeColor = 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800';
+        }
+        return (
+          <span className={`text-[11px] font-bold font-mono px-2 py-0.5 rounded border ${badgeColor}`}>
+            {log.action}
+          </span>
+        );
+      },
     },
     {
       header: 'Usuario',
@@ -385,25 +464,26 @@ export function AdminPage() {
       ),
     },
     {
-      header: 'Acción',
-      cell: (log: AuditLog) => (
-        <span className="text-xs font-bold font-mono px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
-          {log.action}
-        </span>
-      ),
-    },
-    {
-      header: 'Entidad',
-      cell: (log: AuditLog) => (
-        <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{log.entity}</span>
-      ),
-    },
-    {
       header: 'IP Origen',
       cell: (log: AuditLog) => (
         <span className="text-[11px] font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400">
           {log.ipAddress || '127.0.0.1'}
         </span>
+      ),
+    },
+    {
+      header: 'Acciones',
+      cell: (log: AuditLog) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setSelectedLogDetail(log)}
+          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 text-xs py-1 px-2"
+          title="Inspeccionar detalles y payload"
+        >
+          <Eye size={14} />
+          <span>Detalle</span>
+        </Button>
       ),
     },
   ];
@@ -600,12 +680,50 @@ export function AdminPage() {
       {activeTab === 'perfiles' && <RolePermissionsTab />}
 
       {activeTab === 'auditoria' && (
-        <DataTable
-          data={auditLogs || []}
-          columns={auditColumns}
-          isLoading={loadingAudit}
-          emptyMessage="No hay registros de auditoría"
-        />
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex flex-1 flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar por usuario, acción, entidad, IP o detalle..."
+                  value={auditSearchTerm}
+                  onChange={(e) => setAuditSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <select
+                value={auditEntityFilter}
+                onChange={(e) => setAuditEntityFilter(e.target.value)}
+                className="px-3 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">Todas las entidades ({uniqueEntities.length})</option>
+                {uniqueEntities.map((ent) => (
+                  <option key={ent} value={ent}>
+                    {ent}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportAuditLogs}
+              className="flex items-center gap-1.5 shrink-0"
+            >
+              <Download size={14} />
+              <span>Exportar CSV</span>
+            </Button>
+          </div>
+
+          <DataTable
+            data={filteredAuditLogs}
+            columns={auditColumns}
+            isLoading={loadingAudit}
+            emptyMessage="No hay registros de auditoría que coincidan con los filtros"
+          />
+        </div>
       )}
 
       {activeTab === 'alertas' && <NotificationChannelsTab />}
@@ -866,6 +984,67 @@ export function AdminPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal: Audit Log Detail Inspection */}
+      <Modal
+        isOpen={!!selectedLogDetail}
+        onClose={() => setSelectedLogDetail(null)}
+        title="Inspección de Registro de Auditoría"
+        size="lg"
+      >
+        {selectedLogDetail && (
+          <div className="space-y-4 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg text-xs">
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block font-medium">Fecha y Hora</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {formatAuditDate(selectedLogDetail.timestamp || selectedLogDetail.createdAt)}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block font-medium">Usuario</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {selectedLogDetail.user?.name || selectedLogDetail.userId || 'Sistema'}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block font-medium">Entidad / Acción</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {selectedLogDetail.entity} ({selectedLogDetail.action})
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block font-medium">ID de Entidad</span>
+                <span className="font-mono text-slate-800 dark:text-slate-200 truncate block">
+                  {selectedLogDetail.entityId || 'N/A'}
+                </span>
+              </div>
+            </div>
+
+            {selectedLogDetail.ipAddress && (
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                <span className="font-medium">Dirección IP:</span>{' '}
+                <span className="font-mono">{selectedLogDetail.ipAddress}</span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                Detalle de la Operación (Payload / JSON)
+              </label>
+              <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg text-xs font-mono overflow-auto max-h-80 border border-slate-800">
+                {JSON.stringify(selectedLogDetail.detail ?? selectedLogDetail.details ?? {}, null, 2)}
+              </pre>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-200 dark:border-slate-700">
+              <Button variant="outline" onClick={() => setSelectedLogDetail(null)}>
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

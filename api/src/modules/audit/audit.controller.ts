@@ -11,9 +11,14 @@ export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
   @Get()
-  async findAll(@Query('skip') skip?: string, @Query('take') take?: string) {
+  async findAll(
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+    @Query('entity') entity?: string,
+    @Query('action') action?: string,
+  ) {
     const skipNum = skip ? parseInt(skip, 10) : 0;
     const takeNum = take ? parseInt(take, 10) : 50;
-    return this.auditService.findAll(skipNum, takeNum);
+    return this.auditService.findAll(skipNum, takeNum, { entity, action });
   }
 }

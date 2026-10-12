@@ -37,6 +37,13 @@ export interface ChangePasswordData {
   newPassword: string;
 }
 
+export interface UpdateRoleData {
+  id: string;
+  displayName?: string;
+  level?: number;
+  maxApprovalAmount?: number;
+}
+
 export const usersApi = {
   getAll: async (): Promise<User[]> => {
     const { data } = await api.get('/users');
@@ -97,6 +104,14 @@ export const usersApi = {
     const { data } = await api.put(`/users/roles/${roleId}/permissions`, { permissions });
     return data;
   },
+  updateRole: async ({ id, ...roleData }: UpdateRoleData): Promise<Role> => {
+    const { data } = await api.patch(`/users/roles/${id}`, roleData);
+    return data;
+  },
+  deleteRole: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const { data } = await api.delete(`/users/roles/${id}`);
+    return data;
+  },
 };
 
 // React Query Hooks
@@ -125,6 +140,26 @@ export function useCreateRole() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: usersApi.createRole,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+    },
+  });
+}
+
+export function useUpdateRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: usersApi.updateRole,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+    },
+  });
+}
+
+export function useDeleteRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: usersApi.deleteRole,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
     },

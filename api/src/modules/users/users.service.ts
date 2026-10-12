@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto, ResetPasswordDto, SetSuperKeyDto } from './dto/update-user.dto';
+import { UpdateRoleDto } from './dto/role.dto';
 
 @Injectable()
 export class UsersService {
@@ -294,4 +295,57 @@ export class UsersService {
       });
     });
   }
+
+  async updateRole(id: string, dto: UpdateRoleDto) {
+    const role = await this.prisma.role.findUnique({ where: { id } });
+    if (!role) {
+      throw new NotFoundException(`Rol con ID ${id} no encontrado`);
+    }
+
+    return this.prisma.role.update({
+      where: { id },
+      data: {
+        ...(dto.displayName !== undefined && { displayName: dto.displayName.trim() }),
+        ...(dto.level !== undefined && { level: dto.level }),
+        ...(dto.maxApprovalAmount !== undefined && { maxApprovalAmount: dto.maxApprovalAmount }),
+      },
+      include: {
+        permissions: {
+          orderBy: { module: 'asc' },
+        },
+      },
+    });
+  }
+
+  async deleteRole(id: string) {
+    const role = await this.prisma.role.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { users: true },
+        },
+      },
+    });
+
+    if (!role) {
+      throw new NotFoundException(`Rol con ID ${id} no encontrado`);
+    }
+
+    if (role.name === 'ADMIN_SISTEMA' || role.name === 'SUPER_USUARIO') {
+      throw new BadRequestException('No se pueden eliminar los roles del sistema (ADMIN_SISTEMA, SUPER_USUARIO)');
+    }
+
+    if (role._count.users > 0) {
+      throw new BadRequestException(
+        `No se puede eliminar el perfil porque tiene ${role._count.users} usuario(s) asignado(s). Debe reasignar los usuarios primero.`,
+      );
+    }
+
+    await this.prisma.role.delete({
+      where: { id },
+    });
+
+    return { success: true, message: 'Perfil eliminado exitosamente' };
+  }
 }
+

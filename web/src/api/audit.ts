@@ -1,19 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/axios';
-import { User, BaseEntity } from '../types/models';
+import { User } from '../types/models';
 
-export interface AuditLog extends BaseEntity {
-  userId: string;
+export interface AuditLog {
+  id: string;
+  timestamp?: string;
+  createdAt?: string;
+  userId?: string | null;
   action: string;
   entity: string;
-  entityId: string;
-  details: Record<string, any>;
-  ipAddress: string;
+  entityId?: string;
+  detail?: any;
+  details?: any;
+  ipAddress?: string | null;
   user?: User;
 }
 
-export const fetchAuditLogs = async (): Promise<AuditLog[]> => {
-  const { data } = await api.get<AuditLog[]>('/audit');
+export const fetchAuditLogs = async (params?: { entity?: string; action?: string }): Promise<AuditLog[]> => {
+  const { data } = await api.get<AuditLog[]>('/audit', { params });
   return data;
 };
 
@@ -22,10 +26,10 @@ export const fetchUsers = async (): Promise<User[]> => {
   return data;
 };
 
-export const useAuditLogs = () => {
+export const useAuditLogs = (params?: { entity?: string; action?: string }) => {
   return useQuery({
-    queryKey: ['audit'],
-    queryFn: fetchAuditLogs,
+    queryKey: ['audit', params],
+    queryFn: () => fetchAuditLogs(params),
   });
 };
 

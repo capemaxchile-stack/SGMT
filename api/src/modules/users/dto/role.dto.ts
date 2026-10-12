@@ -28,6 +28,22 @@ export class CreateRoleDto {
   maxApprovalAmount?: number;
 }
 
+export class UpdateRoleDto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty({ message: 'El nombre a mostrar no puede estar vacío' })
+  displayName?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1, { message: 'El nivel jerárquico debe ser mayor a 0' })
+  level?: number;
+
+  @IsOptional()
+  @IsNumber()
+  maxApprovalAmount?: number;
+}
+
 export class ModulePermissionItemDto {
   @IsOptional()
   @IsString()

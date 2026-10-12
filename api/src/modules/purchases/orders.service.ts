@@ -112,7 +112,9 @@ export class OrdersService {
           throw new NotFoundException(`Purchase request with id ${createOrderDto.purchaseRequestId} not found`);
         }
         if (req.status !== RequestStatus.APROBADA) {
-          throw new BadRequestException('Only APROBADA field requests can be converted to purchase order');
+          throw new BadRequestException(
+            `Only APROBADA field requests can be converted to purchase order: La solicitud de compra vinculada (${req.requestNumber}) se encuentra en estado "${req.status}". Debe ser aprobada previamente antes de generar la Orden de Compra.`,
+          );
         }
 
         if (!faenaId && req.faenaId) {

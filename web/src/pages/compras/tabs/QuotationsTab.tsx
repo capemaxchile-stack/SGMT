@@ -115,6 +115,16 @@ export function QuotationsTab() {
   };
 
   const handleConvertToOrder = async (quote: Quotation) => {
+    if (quote.purchaseRequestId) {
+      const linkedRequest = requests.find((r) => r.id === quote.purchaseRequestId);
+      if (linkedRequest && linkedRequest.status !== 'APROBADA') {
+        alert(
+          `No se puede generar la Orden de Compra formal: La solicitud de compra vinculada (${linkedRequest.requestNumber}) se encuentra en estado "${linkedRequest.status}". Debe ser aprobada previamente por la jefatura en la pestaña "Solicitudes de Terreno".`
+        );
+        return;
+      }
+    }
+
     if (!confirm(`¿Generar Orden de Compra formal para la cotización ${quote.quotationNumber}?`)) return;
     try {
       await createOrderMutation.mutateAsync({
@@ -130,7 +140,8 @@ export function QuotationsTab() {
       });
       alert('¡Orden de Compra generada exitosamente y enviada para autorización!');
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Error al generar Orden de Compra');
+      const msg = err?.response?.data?.message || err?.message || 'Error al generar Orden de Compra';
+      alert(msg);
     }
   };
 
@@ -204,15 +215,29 @@ export function QuotationsTab() {
           <div className="p-12 text-center text-slate-400 dark:text-slate-500 text-sm">No hay cotizaciones para el filtro seleccionado.</div>
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {filteredQuotes.map((quote) => (
+            {filteredQuotes.map((quote) => {
+              const linkedReq = quote.purchaseRequest || (quote.purchaseRequestId ? requests.find((r) => r.id === quote.purchaseRequestId) : null);
+              const isReqApproved = !linkedReq || linkedReq.status === 'APROBADA';
+              return (
               <div key={quote.id} className="p-5 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-3">
                     <span className="font-bold text-slate-900 dark:text-white text-sm">{quote.quotationNumber}</span>
                     {getStatusBadge(quote.status)}
-                    {quote.purchaseRequest && (
-                      <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                        Asoc: {quote.purchaseRequest.requestNumber}
+                    {linkedReq && (
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded font-medium border ${
+                          linkedReq.status === 'APROBADA'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                            : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
+                        }`}
+                        title={
+                          linkedReq.status === 'APROBADA'
+                            ? 'Solicitud aprobada y lista para OC'
+                            : `Solicitud en estado ${linkedReq.status}. Requiere aprobación previa de jefatura.`
+                        }
+                      >
+                        Sol: {linkedReq.requestNumber} ({linkedReq.status})
                       </span>
                     )}
                   </div>
@@ -274,19 +299,27 @@ export function QuotationsTab() {
                     )}
 
                     {quote.status === 'SELECCIONADA' && (
-                      <button
-                        onClick={() => handleConvertToOrder(quote)}
-                        disabled={createOrderMutation.isPending}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs"
-                      >
-                        <FileCheck size={14} />
-                        Generar Orden de Compra
-                      </button>
+                      <div className="flex flex-col items-end gap-1">
+                        <button
+                          onClick={() => handleConvertToOrder(quote)}
+                          disabled={createOrderMutation.isPending}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs"
+                        >
+                          <FileCheck size={14} />
+                          Generar Orden de Compra
+                        </button>
+                        {!isReqApproved && (
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                            ⚠️ Solicitud base requiere aprobación
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

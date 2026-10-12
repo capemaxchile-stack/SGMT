@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useRoles, useCreateRole, useUpdateRolePermissions } from '../../api/users';
+import {
+  useRoles,
+  useCreateRole,
+  useUpdateRole,
+  useDeleteRole,
+  useUpdateRolePermissions,
+} from '../../api/users';
 import { Role, RolePermission } from '../../types/models';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -15,6 +21,8 @@ import {
   Eye,
   CheckSquare,
   Lock,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 
 interface ModuleConfig {
@@ -40,6 +48,8 @@ export function RolePermissionsTab() {
   const toast = useToast();
   const { data: roles, isLoading } = useRoles();
   const createRoleMutation = useCreateRole();
+  const updateRoleMutation = useUpdateRole();
+  const deleteRoleMutation = useDeleteRole();
   const updatePermissionsMutation = useUpdateRolePermissions();
 
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
@@ -52,6 +62,15 @@ export function RolePermissionsTab() {
   const [newRoleDisplayName, setNewRoleDisplayName] = useState('');
   const [newRoleLevel, setNewRoleLevel] = useState(1);
   const [newRoleMaxApproval, setNewRoleMaxApproval] = useState<number | undefined>(undefined);
+
+  // Edit Role Modal state
+  const [isEditRoleModalOpen, setIsEditRoleModalOpen] = useState(false);
+  const [editRoleDisplayName, setEditRoleDisplayName] = useState('');
+  const [editRoleLevel, setEditRoleLevel] = useState(1);
+  const [editRoleMaxApproval, setEditRoleMaxApproval] = useState<number | undefined>(undefined);
+
+  // Delete Role Modal state
+  const [isDeleteRoleModalOpen, setIsDeleteRoleModalOpen] = useState(false);
 
   // Sync selected role when roles load or change
   useEffect(() => {
@@ -215,6 +234,66 @@ export function RolePermissionsTab() {
     }
   };
 
+  const isSystemRole =
+    selectedRole?.name === 'ADMIN_SISTEMA' || selectedRole?.name === 'SUPER_USUARIO';
+
+  const handleOpenEditRole = () => {
+    if (!selectedRole) return;
+    setEditRoleDisplayName(selectedRole.displayName);
+    setEditRoleLevel(selectedRole.level);
+    setEditRoleMaxApproval(
+      selectedRole.maxApprovalAmount ? Number(selectedRole.maxApprovalAmount) : undefined,
+    );
+    setIsEditRoleModalOpen(true);
+  };
+
+  const handleEditRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRole) return;
+    if (!editRoleDisplayName.trim()) {
+      toast.error('El nombre a mostrar no puede estar vacío.');
+      return;
+    }
+
+    try {
+      const updated = await updateRoleMutation.mutateAsync({
+        id: selectedRole.id,
+        displayName: editRoleDisplayName.trim(),
+        level: Number(editRoleLevel),
+        maxApprovalAmount:
+          editRoleMaxApproval !== undefined && editRoleMaxApproval !== null
+            ? Number(editRoleMaxApproval)
+            : undefined,
+      });
+      setIsEditRoleModalOpen(false);
+      toast.success(`Perfil "${updated.displayName}" actualizado correctamente.`);
+      setSelectedRole(updated);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al actualizar el perfil.');
+    }
+  };
+
+  const handleOpenDeleteRole = () => {
+    if (!selectedRole) return;
+    if (isSystemRole) {
+      toast.error('No se pueden eliminar los roles del sistema (ADMIN_SISTEMA, SUPER_USUARIO).');
+      return;
+    }
+    setIsDeleteRoleModalOpen(true);
+  };
+
+  const handleDeleteRole = async () => {
+    if (!selectedRole) return;
+    try {
+      const res = await deleteRoleMutation.mutateAsync(selectedRole.id);
+      toast.success(res?.message || `Perfil "${selectedRole.displayName}" eliminado exitosamente.`);
+      setIsDeleteRoleModalOpen(false);
+      setSelectedRole(null);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al eliminar el perfil.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-8 text-center text-slate-500">
@@ -223,9 +302,6 @@ export function RolePermissionsTab() {
       </div>
     );
   }
-
-  const isSystemRole =
-    selectedRole?.name === 'ADMIN_SISTEMA' || selectedRole?.name === 'SUPER_USUARIO';
 
   return (
     <div className="space-y-6">
@@ -326,7 +402,38 @@ export function RolePermissionsTab() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleOpenEditRole}
+                      className="flex items-center gap-1.5"
+                      title="Editar datos del perfil"
+                    >
+                      <Edit2 size={14} />
+                      <span>Editar Perfil</span>
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isSystemRole}
+                      onClick={handleOpenDeleteRole}
+                      className={`flex items-center gap-1.5 ${
+                        isSystemRole
+                          ? 'opacity-50 cursor-not-allowed text-slate-400 border-slate-200 dark:border-slate-800'
+                          : 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 border-red-200 dark:border-red-900/40'
+                      }`}
+                      title={
+                        isSystemRole
+                          ? 'Perfil protegido del sistema (no eliminable)'
+                          : 'Eliminar perfil'
+                      }
+                    >
+                      <Trash2 size={14} />
+                      <span>Eliminar Perfil</span>
+                    </Button>
+
                     {hasChanges && (
                       <span className="text-xs text-amber-600 dark:text-amber-400 font-medium animate-pulse hidden sm:inline">
                         Cambios pendientes
@@ -582,6 +689,101 @@ export function RolePermissionsTab() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal: Editar Perfil */}
+      <Modal
+        isOpen={isEditRoleModalOpen}
+        onClose={() => setIsEditRoleModalOpen(false)}
+        title={`Editar Perfil: ${selectedRole?.displayName || ''}`}
+      >
+        <form onSubmit={handleEditRole} className="space-y-4">
+          <Input
+            label="Nombre del Perfil *"
+            placeholder="Ej. Asistente de Adquisiciones"
+            value={editRoleDisplayName}
+            onChange={(e) => setEditRoleDisplayName(e.target.value)}
+            required
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Nivel Jerárquico *"
+              type="number"
+              min={1}
+              max={100}
+              value={editRoleLevel}
+              onChange={(e) => setEditRoleLevel(Number(e.target.value))}
+              required
+            />
+
+            <Input
+              label="Tope de Aprobación CLP (Opcional)"
+              type="number"
+              placeholder="Ej. 2000000"
+              value={editRoleMaxApproval ?? ''}
+              onChange={(e) =>
+                setEditRoleMaxApproval(e.target.value ? Number(e.target.value) : undefined)
+              }
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditRoleModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={updateRoleMutation.isPending}
+              isLoading={updateRoleMutation.isPending}
+            >
+              Guardar Cambios
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal: Confirmar Eliminación de Perfil */}
+      <Modal
+        isOpen={isDeleteRoleModalOpen}
+        onClose={() => setIsDeleteRoleModalOpen(false)}
+        title="Confirmar Eliminación de Perfil"
+      >
+        <div className="space-y-4 pt-2">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            ¿Está seguro de que desea eliminar el perfil{' '}
+            <strong className="text-slate-900 dark:text-white font-semibold">
+              {selectedRole?.displayName}
+            </strong>
+            ? Esta acción es irreversible.
+          </p>
+          <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800">
+            Asegúrese de que ningún usuario tenga este perfil asignado antes de continuar. Si existen usuarios asignados, el sistema rechazará la eliminación.
+          </p>
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteRoleModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              disabled={deleteRoleMutation.isPending}
+              isLoading={deleteRoleMutation.isPending}
+              onClick={handleDeleteRole}
+            >
+              Eliminar Perfil
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
