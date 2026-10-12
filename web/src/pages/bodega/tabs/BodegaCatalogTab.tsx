@@ -316,10 +316,10 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
             {type === 'items' ? 'Catalogo de Materiales e Insumos' : type === 'warehouses' ? 'Listado de Bodegas' : 'Directorio de Proveedores'}
           </h2>
-          <p className="text-slate-500 text-sm">
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
             {type === 'items'
               ? 'Administracion de repuestos, lubricantes y combustibles'
               : type === 'warehouses'
@@ -339,7 +339,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col sm:flex-row gap-4">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <Input
             placeholder="Buscar..."
@@ -351,13 +351,13 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
         {type === 'items' && (
           <div className="w-full sm:w-64">
             <div className="flex items-center gap-2 mb-1">
-              <Filter size={16} className="text-slate-500" />
-              <label className="text-sm font-medium text-slate-700">Filtrar por Categoria</label>
+              <Filter size={16} className="text-slate-500 dark:text-slate-400" />
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Filtrar por Categoria</label>
             </div>
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="TODOS">Todas las Categorías</option>
               {ITEM_CATEGORIES.map((cat) => (
@@ -375,26 +375,26 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
             {
               header: 'Codigo',
               cell: (i: Item) => (
-                <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded text-xs">
+                <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs">
                   {i.code}
                 </span>
               ),
             },
             {
               header: 'Descripcion',
-              cell: (i: Item) => <span className="font-medium text-slate-800">{i.description}</span>,
+              cell: (i: Item) => <span className="font-medium text-slate-800 dark:text-slate-200">{i.description}</span>,
             },
             {
               header: 'Categoria',
-              cell: (i: Item) => <span className="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">{i.category}</span>,
+              cell: (i: Item) => <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs px-2 py-1 rounded">{i.category}</span>,
             },
             {
               header: 'Unidad',
-              cell: (i: Item) => <span className="text-slate-600 text-sm">{i.unitOfMeasure}</span>,
+              cell: (i: Item) => <span className="text-slate-600 dark:text-slate-400 text-sm">{i.unitOfMeasure}</span>,
             },
             {
               header: 'Stock Minimo',
-              cell: (i: Item) => <span className="text-slate-600 text-sm">{i.minimumStock}</span>,
+              cell: (i: Item) => <span className="text-slate-600 dark:text-slate-400 text-sm">{i.minimumStock}</span>,
             },
             {
               header: 'Acciones',
@@ -421,19 +421,19 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
           columns={[
             {
               header: 'Nombre',
-              cell: (w: Warehouse) => <span className="font-semibold text-slate-900">{w.name}</span>,
+              cell: (w: Warehouse) => <span className="font-semibold text-slate-900 dark:text-slate-100">{w.name}</span>,
             },
             {
               header: 'Tipo',
               cell: (w: Warehouse) => (
-                <span className={`text-xs px-2.5 py-1 rounded font-medium ${w.type === 'CENTRAL' ? 'bg-primary-100 text-primary-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                <span className={`text-xs px-2.5 py-1 rounded font-medium ${w.type === 'CENTRAL' ? 'bg-primary-100 text-primary-800 dark:bg-primary-950/70 dark:text-primary-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300'}`}>
                   {w.type === 'CENTRAL' ? 'Central' : 'En Faena'}
                 </span>
               ),
             },
             {
               header: 'Ubicacion',
-              cell: (w: Warehouse) => <span className="text-slate-600 text-sm">{w.location}</span>,
+              cell: (w: Warehouse) => <span className="text-slate-600 dark:text-slate-400 text-sm">{w.location}</span>,
             },
             {
               header: 'Acciones',
@@ -461,27 +461,27 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
             {
               header: 'RUT',
               cell: (s: Supplier) => (
-                <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded text-xs">
+                <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs">
                   {s.rut}
                 </span>
               ),
             },
             {
               header: 'Razon Social',
-              cell: (s: Supplier) => <span className="font-medium text-slate-900">{s.businessName}</span>,
+              cell: (s: Supplier) => <span className="font-medium text-slate-900 dark:text-slate-100">{s.businessName}</span>,
             },
             {
               header: 'Contacto',
               cell: (s: Supplier) => (
-                <div className="text-xs text-slate-700">
+                <div className="text-xs text-slate-700 dark:text-slate-300">
                   <p className="font-medium">{s.contactName || 'N/A'}</p>
-                  <p className="text-slate-500">{s.contactEmail}</p>
+                  <p className="text-slate-500 dark:text-slate-400">{s.contactEmail}</p>
                 </div>
               ),
             },
             {
               header: 'Telefono',
-              cell: (s: Supplier) => <span className="text-slate-600 text-sm">{s.contactPhone || 'N/A'}</span>,
+              cell: (s: Supplier) => <span className="text-slate-600 dark:text-slate-400 text-sm">{s.contactPhone || 'N/A'}</span>,
             },
             {
               header: 'Acciones',
@@ -524,8 +524,8 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
               <div className="grid grid-cols-2 gap-4">
                 <Input label="Codigo *" placeholder="Ej: ITM-006" value={itemCode} onChange={(e) => setItemCode(e.target.value)} required />
                 <div className="flex flex-col w-full">
-                  <label className="mb-1 text-sm font-medium text-slate-700">Categoria *</label>
-                  <select value={itemCategory} onChange={(e) => setItemCategory(e.target.value)} className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                  <label className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Categoria *</label>
+                  <select value={itemCategory} onChange={(e) => setItemCategory(e.target.value)} className="flex w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                     {ITEM_CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
@@ -535,8 +535,8 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
               <Input label="Descripcion *" placeholder="Ej: Filtro de Petroleo" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} required />
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col w-full">
-                  <label className="mb-1 text-sm font-medium text-slate-700">Unidad de Medida *</label>
-                  <select value={itemUnit} onChange={(e) => setItemUnit(e.target.value)} className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                  <label className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Unidad de Medida *</label>
+                  <select value={itemUnit} onChange={(e) => setItemUnit(e.target.value)} className="flex w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                     <option value="UN">UN (Unidad)</option>
                     <option value="L">L (Litros)</option>
                     <option value="KG">KG (Kilogramos)</option>
@@ -554,8 +554,8 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
               <Input label="Nombre de Bodega *" placeholder="Ej: Bodega Faena Pelambres" value={warehouseName} onChange={(e) => setWarehouseName(e.target.value)} required />
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col w-full">
-                  <label className="mb-1 text-sm font-medium text-slate-700">Tipo *</label>
-                  <select value={warehouseType} onChange={(e) => setWarehouseType(e.target.value as WarehouseType)} className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                  <label className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Tipo *</label>
+                  <select value={warehouseType} onChange={(e) => setWarehouseType(e.target.value as WarehouseType)} className="flex w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                     <option value="CENTRAL">Central</option>
                     <option value="FAENA">En Faena</option>
                   </select>
@@ -580,7 +580,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
             </>
           )}
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button variant="ghost" type="button" onClick={() => { setIsCreateModalOpen(false); setIsEditModalOpen(false); }}>
               Cancelar
             </Button>
@@ -595,10 +595,10 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
       <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirmar Eliminacion">
         <div className="space-y-4 pt-2">
           {errorMsg && <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm border border-red-200">{errorMsg}</div>}
-          <p className="text-slate-700 text-sm">
+          <p className="text-slate-700 dark:text-slate-300 text-sm">
             ¿Estas seguro de que deseas eliminar este registro? Esta accion no se puede deshacer.
           </p>
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)}>Cancelar</Button>
             <Button variant="danger" onClick={handleDeleteSubmit}>Eliminar</Button>
           </div>

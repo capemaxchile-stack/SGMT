@@ -120,8 +120,8 @@ export function FaenasPage() {
       header: 'Nombre y Ubicacion',
       cell: (item: Faena) => (
         <div>
-          <p className="font-semibold text-slate-900">{item.name}</p>
-          <div className="flex items-center text-xs text-slate-500 mt-1">
+          <p className="font-semibold text-slate-900 dark:text-slate-100">{item.name}</p>
+          <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 mt-1">
             <MapPin size={12} className="mr-1 text-slate-400" /> {item.location}
           </div>
         </div>
@@ -134,7 +134,7 @@ export function FaenasPage() {
     {
       header: 'Jefe Responsable',
       cell: (item: Faena) => (
-        <div className="text-sm text-slate-700 flex items-center">
+        <div className="text-sm text-slate-700 dark:text-slate-300 flex items-center">
           <UserCheck size={14} className="mr-1.5 text-slate-400" />
           {item.chief?.name || <span className="text-slate-400 italic">Sin asignar</span>}
         </div>
@@ -146,12 +146,12 @@ export function FaenasPage() {
         <div className="flex gap-4">
           <button
             onClick={() => handleOpenContractsModal(item)}
-            className="flex items-center text-sm text-primary-600 hover:underline"
+            className="flex items-center text-sm text-primary-600 dark:text-primary-400 hover:underline"
           >
-            <FileText size={14} className="mr-1 text-primary-500" />
+            <FileText size={14} className="mr-1 text-primary-500 dark:text-primary-400" />
             {item._count?.contracts ?? 0} Contratos
           </button>
-          <div className="flex items-center text-sm text-slate-600">
+          <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
             <Building2 size={14} className="mr-1 text-slate-400" />
             {item._count?.assets ?? 0} Equipos
           </div>
@@ -161,7 +161,7 @@ export function FaenasPage() {
     {
       header: 'Fecha Inicio',
       cell: (item: Faena) => (
-        <div className="text-sm text-slate-600 flex items-center">
+        <div className="text-sm text-slate-600 dark:text-slate-400 flex items-center">
           <Calendar size={12} className="mr-1.5 text-slate-400" />
           {item.startDate ? new Date(item.startDate).toLocaleDateString() : 'N/A'}
         </div>
@@ -192,8 +192,8 @@ export function FaenasPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Gestion de Faenas</h1>
-          <p className="text-slate-500 text-sm mt-1">Administra los proyectos, obras y sus contratos asociados</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Gestion de Faenas</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Administra los proyectos, obras y sus contratos asociados</p>
         </div>
         <Button onClick={handleOpenCreateModal}>
           <Plus size={16} className="mr-2" />
@@ -201,7 +201,7 @@ export function FaenasPage() {
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-lg border border-slate-200">
+      <div className="flex flex-col sm:flex-row gap-4 bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
         <div className="flex-1">
           <Input
             placeholder="Buscar por nombre o ubicacion..."
@@ -217,8 +217,8 @@ export function FaenasPage() {
               onClick={() => setStatusFilter(st)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                 statusFilter === st
-                  ? 'bg-primary-100 text-primary-700 font-semibold'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-950/80 dark:text-primary-300 font-semibold'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
               }`}
             >
               {st === 'TODAS' ? 'Todas' : st.replace('_', ' ')}
@@ -266,11 +266,11 @@ export function FaenasPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col w-full">
-              <label className="mb-1 text-sm font-medium text-slate-700">Estado</label>
+              <label className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Estado</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as FaenaStatus)}
-                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="flex w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="EN_FORMACION">En Formacion</option>
                 <option value="ACTIVA">Activa</option>
@@ -288,11 +288,11 @@ export function FaenasPage() {
           </div>
 
           <div className="flex flex-col w-full">
-            <label className="mb-1 text-sm font-medium text-slate-700">Jefe de Faena Responsable</label>
+            <label className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Jefe de Faena Responsable</label>
             <select
               value={chiefId}
               onChange={(e) => setChiefId(e.target.value)}
-              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="flex w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">-- Sin asignar / Seleccionar despues --</option>
               {users?.map((u) => (
@@ -329,11 +329,11 @@ export function FaenasPage() {
               {errorMsg}
             </div>
           )}
-          <p className="text-slate-700 text-sm">
+          <p className="text-slate-700 dark:text-slate-300 text-sm">
             ¿Estas seguro de que deseas eliminar la faena <strong>{selectedFaena?.name}</strong>?
             Esta accion no se puede deshacer.
           </p>
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)}>
               Cancelar
             </Button>
@@ -355,12 +355,12 @@ export function FaenasPage() {
         title={`Contratos: ${selectedFaena?.name || ''}`}
       >
         <div className="space-y-4 pt-2">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Contratos activos vinculados a esta faena y sus centros de costo.
           </p>
-          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center py-6">
-            <p className="text-sm font-medium text-slate-700">Modulo de Contratos</p>
-            <p className="text-xs text-slate-500 mt-1">
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 text-center py-6">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Modulo de Contratos</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               {selectedFaena?._count?.contracts ?? 0} contratos registrados.
             </p>
           </div>

@@ -82,7 +82,7 @@ export function Modal({
       />
       <div 
         className={cn(
-          "relative bg-white rounded-lg shadow-xl w-full max-h-[90vh] flex flex-col mx-4 transition-all transform duration-200 ease-out",
+          "relative bg-white rounded-lg shadow-xl w-full max-h-[90vh] flex flex-col mx-4 transition-all transform duration-200 ease-out border border-slate-200 dark:bg-slate-900 dark:border-slate-800",
           sizeClasses[size] || 'max-w-lg',
           className
         )}
@@ -90,11 +90,11 @@ export function Modal({
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <div className="flex items-center justify-between p-4 border-b border-slate-100">
-          <h2 id="modal-title" className="text-lg font-semibold text-slate-800">
+        <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
+          <h2 id="modal-title" className="text-lg font-semibold text-slate-800 dark:text-slate-100">
             {title}
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 rounded-full text-slate-500 hover:bg-slate-100">
+          <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">
             <X size={18} />
             <span className="sr-only">Cerrar</span>
           </Button>
