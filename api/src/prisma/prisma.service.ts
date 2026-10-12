@@ -13,6 +13,70 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
           "description" TEXT,
           "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+
+        DO $$ BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'AssetDocType') THEN
+            CREATE TYPE "AssetDocType" AS ENUM (
+              'REVISION_TECNICA', 'PERMISO_CIRCULACION', 'SEGURO_SOAP', 'SEGURO_DANOS',
+              'CERTIFICACION_ESTRUCTURAL', 'ANALISIS_GASES', 'CERTIFICADO_HOMOLOGACION', 'OTRO'
+            );
+          END IF;
+        END $$;
+
+        DO $$ BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'OperatorDocType') THEN
+            CREATE TYPE "OperatorDocType" AS ENUM (
+              'LICENCIA_CONDUCIR', 'EXAMEN_OCUPACIONAL', 'INDUCCION_DAS',
+              'CERTIFICACION_MAQUINARIA', 'CONTRATO_TRABAJO', 'ENTREGA_EPP', 'OTRO'
+            );
+          END IF;
+        END $$;
+
+        CREATE TABLE IF NOT EXISTS "AssetDocument" (
+          "id" TEXT PRIMARY KEY,
+          "assetId" TEXT NOT NULL,
+          "docType" "AssetDocType" NOT NULL,
+          "documentNumber" TEXT,
+          "issuingEntity" TEXT,
+          "issueDate" TIMESTAMP(3),
+          "expirationDate" TIMESTAMP(3) NOT NULL,
+          "fileUrl" TEXT,
+          "notes" TEXT,
+          "isMandatory" BOOLEAN NOT NULL DEFAULT true,
+          "createdById" TEXT NOT NULL,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS "OperatorCertification" (
+          "id" TEXT PRIMARY KEY,
+          "operatorName" TEXT NOT NULL,
+          "rut" TEXT NOT NULL,
+          "jobTitle" TEXT,
+          "faenaId" TEXT,
+          "docType" "OperatorDocType" NOT NULL,
+          "documentNumber" TEXT,
+          "issuingEntity" TEXT,
+          "issueDate" TIMESTAMP(3),
+          "expirationDate" TIMESTAMP(3) NOT NULL,
+          "fileUrl" TEXT,
+          "notes" TEXT,
+          "createdById" TEXT NOT NULL,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS "Budget" (
+          "id" TEXT PRIMARY KEY,
+          "faenaId" TEXT NOT NULL,
+          "costCenterId" TEXT,
+          "year" INTEGER NOT NULL,
+          "month" INTEGER,
+          "amount" DECIMAL(65,30) NOT NULL DEFAULT 0,
+          "notes" TEXT,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
       `);
     } catch {
       // Ignore in mock/test DBs

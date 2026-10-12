@@ -94,47 +94,47 @@ export function PendingReceptionTab() {
       </div>
 
       {/* Orders List */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center text-slate-500 text-sm">Cargando compras pendientes...</div>
+          <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-sm">Cargando compras pendientes...</div>
         ) : pendingOrders.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 text-sm">
+          <div className="p-12 text-center text-slate-400 dark:text-slate-500 text-sm">
             <CheckCircle2 size={32} className="mx-auto text-emerald-500 mb-2" />
             No hay compras pendientes de ingreso a bodega en este momento. Todas las recepciones están al día.
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {pendingOrders.map((order) => (
               <div
                 key={order.id}
-                className="p-5 hover:bg-slate-50/60 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="p-5 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
                 <div className="space-y-2 flex-1">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="font-bold text-slate-900 text-sm">{order.orderNumber}</span>
+                    <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">{order.orderNumber}</span>
 
                     {order.receptionDestination === 'GARITA_TRANSITO' ? (
-                      <span className="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-100 text-indigo-800 flex items-center gap-1">
+                      <span className="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 flex items-center gap-1">
                         <Truck size={12} />
                         En Garita (Ticket: {order.gateTicketNumber || 'S/N'})
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 text-xs font-semibold rounded bg-amber-100 text-amber-800 flex items-center gap-1">
+                      <span className="px-2 py-0.5 text-xs font-semibold rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 flex items-center gap-1">
                         <Clock size={12} />
                         Emitida - En Despacho
                       </span>
                     )}
 
                     {order.isOverdue && (
-                      <span className="px-2 py-0.5 text-xs font-semibold rounded bg-rose-100 text-rose-800 flex items-center gap-1">
+                      <span className="px-2 py-0.5 text-xs font-semibold rounded bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 flex items-center gap-1">
                         <AlertTriangle size={12} />
                         Atrasada
                       </span>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600">
-                    <span className="flex items-center gap-1 font-medium text-slate-800">
+                  <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
+                    <span className="flex items-center gap-1 font-medium text-slate-800 dark:text-slate-200">
                       <Building size={14} className="text-slate-400" />
                       {order.supplierName} ({order.supplierRut})
                     </span>
@@ -149,7 +149,7 @@ export function PendingReceptionTab() {
                   </div>
 
                   {/* Items summary */}
-                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-xs text-slate-700">
+                  <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
                     {order.lines.map((l, lIdx) => (
                       <div key={lIdx} className="flex justify-between py-0.5">
                         <span>
@@ -161,10 +161,10 @@ export function PendingReceptionTab() {
                   </div>
                 </div>
 
-                <div className="flex flex-col items-end justify-between gap-3 border-t md:border-t-0 pt-3 md:pt-0">
+                <div className="flex flex-col items-end justify-between gap-3 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100 dark:border-slate-800">
                   <div className="text-right">
                     <span className="text-[11px] text-slate-400 block uppercase font-medium">Monto OC</span>
-                    <span className="text-base font-bold text-slate-900">
+                    <span className="text-base font-bold text-slate-900 dark:text-slate-100">
                       ${order.totalAmount.toLocaleString('es-CL')} CLP
                     </span>
                   </div>
@@ -172,7 +172,7 @@ export function PendingReceptionTab() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setSelectedOrderForTimeline(order.id)}
-                      className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-xs"
+                      className="px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-xs"
                     >
                       Ver Trazabilidad
                     </button>
@@ -195,25 +195,25 @@ export function PendingReceptionTab() {
       {/* Reception Action Dialog */}
       {selectedOrderForReception && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 space-y-4">
-            <h3 className="text-base font-bold text-slate-900">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 space-y-4">
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
               Recepcionar Compra ({selectedOrderForReception.orderNumber})
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Seleccione el destino físico de la carga según los procedimientos de logística de faena.
             </p>
 
             <form onSubmit={handleConfirmReception} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Destino de Recepción *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Destino de Recepción *</label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setDestination('BODEGA')}
                     className={`p-2.5 text-xs font-semibold rounded-lg border text-center transition-all ${
                       destination === 'BODEGA'
-                        ? 'border-primary-600 bg-primary-50 text-primary-700 ring-2 ring-primary-100'
-                        : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                        ? 'border-primary-600 bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 ring-2 ring-primary-100 dark:ring-primary-900/50'
+                        : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     Bodega Central/Faena
@@ -223,8 +223,8 @@ export function PendingReceptionTab() {
                     onClick={() => setDestination('GARITA_TRANSITO')}
                     className={`p-2.5 text-xs font-semibold rounded-lg border text-center transition-all ${
                       destination === 'GARITA_TRANSITO'
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-100'
-                        : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-100 dark:ring-indigo-900/50'
+                        : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     Garita Control
@@ -234,8 +234,8 @@ export function PendingReceptionTab() {
                     onClick={() => setDestination('ACTIVO_DIRECTO')}
                     className={`p-2.5 text-xs font-semibold rounded-lg border text-center transition-all ${
                       destination === 'ACTIVO_DIRECTO'
-                        ? 'border-emerald-600 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-100'
-                        : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-100 dark:ring-emerald-900/50'
+                        : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     Directo a Terreno
@@ -245,12 +245,12 @@ export function PendingReceptionTab() {
 
               {destination === 'BODEGA' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Bodega de Destino *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Bodega de Destino *</label>
                   <select
                     required
                     value={warehouseId}
                     onChange={(e) => setWarehouseId(e.target.value)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2.5 bg-white"
+                    className="w-full text-xs border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   >
                     <option value="">Seleccione bodega...</option>
                     {warehouses.map((w) => (
@@ -264,28 +264,28 @@ export function PendingReceptionTab() {
 
               {destination === 'GARITA_TRANSITO' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Número de Ticket Garita *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Número de Ticket Garita *</label>
                   <input
                     type="text"
                     required
                     placeholder="Ej. GT-2026-9042"
                     value={gateTicketNumber}
                     onChange={(e) => setGateTicketNumber(e.target.value)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2.5"
+                    className="w-full text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg p-2.5"
                   />
                 </div>
               )}
 
               {destination === 'ACTIVO_DIRECTO' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Maquinaria / Camión Destino *
                   </label>
                   <select
                     required
                     value={targetAssetId}
                     onChange={(e) => setTargetAssetId(e.target.value)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2.5 bg-white"
+                    className="w-full text-xs border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   >
                     <option value="">Seleccione maquinaria...</option>
                     {assets.map((a: any) => (
@@ -298,21 +298,21 @@ export function PendingReceptionTab() {
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Observaciones</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Observaciones</label>
                 <input
                   type="text"
                   placeholder="Guía de despacho, transportista, estado del empaque"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5"
+                  className="w-full text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg p-2.5"
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex justify-end gap-3">
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setSelectedOrderForReception(null)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50"
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   Cancelar
                 </button>

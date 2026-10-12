@@ -175,7 +175,7 @@ export function LoginPage() {
 
         <CardHeader className="text-center pb-2 pt-6 flex flex-col items-center">
           <div className="mb-3">
-            <Logo size="lg" variant="full" />
+            <Logo size="lg" variant="full" textColor="text-white" />
           </div>
           <CardTitle className="text-2xl font-black text-white tracking-tight">
             Acceso al Sistema

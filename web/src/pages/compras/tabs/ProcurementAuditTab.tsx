@@ -76,7 +76,7 @@ export function ProcurementAuditTab() {
         <div className="max-w-3xl space-y-2">
           <div className="flex items-center gap-2 text-red-400 text-xs font-semibold uppercase tracking-wider">
             <ShieldAlert size={16} />
-            Radar Antifraude & Prevención de Mal Uso (Estándar Minero Escondida)
+            Radar Antifraude & Prevención de Mal Uso (Estándar Operacional Minero)
           </div>
           <h2 className="text-xl font-bold">Indicadores de Desviación & Integridad Operativa</h2>
           <p className="text-sm text-slate-300 leading-relaxed">

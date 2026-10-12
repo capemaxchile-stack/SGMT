@@ -239,8 +239,8 @@ export function PurchaseRequestsTab() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">Solicitudes de Pedido desde Faena</h2>
-          <p className="text-slate-500 text-sm">Requerimientos originados en terreno para cotización y compra</p>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Solicitudes de Pedido desde Faena</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Requerimientos originados en terreno para cotización y compra</p>
         </div>
         <Button onClick={handleOpenModal}>
           <Plus size={16} className="mr-2" />
@@ -248,7 +248,7 @@ export function PurchaseRequestsTab() {
         </Button>
       </div>
 
-      <div className="bg-white p-4 rounded-lg border border-slate-200">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
         <Input
           placeholder="Buscar por N° solicitud, faena o justificación..."
           value={searchTerm}
@@ -278,12 +278,12 @@ export function PurchaseRequestsTab() {
             <Input label="N° Solicitud" value={requestNumber} disabled />
 
             <div className="flex flex-col w-full">
-              <label className="mb-1 text-sm font-medium text-slate-700">Faena de Origen *</label>
+              <label className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-300">Faena de Origen *</label>
               <select
                 value={faenaId}
                 onChange={(e) => setFaenaId(e.target.value)}
                 required
-                className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+                className="flex w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">-- Seleccione Faena --</option>
                 {faenas?.map((f) => (
@@ -304,24 +304,24 @@ export function PurchaseRequestsTab() {
           />
 
           {/* Lines */}
-          <div className="space-y-3 pt-2 border-t border-slate-100">
+          <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
             <div className="flex justify-between items-center">
-              <label className="text-sm font-bold text-slate-800">Repuestos Requeridos</label>
+              <label className="text-sm font-bold text-slate-800 dark:text-slate-200">Repuestos Requeridos</label>
               <Button variant="ghost" size="sm" type="button" onClick={handleAddLine}>
                 <Plus size={14} className="mr-1" /> Agregar Repuesto
               </Button>
             </div>
 
             {lines.map((line, idx) => (
-              <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+              <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-200 dark:border-slate-700 space-y-2">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-medium text-slate-600">Repuesto *</label>
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400">Repuesto *</label>
                     <select
                       value={line.itemId}
                       onChange={(e) => handleLineChange(idx, 'itemId', e.target.value)}
                       required
-                      className="w-full text-xs rounded-md border border-slate-300 bg-white p-2"
+                      className="w-full text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-2"
                     >
                       <option value="">Seleccione repuesto...</option>
                       {items?.map((it) => (
@@ -332,7 +332,7 @@ export function PurchaseRequestsTab() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600">Cantidad *</label>
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400">Cantidad *</label>
                     <input
                       type="number"
                       min="0.01"
@@ -340,18 +340,18 @@ export function PurchaseRequestsTab() {
                       value={line.quantity}
                       onChange={(e) => handleLineChange(idx, 'quantity', parseFloat(e.target.value) || 1)}
                       required
-                      className="w-full text-xs rounded-md border border-slate-300 bg-white p-2"
+                      className="w-full text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-2"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600">Maquinaria Destino (Opcional)</label>
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400">Maquinaria Destino (Opcional)</label>
                     <select
                       value={line.targetAssetId || ''}
                       onChange={(e) => handleLineChange(idx, 'targetAssetId', e.target.value)}
-                      className="w-full text-xs rounded-md border border-slate-300 bg-white p-2"
+                      className="w-full text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-2"
                     >
                       <option value="">Sin máquina específica</option>
                       {assets?.map((a: any) => (
@@ -363,11 +363,11 @@ export function PurchaseRequestsTab() {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1">
-                      <label className="block text-[11px] font-medium text-slate-600">Urgencia</label>
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400">Urgencia</label>
                       <select
                         value={line.urgency}
                         onChange={(e) => handleLineChange(idx, 'urgency', e.target.value as RequestUrgency)}
-                        className="w-full text-xs rounded-md border border-slate-300 bg-white p-2"
+                        className="w-full text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-2"
                       >
                         <option value="BAJA">Baja</option>
                         <option value="NORMAL">Normal</option>
@@ -391,7 +391,7 @@ export function PurchaseRequestsTab() {
             ))}
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button variant="ghost" type="button" onClick={() => setIsModalOpen(false)}>
               Cancelar
             </Button>

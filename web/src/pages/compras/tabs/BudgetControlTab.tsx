@@ -255,15 +255,15 @@ export function BudgetControlTab() {
           </div>
 
           {/* Visual Execution Progress Bar */}
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold text-slate-700">Consumo Acumulado del Presupuesto</span>
-              <span className="font-bold text-slate-900">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Consumo Acumulado del Presupuesto</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">
                 ${metrics.totalCommittedAndExecuted.toLocaleString('es-CL')} de ${metrics.budgetTotal.toLocaleString('es-CL')} ({metrics.percentageUsed}%)
               </span>
             </div>
 
-            <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex">
+            <div className="w-full h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
               {/* Real spent */}
               <div
                 style={{
@@ -290,7 +290,7 @@ export function BudgetControlTab() {
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-6 text-xs text-slate-500 pt-1">
+            <div className="flex flex-wrap items-center gap-6 text-xs text-slate-500 dark:text-slate-400 pt-1">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-emerald-500" />
                 <span>Gasto Real Recepcionado (${metrics.executedOrders.toLocaleString('es-CL')})</span>
@@ -304,7 +304,7 @@ export function BudgetControlTab() {
                 <span>Cotizaciones en Trámite (${metrics.committedQuotations.toLocaleString('es-CL')})</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-slate-200" />
+                <span className="w-3 h-3 rounded-full bg-slate-200 dark:bg-slate-700" />
                 <span>Saldo Libre (${Math.max(metrics.availableBudget, 0).toLocaleString('es-CL')})</span>
               </div>
             </div>
@@ -313,9 +313,9 @@ export function BudgetControlTab() {
           {/* Breakdown: Cost Centers & Recent Orders */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Centros de Costo */}
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="font-semibold text-slate-800 text-sm flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
                   <Layers size={16} className="text-primary-600" />
                   Centros de Costo de la Faena
                 </h3>
@@ -324,15 +324,15 @@ export function BudgetControlTab() {
               {budgetData.costCenters.length === 0 ? (
                 <p className="text-xs text-slate-400 py-4 text-center">No hay centros de costo asociados a los contratos de esta faena.</p>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {budgetData.costCenters.map((cc) => (
                     <div key={cc.id} className="py-2.5 flex items-center justify-between text-sm">
                       <div>
-                        <div className="font-medium text-slate-900">{cc.name}</div>
+                        <div className="font-medium text-slate-900 dark:text-slate-100">{cc.name}</div>
                         <div className="text-xs text-slate-400">Código: {cc.code}</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold text-slate-800">
+                        <div className="font-semibold text-slate-800 dark:text-slate-200">
                           ${cc.allocatedBudget.toLocaleString('es-CL')}
                         </div>
                         <div className="text-xs text-slate-400">Asignado</div>
@@ -344,9 +344,9 @@ export function BudgetControlTab() {
             </div>
 
             {/* Órdenes Recientes del Período */}
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="font-semibold text-slate-800 text-sm flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
                   <DollarSign size={16} className="text-emerald-600" />
                   Últimos Gastos & Órdenes en la Faena
                 </h3>
@@ -355,18 +355,18 @@ export function BudgetControlTab() {
               {budgetData.recentOrders.length === 0 ? (
                 <p className="text-xs text-slate-400 py-4 text-center">No se registran órdenes de compra en el período.</p>
               ) : (
-                <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-64 overflow-y-auto">
                   {budgetData.recentOrders.map((po) => (
                     <div key={po.id} className="py-2.5 flex items-center justify-between text-sm">
                       <div>
-                        <div className="font-medium text-slate-900">{po.orderNumber}</div>
-                        <div className="text-xs text-slate-500">{po.supplierName}</div>
+                        <div className="font-medium text-slate-900 dark:text-slate-100">{po.orderNumber}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">{po.supplierName}</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold text-slate-900">
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">
                           ${po.totalAmount.toLocaleString('es-CL')}
                         </div>
-                        <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                        <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                           {po.status}
                         </span>
                       </div>
@@ -381,16 +381,16 @@ export function BudgetControlTab() {
 
       {/* Modal Asignar Presupuesto */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-slate-900">Asignar / Modificar Presupuesto</h3>
-            <p className="text-xs text-slate-500">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Asignar / Modificar Presupuesto</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Define el presupuesto operativo para compras y suministros en la faena seleccionada.
             </p>
 
             <form onSubmit={handleSaveBudget} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
                   Monto Total Presupuesto (CLP)
                 </label>
                 <input
@@ -401,24 +401,24 @@ export function BudgetControlTab() {
                   value={modalForm.amount}
                   onChange={(e) => setModalForm({ ...modalForm, amount: e.target.value })}
                   placeholder="Ej: 50000000"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
                     Año
                   </label>
                   <input
                     type="number"
                     value={modalForm.year}
                     onChange={(e) => setModalForm({ ...modalForm, year: parseInt(e.target.value, 10) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
                     Mes (Opcional)
                   </label>
                   <select
@@ -429,7 +429,7 @@ export function BudgetControlTab() {
                         month: e.target.value ? parseInt(e.target.value, 10) : undefined,
                       })
                     }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-sm"
                   >
                     <option value="">Anual (Todo el año)</option>
                     {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -442,13 +442,13 @@ export function BudgetControlTab() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
                   Centro de Costo (Opcional)
                 </label>
                 <select
                   value={modalForm.costCenterId}
                   onChange={(e) => setModalForm({ ...modalForm, costCenterId: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-sm"
                 >
                   <option value="">General Faena</option>
                   {budgetData?.costCenters.map((cc) => (
@@ -460,7 +460,7 @@ export function BudgetControlTab() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
                   Notas / Justificación
                 </label>
                 <textarea
@@ -468,7 +468,7 @@ export function BudgetControlTab() {
                   value={modalForm.notes}
                   onChange={(e) => setModalForm({ ...modalForm, notes: e.target.value })}
                   placeholder="Detalles sobre asignación presupuestaria..."
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-sm"
                 />
               </div>
 
@@ -476,7 +476,7 @@ export function BudgetControlTab() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   Cancelar
                 </button>

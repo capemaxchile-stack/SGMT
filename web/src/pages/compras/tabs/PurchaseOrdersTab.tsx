@@ -368,8 +368,8 @@ export function PurchaseOrdersTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">Ordenes de Compra (OC)</h2>
-          <p className="text-slate-500 text-sm">Gestion del ciclo de compras, aprobacion jerarquica y recepcion</p>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Ordenes de Compra (OC)</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Gestion del ciclo de compras, aprobacion jerarquica y recepcion</p>
         </div>
         <Button onClick={handleOpenCreateModal}>
           <Plus size={16} className="mr-2" />
@@ -379,26 +379,26 @@ export function PurchaseOrdersTab() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-slate-200">
-          <p className="text-xs text-slate-500 uppercase font-bold">Total OCs</p>
-          <p className="text-2xl font-bold text-slate-900 mt-1">{totalOrders}</p>
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
+          <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold">Total OCs</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{totalOrders}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-slate-200">
-          <p className="text-xs text-amber-600 uppercase font-bold">Por Aprobar</p>
-          <p className="text-2xl font-bold text-amber-700 mt-1">{pendingOrders}</p>
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
+          <p className="text-xs text-amber-600 dark:text-amber-400 uppercase font-bold">Por Aprobar</p>
+          <p className="text-2xl font-bold text-amber-700 dark:text-amber-400 mt-1">{pendingOrders}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-slate-200">
-          <p className="text-xs text-primary-600 uppercase font-bold">Aprobadas</p>
-          <p className="text-2xl font-bold text-primary-700 mt-1">{approvedOrders}</p>
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
+          <p className="text-xs text-primary-600 dark:text-primary-400 uppercase font-bold">Aprobadas</p>
+          <p className="text-2xl font-bold text-primary-700 dark:text-primary-400 mt-1">{approvedOrders}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-slate-200">
-          <p className="text-xs text-emerald-600 uppercase font-bold">Recepcionadas</p>
-          <p className="text-2xl font-bold text-emerald-700 mt-1">{receivedOrders}</p>
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 uppercase font-bold">Recepcionadas</p>
+          <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mt-1">{receivedOrders}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-lg border border-slate-200">
+      <div className="flex flex-col sm:flex-row gap-4 bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
         <div className="flex-1">
           <Input
             placeholder="Buscar por N° OC o proveedor..."
@@ -411,7 +411,7 @@ export function PurchaseOrdersTab() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="flex w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="TODOS">Todos los Estados</option>
             <option value="PENDIENTE_APROBACION">Pendiente Aprobacion</option>
@@ -440,12 +440,12 @@ export function PurchaseOrdersTab() {
           )}
 
           <div className="flex flex-col w-full">
-            <label className="mb-1 text-sm font-medium text-slate-700">Proveedor *</label>
+            <label className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-300">Proveedor *</label>
             <select
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
               required
-              className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="flex w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               {suppliers?.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -473,20 +473,20 @@ export function PurchaseOrdersTab() {
           {/* Line Items */}
           <div className="space-y-2 pt-2">
             <div className="flex justify-between items-center">
-              <label className="text-sm font-bold text-slate-800">Lineas de Compra</label>
+              <label className="text-sm font-bold text-slate-800 dark:text-slate-200">Lineas de Compra</label>
               <Button variant="ghost" size="sm" type="button" onClick={handleAddLine}>
                 <Plus size={14} className="mr-1" /> Agregar Fila
               </Button>
             </div>
 
             {lines.map((line, idx) => (
-              <div key={idx} className="flex gap-2 items-center bg-slate-50 p-2 rounded border border-slate-200">
+              <div key={idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-800/60 p-2 rounded border border-slate-200 dark:border-slate-700">
                 <div className="flex-1">
                   <select
                     value={line.itemId}
                     onChange={(e) => handleLineChange(idx, 'itemId', e.target.value)}
                     required
-                    className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="flex w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     {items?.map((item) => (
                       <option key={item.id} value={item.id}>
@@ -519,7 +519,7 @@ export function PurchaseOrdersTab() {
                   variant="ghost"
                   size="sm"
                   type="button"
-                  className="text-red-500"
+                  className="text-red-500 hover:text-red-600"
                   onClick={() => handleRemoveLine(idx)}
                 >
                   <Trash2 size={15} />
@@ -527,12 +527,12 @@ export function PurchaseOrdersTab() {
               </div>
             ))}
 
-            <div className="text-right font-bold text-slate-900 text-sm pt-2">
+            <div className="text-right font-bold text-slate-900 dark:text-white text-sm pt-2">
               Total OC: ${totalCalculated.toLocaleString('es-CL')} CLP
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button variant="ghost" type="button" onClick={() => setIsCreateModalOpen(false)}>
               Cancelar
             </Button>
@@ -556,7 +556,7 @@ export function PurchaseOrdersTab() {
             </div>
           )}
 
-          <div className="bg-slate-50 p-3 rounded text-sm text-slate-700">
+          <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded text-sm text-slate-700 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700">
             <p>
               <strong>Proveedor:</strong> {selectedOrder?.supplier?.businessName}
             </p>
@@ -567,15 +567,15 @@ export function PurchaseOrdersTab() {
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Destino de Recepción *</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Destino de Recepción *</label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setReceptionDestination('BODEGA')}
                   className={`p-2 text-xs font-semibold rounded-lg border text-center transition-all ${
                     receptionDestination === 'BODEGA'
-                      ? 'border-primary-600 bg-primary-50 text-primary-700 ring-2 ring-primary-100'
-                      : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                      ? 'border-primary-600 bg-primary-50 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 ring-2 ring-primary-100 dark:ring-primary-900'
+                      : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                 >
                   Bodega
@@ -585,8 +585,8 @@ export function PurchaseOrdersTab() {
                   onClick={() => setReceptionDestination('GARITA_TRANSITO')}
                   className={`p-2 text-xs font-semibold rounded-lg border text-center transition-all ${
                     receptionDestination === 'GARITA_TRANSITO'
-                      ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-100'
-                      : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                      ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 ring-2 ring-indigo-100 dark:ring-indigo-900'
+                      : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                 >
                   Garita Entrada
@@ -596,8 +596,8 @@ export function PurchaseOrdersTab() {
                   onClick={() => setReceptionDestination('ACTIVO_DIRECTO')}
                   className={`p-2 text-xs font-semibold rounded-lg border text-center transition-all ${
                     receptionDestination === 'ACTIVO_DIRECTO'
-                      ? 'border-emerald-600 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-100'
-                      : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                      ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-100 dark:ring-emerald-900'
+                      : 'border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                 >
                   Directo a Terreno
@@ -607,12 +607,12 @@ export function PurchaseOrdersTab() {
 
             {receptionDestination === 'BODEGA' && (
               <div className="flex flex-col w-full">
-                <label className="mb-1 text-sm font-medium text-slate-700">Bodega de Destino *</label>
+                <label className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-300">Bodega de Destino *</label>
                 <select
                   value={receiveWarehouseId}
                   onChange={(e) => setReceiveWarehouseId(e.target.value)}
                   required
-                  className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+                  className="flex w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">-- Seleccione Bodega de Destino --</option>
                   {warehouses?.map((w) => (
@@ -626,26 +626,26 @@ export function PurchaseOrdersTab() {
 
             {receptionDestination === 'GARITA_TRANSITO' && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Ticket / Guía de Garita *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ticket / Guía de Garita *</label>
                 <input
                   type="text"
                   required
                   placeholder="Ej: GT-2026-8812"
                   value={receiveGateTicketNumber}
                   onChange={(e) => setReceiveGateTicketNumber(e.target.value)}
-                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5"
+                  className="w-full text-xs border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 />
               </div>
             )}
 
             {receptionDestination === 'ACTIVO_DIRECTO' && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Maquinaria en Terreno *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Maquinaria en Terreno *</label>
                 <select
                   required
                   value={receiveTargetAssetId}
                   onChange={(e) => setReceiveTargetAssetId(e.target.value)}
-                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 bg-white"
+                  className="w-full text-xs border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 >
                   <option value="">Seleccione equipo...</option>
                   {assets?.map((a: any) => (
@@ -658,18 +658,18 @@ export function PurchaseOrdersTab() {
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Observaciones</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Observaciones</label>
               <input
                 type="text"
                 placeholder="Observaciones de recepción / guía de despacho"
                 value={receiveNotes}
                 onChange={(e) => setReceiveNotes(e.target.value)}
-                className="w-full text-xs border border-slate-300 rounded-lg p-2.5"
+                className="w-full text-xs border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
             </div>
           </div>
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {receptionDestination === 'BODEGA'
               ? 'Se aumentará el stock disponible en bodega y se actualizará el costo promedio ponderado.'
               : receptionDestination === 'GARITA_TRANSITO'
@@ -677,7 +677,7 @@ export function PurchaseOrdersTab() {
               : 'Se asociará el consumo directamente al equipo en terreno sin inflar el inventario de bodega.'}
           </p>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button variant="ghost" type="button" onClick={() => setIsReceiveModalOpen(false)}>
               Cancelar
             </Button>
@@ -711,7 +711,7 @@ export function PurchaseOrdersTab() {
             onChange={(e) => setSuperKey(e.target.value)} 
             required 
           />
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button variant="ghost" type="button" onClick={() => setIsSuperUserModalOpen(false)}>
               Cancelar
             </Button>

@@ -9,9 +9,9 @@ const CONFIG_SETTING_KEY = 'NOTIFICATION_CHANNELS_CONFIG';
 
 const DEFAULT_CONFIG: NotificationChannelsConfigDto = {
   telegram: {
-    enabled: false,
-    botToken: '',
-    chatId: '',
+    enabled: Boolean(process.env.TELEGRAM_BOT_TOKEN),
+    botToken: process.env.TELEGRAM_BOT_TOKEN || '',
+    chatId: process.env.TELEGRAM_CHAT_ID || '',
     events: {
       radarAlerts: true,
       lowStock: true,
@@ -20,11 +20,11 @@ const DEFAULT_CONFIG: NotificationChannelsConfigDto = {
     },
   },
   brevo: {
-    enabled: false,
-    apiKey: '',
-    senderEmail: 'alertas@sgmt.local',
+    enabled: Boolean(process.env.BREVO_API_KEY),
+    apiKey: process.env.BREVO_API_KEY || '',
+    senderEmail: process.env.BREVO_SENDER_EMAIL || 'alertas@sgmt.local',
     senderName: 'SGMT Alertas Operacionales',
-    recipientEmails: [],
+    recipientEmails: process.env.BREVO_RECIPIENTS ? process.env.BREVO_RECIPIENTS.split(',') : [],
     events: {
       radarAlerts: true,
       lowStock: true,
@@ -45,7 +45,7 @@ const DEFAULT_CONFIG: NotificationChannelsConfigDto = {
   scheduleRules: {
     digestFrequency: 'DAILY',
     dailyDigestTime: '08:00',
-    enableRealtimeEvents: false,
+    enableRealtimeEvents: true,
     cooldownPreventDuplicateDaily: true,
   },
 };
@@ -341,22 +341,22 @@ export class NotificationChannelsService {
       }
 
       // 1. Dispatch to Telegram if enabled and event is subscribed
-      if (config.telegram?.enabled && config.telegram.events?.[payload.event]) {
-        const botToken = config.telegram.botToken;
-        const chatId = config.telegram.chatId;
-        if (botToken && chatId) {
-          const mdText =
-            `🚨 *SGMT PRO - Alerta Automática* 🔔\n\n` +
-            `📋 *${payload.title}*\n` +
-            `${payload.summary}\n\n` +
-            `📍 *Módulo:* \`${payload.link || '/dashboard'}\`\n` +
-            `📅 *Fecha:* ${new Date().toLocaleString('es-CL')}\n` +
-            `⚙️ *Servidor:* LXC Node 106`;
+      const botToken = config.telegram?.botToken || process.env.TELEGRAM_BOT_TOKEN;
+      const chatId = config.telegram?.chatId || process.env.TELEGRAM_CHAT_ID;
+      const isTelegramActive = (config.telegram?.enabled ?? true) || Boolean(process.env.TELEGRAM_BOT_TOKEN);
 
-          this.executeTelegramSend(botToken, chatId, mdText).catch((err) =>
-            this.logger.warn(`Failed async telegram dispatch: ${err.message}`),
-          );
-        }
+      if (isTelegramActive && botToken && chatId) {
+        const mdText =
+          `🚨 *SGMT PRO - Alerta Operacional* 🔔\n\n` +
+          `📋 *${payload.title}*\n` +
+          `${payload.summary}\n\n` +
+          `📍 *Módulo:* \`${payload.link || '/compras'}\`\n` +
+          `📅 *Fecha:* ${new Date().toLocaleString('es-CL')}\n` +
+          `⚙️ *Servidor:* LXC Node 106`;
+
+        this.executeTelegramSend(botToken, chatId, mdText).catch((err) =>
+          this.logger.warn(`Failed async telegram dispatch: ${err.message}`),
+        );
       }
 
       // 2. Dispatch to Brevo Email if enabled and event is subscribed
