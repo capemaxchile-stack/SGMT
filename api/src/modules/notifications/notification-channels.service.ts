@@ -81,17 +81,29 @@ export class NotificationChannelsService {
 
     try {
       const parsed: NotificationChannelsConfigDto = JSON.parse(setting.value);
-      if (rawSecrets) return parsed;
+      const merged: NotificationChannelsConfigDto = {
+        ...DEFAULT_CONFIG,
+        ...parsed,
+        telegram: { ...DEFAULT_CONFIG.telegram, ...parsed.telegram },
+        brevo: { ...DEFAULT_CONFIG.brevo, ...parsed.brevo },
+        scheduleRules: {
+          digestFrequency: parsed.scheduleRules?.digestFrequency || DEFAULT_CONFIG.scheduleRules?.digestFrequency || 'DAILY',
+          dailyDigestTime: parsed.scheduleRules?.dailyDigestTime || DEFAULT_CONFIG.scheduleRules?.dailyDigestTime || '08:00',
+          enableRealtimeEvents: parsed.scheduleRules?.enableRealtimeEvents ?? DEFAULT_CONFIG.scheduleRules?.enableRealtimeEvents ?? true,
+          cooldownPreventDuplicateDaily: parsed.scheduleRules?.cooldownPreventDuplicateDaily ?? DEFAULT_CONFIG.scheduleRules?.cooldownPreventDuplicateDaily ?? true,
+        },
+      };
+      if (rawSecrets) return merged;
 
       return {
-        ...parsed,
+        ...merged,
         telegram: {
-          ...parsed.telegram,
-          botToken: this.maskSecret(parsed.telegram?.botToken),
+          ...merged.telegram,
+          botToken: this.maskSecret(merged.telegram?.botToken),
         },
         brevo: {
-          ...parsed.brevo,
-          apiKey: this.maskSecret(parsed.brevo?.apiKey),
+          ...merged.brevo,
+          apiKey: this.maskSecret(merged.brevo?.apiKey),
         },
       };
     } catch {
@@ -335,7 +347,7 @@ export class NotificationChannelsService {
       const config = await this.getConfig(true);
 
       // Check if immediate realtime event dispatch is active (otherwise captured in daily digest)
-      const allowRealtime = config.scheduleRules?.enableRealtimeEvents ?? false;
+      const allowRealtime = config.scheduleRules?.enableRealtimeEvents ?? true;
       if (!allowRealtime) {
         return;
       }
