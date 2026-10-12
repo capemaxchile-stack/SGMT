@@ -107,5 +107,67 @@ describe('CertificationsService', () => {
       expect(res.id).toBe('doc-1');
       expect(res.status).toBe('VIGENTE');
     });
+
+    it('should correctly handle object userParam (e.g. from CurrentUser)', async () => {
+      mockPrismaService.asset.findUnique.mockResolvedValue({ id: 'asset-1', internalNumber: 'EX-01' });
+      const futureDate = new Date(Date.now() + 86400000 * 40);
+      mockPrismaService.assetDocument.create.mockResolvedValue({
+        id: 'doc-2',
+        assetId: 'asset-1',
+        docType: 'SEGURO_SOAP',
+        expirationDate: futureDate,
+      });
+
+      const res = await service.createAssetDocument(
+        {
+          assetId: 'asset-1',
+          docType: 'SEGURO_SOAP',
+          expirationDate: futureDate.toISOString(),
+        },
+        { id: 'user-obj-1', email: 'admin@sgmt.local' } as any,
+      );
+
+      expect(res.id).toBe('doc-2');
+      expect(mockPrismaService.assetDocument.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            createdById: 'user-obj-1',
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('createOperatorCertification', () => {
+    it('should create operator certification correctly with user object', async () => {
+      const futureDate = new Date(Date.now() + 86400000 * 40);
+      mockPrismaService.operatorCertification.create.mockResolvedValue({
+        id: 'op-doc-1',
+        operatorName: 'Juan Perez',
+        rut: '12.345.678-9',
+        docType: 'LICENCIA_CONDUCIR',
+        expirationDate: futureDate,
+      });
+
+      const res = await service.createOperatorCertification(
+        {
+          operatorName: 'Juan Perez',
+          rut: '12.345.678-9',
+          docType: 'LICENCIA_CONDUCIR',
+          expirationDate: futureDate.toISOString(),
+        },
+        { id: 'user-op-1' } as any,
+      );
+
+      expect(res.id).toBe('op-doc-1');
+      expect(mockPrismaService.operatorCertification.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            createdById: 'user-op-1',
+            rut: '12.345.678-9',
+          }),
+        }),
+      );
+    });
   });
 });
