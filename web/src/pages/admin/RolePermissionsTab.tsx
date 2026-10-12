@@ -165,15 +165,21 @@ export function RolePermissionsTab() {
   const handleSavePermissions = async () => {
     if (!selectedRole) return;
     try {
-      const permsArray = Object.values(permissionsMatrix);
+      const permsArray = Object.values(permissionsMatrix).map((p) => ({
+        module: p.module,
+        canRead: Boolean(p.canRead),
+        canWrite: Boolean(p.canWrite),
+        canApprove: Boolean(p.canApprove),
+        canAdmin: Boolean(p.canAdmin),
+      }));
       await updatePermissionsMutation.mutateAsync({
         roleId: selectedRole.id,
         permissions: permsArray,
       });
       setHasChanges(false);
       toast.success(`Permisos del perfil "${selectedRole.displayName}" actualizados con éxito.`);
-    } catch {
-      toast.error('Error al guardar los permisos del perfil.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Error al guardar los permisos del perfil.');
     }
   };
 

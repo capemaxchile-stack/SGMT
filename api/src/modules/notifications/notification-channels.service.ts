@@ -117,16 +117,24 @@ export class NotificationChannelsService {
   async updateConfig(dto: NotificationChannelsConfigDto): Promise<NotificationChannelsConfigDto> {
     const current = await this.getConfig(true);
 
-    // If submitted botToken is masked, keep existing secret
-    let finalBotToken = dto.telegram.botToken;
-    if (finalBotToken && finalBotToken.includes('••••')) {
-      finalBotToken = current.telegram.botToken;
+    // If submitted botToken is masked or empty, keep existing secret ONLY if existing secret is not masked
+    let finalBotToken = dto.telegram.botToken?.trim();
+    if (!finalBotToken || finalBotToken.includes('••••')) {
+      finalBotToken =
+        current.telegram?.botToken && !current.telegram.botToken.includes('••••')
+          ? current.telegram.botToken
+          : process.env.TELEGRAM_BOT_TOKEN || '';
+    } else {
+      finalBotToken = finalBotToken.replace(/^bot/i, '').trim();
     }
 
     // If submitted Brevo apiKey is masked, keep existing secret
-    let finalBrevoApiKey = dto.brevo.apiKey;
-    if (finalBrevoApiKey && finalBrevoApiKey.includes('••••')) {
-      finalBrevoApiKey = current.brevo.apiKey;
+    let finalBrevoApiKey = dto.brevo.apiKey?.trim();
+    if (!finalBrevoApiKey || finalBrevoApiKey.includes('••••')) {
+      finalBrevoApiKey =
+        current.brevo?.apiKey && !current.brevo.apiKey.includes('••••')
+          ? current.brevo.apiKey
+          : process.env.BREVO_API_KEY || '';
     }
 
     const mergedConfig: NotificationChannelsConfigDto = {
@@ -164,14 +172,25 @@ export class NotificationChannelsService {
     const config = await this.getConfig(true);
 
     if (dto.channel === 'TELEGRAM') {
-      const botToken = dto.telegramConfig?.botToken?.includes('••••')
-        ? config.telegram.botToken
-        : dto.telegramConfig?.botToken || config.telegram.botToken;
+      let botToken = dto.telegramConfig?.botToken?.trim();
+      if (!botToken || botToken.includes('••••')) {
+        botToken =
+          config.telegram?.botToken && !config.telegram.botToken.includes('••••')
+            ? config.telegram.botToken
+            : process.env.TELEGRAM_BOT_TOKEN || '';
+      } else {
+        botToken = botToken.replace(/^bot/i, '').trim();
+      }
 
-      const chatId = dto.telegramConfig?.chatId || config.telegram.chatId;
+      const chatId = (dto.telegramConfig?.chatId || config.telegram?.chatId || '').trim();
 
-      if (!botToken || !chatId) {
-        throw new BadRequestException('Debes ingresar el Token del Bot y el ID del Chat de Telegram');
+      if (!botToken || botToken.includes('••••')) {
+        throw new BadRequestException(
+          'Debes ingresar el Token completo del Bot de Telegram (obtenido de @BotFather, ej. 123456789:ABCDef...)',
+        );
+      }
+      if (!chatId) {
+        throw new BadRequestException('Debes ingresar el ID del Chat o Canal de Telegram');
       }
 
       return this.executeTelegramSend(
@@ -254,12 +273,13 @@ export class NotificationChannelsService {
     text: string,
   ): Promise<{ success: boolean; message: string; details?: any }> {
     try {
-      const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+      const cleanToken = botToken.trim().replace(/^bot/i, '');
+      const url = `https://api.telegram.org/bot${cleanToken}/sendMessage`;
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chat_id: chatId,
+          chat_id: chatId.trim(),
           text,
           parse_mode: 'Markdown',
         }),
@@ -353,11 +373,11 @@ export class NotificationChannelsService {
       }
 
       // 1. Dispatch to Telegram if enabled and event is subscribed
-      const botToken = config.telegram?.botToken || process.env.TELEGRAM_BOT_TOKEN;
-      const chatId = config.telegram?.chatId || process.env.TELEGRAM_CHAT_ID;
+      const botToken = (config.telegram?.botToken || process.env.TELEGRAM_BOT_TOKEN || '').trim().replace(/^bot/i, '');
+      const chatId = (config.telegram?.chatId || process.env.TELEGRAM_CHAT_ID || '').trim();
       const isTelegramActive = (config.telegram?.enabled ?? true) || Boolean(process.env.TELEGRAM_BOT_TOKEN);
 
-      if (isTelegramActive && botToken && chatId) {
+      if (isTelegramActive && botToken && !botToken.includes('••••') && chatId) {
         const mdText =
           `🚨 *SGMT PRO - Alerta Operacional* 🔔\n\n` +
           `📋 *${payload.title}*\n` +

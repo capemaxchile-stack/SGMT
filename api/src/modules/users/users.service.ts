@@ -228,6 +228,21 @@ export class UsersService {
     });
   }
 
+  async getRolePermissions(roleId: string) {
+    const role = await this.prisma.role.findUnique({
+      where: { id: roleId },
+      include: {
+        permissions: {
+          orderBy: { module: 'asc' },
+        },
+      },
+    });
+    if (!role) {
+      throw new NotFoundException(`Rol con ID ${roleId} no encontrado`);
+    }
+    return role.permissions;
+  }
+
   async updateRolePermissions(
     roleId: string,
     permissions: Array<{

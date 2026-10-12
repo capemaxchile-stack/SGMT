@@ -38,6 +38,12 @@ export class UsersController {
     return this.usersService.createRole(dto);
   }
 
+  @Get('roles/:id/permissions')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_ADMIN_FINANZAS', 'GERENTE_OPERACIONES')
+  getRolePermissions(@Param('id') id: string) {
+    return this.usersService.getRolePermissions(id);
+  }
+
   @Put('roles/:id/permissions')
   @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO')
   updateRolePermissions(

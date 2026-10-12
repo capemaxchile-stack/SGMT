@@ -29,6 +29,14 @@ export class CreateRoleDto {
 }
 
 export class ModulePermissionItemDto {
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @IsOptional()
+  @IsString()
+  roleId?: string;
+
   @IsString()
   @IsNotEmpty()
   module!: string;
@@ -44,6 +52,12 @@ export class ModulePermissionItemDto {
 
   @IsBoolean()
   canAdmin!: boolean;
+
+  @IsOptional()
+  createdAt?: any;
+
+  @IsOptional()
+  updatedAt?: any;
 }
 
 export class UpdateRolePermissionsDto {

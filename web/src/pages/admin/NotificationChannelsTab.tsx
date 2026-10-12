@@ -60,15 +60,30 @@ export function NotificationChannelsTab() {
   const [showBrevoKey, setShowBrevoKey] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
   const [testResult, setTestResult] = useState<{ channel: string; success: boolean; message: string } | null>(null);
+  const [hasExistingTelegramToken, setHasExistingTelegramToken] = useState(false);
+  const [hasExistingBrevoKey, setHasExistingBrevoKey] = useState(false);
 
   useEffect(() => {
     if (config) {
+      const hasTg = Boolean(config.telegram?.botToken && config.telegram.botToken.includes('••••'));
+      const hasBr = Boolean(config.brevo?.apiKey && config.brevo.apiKey.includes('••••'));
+      setHasExistingTelegramToken(hasTg);
+      setHasExistingBrevoKey(hasBr);
+
       setFormData({
         ...config,
+        telegram: {
+          ...config.telegram,
+          botToken: hasTg ? '' : config.telegram?.botToken || '',
+        },
+        brevo: {
+          ...config.brevo,
+          apiKey: hasBr ? '' : config.brevo?.apiKey || '',
+        },
         scheduleRules: config.scheduleRules || {
           digestFrequency: 'DAILY',
           dailyDigestTime: '08:00',
-          enableRealtimeEvents: false,
+          enableRealtimeEvents: true,
           cooldownPreventDuplicateDaily: true,
         },
       });
@@ -88,8 +103,15 @@ export function NotificationChannelsTab() {
 
     const payload: NotificationChannelsConfig = {
       ...formData,
+      telegram: {
+        ...formData.telegram,
+        // Only submit new botToken if user explicitly typed one
+        botToken: formData.telegram.botToken?.trim() || undefined,
+      },
       brevo: {
         ...formData.brevo,
+        // Only submit new apiKey if user explicitly typed one
+        apiKey: formData.brevo.apiKey?.trim() || undefined,
         recipientEmails: emails,
       },
     };
@@ -98,8 +120,8 @@ export function NotificationChannelsTab() {
       await updateMutation.mutateAsync(payload);
       setSaveSuccessMsg('¡Configuración de canales de alerta guardada exitosamente!');
       setTimeout(() => setSaveSuccessMsg(''), 4000);
-    } catch {
-      alert('Error al guardar la configuración');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Error al guardar la configuración');
     }
   };
 
@@ -113,10 +135,20 @@ export function NotificationChannelsTab() {
 
       const res = await testMutation.mutateAsync({
         channel,
-        telegramConfig: channel === 'TELEGRAM' ? formData.telegram : undefined,
+        telegramConfig:
+          channel === 'TELEGRAM'
+            ? {
+                ...formData.telegram,
+                botToken: formData.telegram.botToken?.trim() || undefined,
+              }
+            : undefined,
         brevoConfig:
           channel === 'BREVO'
-            ? { ...formData.brevo, recipientEmails: emails }
+            ? {
+                ...formData.brevo,
+                apiKey: formData.brevo.apiKey?.trim() || undefined,
+                recipientEmails: emails,
+              }
             : undefined,
       });
 
@@ -357,7 +389,11 @@ export function NotificationChannelsTab() {
                 <Input
                   label="Token del Bot de Telegram"
                   type={showTelegramToken ? 'text' : 'password'}
-                  placeholder="123456789:ABCDefGhIJKlmNoPQRstu..."
+                  placeholder={
+                    hasExistingTelegramToken
+                      ? '•••••••••••• (Token guardado. Ingresá uno nuevo para reemplazar)'
+                      : '123456789:ABCDefGhIJKlmNoPQRstu...'
+                  }
                   value={formData.telegram.botToken || ''}
                   onChange={(e) =>
                     setFormData({
@@ -365,7 +401,11 @@ export function NotificationChannelsTab() {
                       telegram: { ...formData.telegram, botToken: e.target.value },
                     })
                   }
-                  helperText="Obtenido al crear tu bot con @BotFather en Telegram"
+                  helperText={
+                    hasExistingTelegramToken
+                      ? 'Token guardado en el servidor. Si necesitas cambiarlo o revincularlo, pegá aquí el token completo de @BotFather.'
+                      : 'Obtenido al crear tu bot con @BotFather en Telegram (ej: 123456789:ABCDefGh...)'
+                  }
                   className="pr-10"
                 />
                 <button
@@ -527,7 +567,11 @@ export function NotificationChannelsTab() {
                 <Input
                   label="Brevo API Key (v3)"
                   type={showBrevoKey ? 'text' : 'password'}
-                  placeholder="xkeysib-1234567890abcdef..."
+                  placeholder={
+                    hasExistingBrevoKey
+                      ? '•••••••••••• (API Key guardada. Ingresá una nueva para reemplazar)'
+                      : 'xkeysib-1234567890abcdef...'
+                  }
                   value={formData.brevo.apiKey || ''}
                   onChange={(e) =>
                     setFormData({
@@ -535,7 +579,11 @@ export function NotificationChannelsTab() {
                       brevo: { ...formData.brevo, apiKey: e.target.value },
                     })
                   }
-                  helperText="Encontrala en tu panel Brevo > SMTP & API > API Keys"
+                  helperText={
+                    hasExistingBrevoKey
+                      ? 'API Key guardada en el servidor. Para reemplazarla o actualizarla, pegá aquí la nueva clave xkeysib-... de Brevo.'
+                      : 'Encontrala en tu panel Brevo > SMTP & API > API Keys'
+                  }
                   className="pr-10"
                 />
                 <button
