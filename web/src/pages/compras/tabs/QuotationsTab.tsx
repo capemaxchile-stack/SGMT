@@ -351,13 +351,31 @@ export function QuotationsTab() {
                   </label>
                   <select
                     value={formData.purchaseRequestId}
-                    onChange={(e) => setFormData({ ...formData, purchaseRequestId: e.target.value })}
+                    onChange={(e) => {
+                      const reqId = e.target.value;
+                      const selectedReq = requests.find((r) => r.id === reqId);
+                      if (selectedReq && selectedReq.lines && selectedReq.lines.length > 0) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          purchaseRequestId: reqId,
+                          lines: selectedReq.lines!.map((l) => ({
+                            itemId: l.itemId,
+                            quantity: Number(l.quantity) || 1,
+                            unitPrice: 0,
+                            availabilityDays: 2,
+                            comments: l.notes || '',
+                          })),
+                        }));
+                      } else {
+                        setFormData((prev) => ({ ...prev, purchaseRequestId: reqId }));
+                      }
+                    }}
                     className="w-full text-xs border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                   >
                     <option value="">Sin solicitud vinculada (Directa)</option>
                     {requests.map((r) => (
                       <option key={r.id} value={r.id}>
-                        {r.requestNumber} ({r.faena?.name})
+                        {r.requestNumber} ({r.faena?.name}) - {r.status}
                       </option>
                     ))}
                   </select>

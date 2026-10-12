@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SGMT - Flujo Operativo y de Abastecimiento Integral</title>
+  <style>
+    :root {
+      --primary: #1e40af;
+      --primary-light: #3b82f6;
+      --primary-bg: #eff6ff;
+      --success: #059669;
+      --success-bg: #ecfdf5;
+      --warning: #d97706;
+      --warning-bg: #fffbeb;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--slate-50);
+      color: var(--slate-800);
+      line-height: 1.6;
+      padding: 30px 20px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--slate-200);
+      overflow: hidden;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--slate-900) 0%, #1e293b 50%, #1e3a8a 100%);
+      color: white;
+      padding: 36px 40px;
+    }
+
+    header .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(147, 197, 253, 0.3);
+      color: #93c5fd;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      color: #cbd5e1;
+      font-size: 15px;
+      max-width: 750px;
+    }
+
+    .content {
+      padding: 40px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 2px solid var(--slate-100);
+      padding-bottom: 10px;
+    }
+
+    .section-title .step-number {
+      background: var(--primary);
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    /* Diagram Styles */
+    .flowchart-wrapper {
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 40px;
+      overflow-x: auto;
+    }
+
+    .flow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+    }
+
+    @media (min-width: 768px) {
+      .flow-steps {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 16px;
+      }
+    }
+
+    .flow-card {
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      padding: 18px 16px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .flow-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.06);
+    }
+
+    .flow-card.step-1 { border-top: 4px solid #3b82f6; }
+    .flow-card.step-2 { border-top: 4px solid #8b5cf6; }
+    .flow-card.step-3 { border-top: 4px solid #f59e0b; }
+    .flow-card.step-4 { border-top: 4px solid #10b981; }
+    .flow-card.step-5 { border-top: 4px solid #06b6d4; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .card-step-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    .card-role-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--slate-100);
+      color: var(--slate-700);
+      font-weight: 600;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 6px;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+
+    .card-status-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      align-self: flex-start;
+    }
+
+    .status-pendiente { background: var(--warning-bg); color: var(--warning); border: 1px solid #fde68a; }
+    .status-aprobada { background: var(--success-bg); color: var(--success); border: 1px solid #a7f3d0; }
+    .status-cotizacion { background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+    .status-oc { background: var(--primary-bg); color: var(--primary); border: 1px solid #bfdbfe; }
+    .status-recepcion { background: #ecfeff; color: #0891b2; border: 1px solid #a5f3fc; }
+
+    /* Detailed explanation grid */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    @media (min-width: 768px) {
+      .detail-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .detail-box {
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .detail-box h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .detail-box p {
+      font-size: 13px;
+      color: #475569;
+      margin-bottom: 12px;
+    }
+
+    .detail-box ul {
+      padding-left: 20px;
+      font-size: 13px;
+      color: #334155;
+    }
+
+    .detail-box li {
+      margin-bottom: 6px;
+    }
+
+    .highlight-card {
+      background: #eff6ff;
+      border-left: 4px solid #2563eb;
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+    }
+
+    .highlight-card strong {
+      color: #1e3a8a;
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .highlight-card p {
+      font-size: 13px;
+      color: #1e40af;
+      margin: 0;
+    }
+
+    /* Status mapping table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 15px;
+      margin-bottom: 30px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--slate-200);
+    }
+
+    th {
+      background-color: var(--slate-100);
+      color: var(--slate-700);
+      font-weight: 700;
+    }
+
+    tr:hover {
+      background-color: var(--slate-50);
+    }
+
+    .print-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .print-btn:hover {
+      background: #1d4ed8;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        border: none;
+        box-shadow: none;
+        max-width: 100%;
+      }
+      .print-btn {
+        display: none;
+      }
+      .flow-steps {
+        grid-template-columns: repeat(5, 1fr) !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Arquitectura Operativa SGMT</div>
+      <h1>Flujo Integral de Abastecimiento & Compras</h1>
+      <p>Guía de trazabilidad completa desde el requerimiento en faena hasta el ingreso físico en bodega o máquina directa.</p>
+      <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
+    </header>
+
+    <div class="content">
+
+      <!-- DIAGRAMA VISUAL -->
+      <h2 class="section-title">
+        <span class="step-number">1</span>
+        Mapa de Proceso: Ciclo de Vida del Requerimiento
+      </h2>
+
+      <div class="flowchart-wrapper">
+        <div class="flow-steps">
+          
+          <!-- PASO 1 -->
+          <div class="flow-card step-1">
+            <div>
+              <div class="card-header">
+                <span class="card-step-badge">Paso 01</span>
+                <span class="card-role-tag">Terreno</span>
+              </div>
+              <div class="card-title">Solicitud de Pedido</div>
+              <div class="card-desc">El operador o mecánico registra la necesidad de repuestos desde la app móvil o web.</div>
+            </div>
+            <div>
+              <span class="card-status-badge status-pendiente">PENDIENTE</span>
+            </div>
+          </div>
+
+          <!-- PASO 2 -->
+          <div class="flow-card step-2">
+            <div>
+              <div class="card-header">
+                <span class="card-step-badge">Paso 02</span>
+                <span class="card-role-tag">Jefe Faena</span>
+              </div>
+              <div class="card-title">Aprobación Técnica</div>
+              <div class="card-desc">La jefatura valida la justificación y autoriza comprometer presupuesto del contrato.</div>
+            </div>
+            <div>
+              <span class="card-status-badge status-aprobada">APROBADA</span>
+            </div>
+          </div>
+
+          <!-- PASO 3 -->
+          <div class="flow-card step-3">
+            <div>
+              <div class="card-header">
+                <span class="card-step-badge">Paso 03</span>
+                <span class="card-role-tag">Adquisiciones</span>
+              </div>
+              <div class="card-title">Cotización Proveedores</div>
+              <div class="card-desc">Se envían los repuestos a 2 o más proveedores (Finning, Komatsu, etc.) comparando precios y días.</div>
+            </div>
+            <div>
+              <span class="card-status-badge status-cotizacion">SOLICITADA</span>
+            </div>
+          </div>
+
+          <!-- PASO 4 -->
+          <div class="flow-card step-4">
+            <div>
+              <div class="card-header">
+                <span class="card-step-badge">Paso 04</span>
+                <span class="card-role-tag">Adquisiciones</span>
+              </div>
+              <div class="card-title">Adjudicación & OC</div>
+              <div class="card-desc">Se elige la cotización ganadora. Se genera la Orden de Compra formal para firma y despacho.</div>
+            </div>
+            <div>
+              <span class="card-status-badge status-oc">OC EMITIDA</span>
+            </div>
+          </div>
+
+          <!-- PASO 5 -->
+          <div class="flow-card step-5">
+            <div>
+              <div class="card-header">
+                <span class="card-step-badge">Paso 05</span>
+                <span class="card-role-tag">Bodega / Garita</span>
+              </div>
+              <div class="card-title">Recepción Logística</div>
+              <div class="card-desc">El material llega a faena. Se ingresa al Kardex de Bodega o se entrega directo a la máquina.</div>
+            </div>
+            <div>
+              <span class="card-status-badge status-recepcion">RECEPCIÓN TOTAL</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- EXPLICACIÓN CLAVE DEL MÓDULO DE COTIZACIONES -->
+      <h2 class="section-title">
+        <span class="step-number">2</span>
+        ¿Cómo Funciona el Módulo de Cotizaciones?
+      </h2>
+
+      <div class="highlight-card">
+        <strong>💡 El Propósito de la Cotización: Comparar antes de Gastar</strong>
+        <p>Una Solicitud de Pedido (SOL-XXXX) dice <em>"necesito 2 filtros y 1 empaquetadura para la excavadora"</em>. La Cotización es la herramienta que permite consultar a múltiples proveedores (ej. Finning vs Salfa) cuánto cuesta y en cuántos días entregan, para que la empresa elija la opción más económica y rápida.</p>
+      </div>
+
+      <div class="detail-grid">
+        
+        <div class="detail-box">
+          <h3>📋 ¿Cómo se vincula una Cotización con un Pedido?</h3>
+          <p>Al crear una cotización en la pestaña <strong>Cotizaciones & Proveedores</strong>:</p>
+          <ul>
+            <li>En el campo <strong>"Solicitud de Compra"</strong>, seleccionás el pedido correspondiente (ej: <code>SOL-8910</code>).</li>
+            <li><strong>Autocompletado Automático:</strong> El sistema carga inmediatamente los mismos repuestos y cantidades que pidió el mecánico en terreno, sin que tengas que volver a escribirlos.</li>
+            <li>Ingresás el <strong>Proveedor</strong>, el <strong>Precio Unitario</strong> que te ofertó y los <strong>Días de Disponibilidad</strong>.</li>
+            <li>Podés registrar 2 o 3 cotizaciones para la misma solicitud (una por cada proveedor que consultaste).</li>
+          </ul>
+        </div>
+
+        <div class="detail-box">
+          <h3>🏆 ¿Qué significa "Adjudicar" y "Generar OC"?</h3>
+          <p>Cuando tenés las opciones sobre la mesa:</p>
+          <ul>
+            <li>Revisás la tabla comparativa de valores totales y plazos.</li>
+            <li>Hacés clic en <strong>"Adjudicar"</strong> sobre la cotización ganadora. Su estado cambia a <code>SELECCIONADA</code>.</li>
+            <li>Al hacer clic en <strong>"Generar Orden de Compra"</strong>, el sistema emite el documento formal (<code>OC-202610-XXXX</code>) y la solicitud de terreno pasa a <code>CONVERTIDA</code>.</li>
+            <li><strong>Regla de Integridad:</strong> Si la solicitud base estaba aún <code>PENDIENTE</code> (sin visto bueno del Jefe de Faena), el sistema no permite emitir la OC hasta que esté aprobada.</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- MATRIZ DE ESTADOS -->
+      <h2 class="section-title">
+        <span class="step-number">3</span>
+        Matriz de Estados y Responsabilidades
+      </h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Etapa</th>
+            <th>Entidad</th>
+            <th>Estado</th>
+            <th>Responsable</th>
+            <th>Acción que Destraba el Flujo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Requerimiento</td>
+            <td>Solicitud (SOL)</td>
+            <td><span class="card-status-badge status-pendiente">PENDIENTE</span></td>
+            <td>Operador / Mecánico</td>
+            <td>Jefe de Faena revisa y hace clic en <strong>"Aprobar"</strong>.</td>
+          </tr>
+          <tr>
+            <td>2. Licitación</td>
+            <td>Cotización (COT)</td>
+            <td><span class="card-status-badge status-cotizacion">SOLICITADA</span></td>
+            <td>Encargado de Compras</td>
+            <td>Se cargan los precios recibidos del proveedor.</td>
+          </tr>
+          <tr>
+            <td>3. Selección</td>
+            <td>Cotización (COT)</td>
+            <td><span class="card-status-badge status-aprobada">SELECCIONADA</span></td>
+            <td>Comprador / Administrador</td>
+            <td>Se hace clic en <strong>"Adjudicar"</strong> a la mejor cotización.</td>
+          </tr>
+          <tr>
+            <td>4. Emisión OC</td>
+            <td>Orden de Compra</td>
+            <td><span class="card-status-badge status-oc">PENDIENTE_APROBACION</span></td>
+            <td>Gerencia / Finanzas</td>
+            <td>Autorización según tope de monto o clave de Súper Usuario.</td>
+          </tr>
+          <tr>
+            <td>5. Recepción</td>
+            <td>Recepción / Kardex</td>
+            <td><span class="card-status-badge status-recepcion">RECEPCION_TOTAL</span></td>
+            <td>Bodeguero / Garita</td>
+            <td>Se chequea la factura/guía y se ingresa el stock al Kardex.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- DESTINOS DE RECEPCIÓN -->
+      <h2 class="section-title">
+        <span class="step-number">4</span>
+        Los 3 Destinos de Recepción en Faena
+      </h2>
+
+      <div class="detail-grid">
+        <div class="detail-box">
+          <h3>📦 1. Bodega (Kardex de Repuestos)</h3>
+          <p>El material ingresa al stock físico de la bodega seleccionada. Se valoriza mediante costo promedio (PMP) y queda disponible para despacho a mantenciones futuras.</p>
+        </div>
+
+        <div class="detail-box">
+          <h3>🚛 2. Garita de Tránsito (Faena)</h3>
+          <p>Para insumos a granel o compras con flete externo. Registra el N° de vale o ticket de garita y fecha/hora de entrada del camión a la faena minera.</p>
+        </div>
+
+        <div class="detail-box" style="grid-column: 1 / -1;">
+          <h3>🚜 3. Entrega Directa a Maquinaria (Activo)</h3>
+          <p>Cuando el repuesto es crítico y se monta de inmediato en la máquina en panne (ej: Excavadora EX-04). Imputa el costo directamente al equipo y a la Orden de Trabajo sin pasar por estantería de bodega.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
