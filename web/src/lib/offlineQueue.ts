@@ -103,3 +103,84 @@ export const syncOfflineRequests = async (
   saveOfflineQueue(remaining);
   return { success: successCount, failed: failedCount };
 };
+
+// =================== OFFLINE FUEL DISPATCH SUPPORT ===================
+
+export interface OfflineFuelItem {
+  id: string;
+  payload: any;
+  createdAt: string;
+  assetInternalNumber?: string;
+  liters?: number;
+  status: 'QUEUED' | 'SYNCING' | 'ERROR';
+  error?: string;
+}
+
+const STORAGE_KEY_FUEL_QUEUE = 'sgmt_offline_fuel_queue';
+
+export const getOfflineFuelQueue = (): OfflineFuelItem[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_FUEL_QUEUE);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const saveOfflineFuelQueue = (queue: OfflineFuelItem[]): void => {
+  try {
+    localStorage.setItem(STORAGE_KEY_FUEL_QUEUE, JSON.stringify(queue));
+    window.dispatchEvent(new CustomEvent('sgmt-fuel-queue-updated', { detail: { count: queue.length } }));
+  } catch (e) {
+    console.error('Error saving offline fuel queue', e);
+  }
+};
+
+export const queueOfflineFuel = (
+  payload: any,
+  meta?: { assetInternalNumber?: string; liters?: number },
+): OfflineFuelItem => {
+  const queue = getOfflineFuelQueue();
+  const newItem: OfflineFuelItem = {
+    id: 'fuel-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+    payload,
+    createdAt: new Date().toISOString(),
+    assetInternalNumber: meta?.assetInternalNumber,
+    liters: meta?.liters,
+    status: 'QUEUED',
+  };
+  queue.push(newItem);
+  saveOfflineFuelQueue(queue);
+  return newItem;
+};
+
+export const syncOfflineFuel = async (
+  onProgress?: (synced: number, total: number) => void,
+): Promise<{ success: number; failed: number }> => {
+  const queue = getOfflineFuelQueue();
+  if (queue.length === 0) return { success: 0, failed: 0 };
+
+  let successCount = 0;
+  let failedCount = 0;
+  const remaining: OfflineFuelItem[] = [];
+
+  for (let i = 0; i < queue.length; i++) {
+    const item = queue[i];
+    try {
+      await api.post('/fuel', item.payload);
+      successCount++;
+    } catch (err: any) {
+      failedCount++;
+      remaining.push({
+        ...item,
+        status: 'ERROR',
+        error: err?.response?.data?.message || err?.message || 'Error de sincronización',
+      });
+    }
+    onProgress?.(i + 1, queue.length);
+  }
+
+  saveOfflineFuelQueue(remaining);
+  return { success: successCount, failed: failedCount };
+};
+

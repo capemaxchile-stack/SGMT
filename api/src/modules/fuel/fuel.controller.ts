@@ -24,7 +24,7 @@ export class FuelController {
   constructor(private readonly fuelService: FuelService) {}
 
   @Get()
-  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'JEFE_FAENA', 'BODEGUERO')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'JEFE_FAENA', 'BODEGUERO', 'SOLICITANTE_TERRENO')
   findAll(@Query() filters: FilterFuelLogsDto) {
     return this.fuelService.findAll(filters);
   }
@@ -36,13 +36,13 @@ export class FuelController {
   }
 
   @Get(':id')
-  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'JEFE_FAENA', 'BODEGUERO')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'JEFE_FAENA', 'BODEGUERO', 'SOLICITANTE_TERRENO')
   findOne(@Param('id') id: string) {
     return this.fuelService.findOne(id);
   }
 
   @Post()
-  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'JEFE_FAENA', 'BODEGUERO')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'GERENTE_OPERACIONES', 'JEFE_FAENA', 'BODEGUERO', 'SOLICITANTE_TERRENO')
   create(@Body() dto: CreateFuelLogDto, @CurrentUser() user: any) {
     return this.fuelService.create(dto, user.id);
   }
