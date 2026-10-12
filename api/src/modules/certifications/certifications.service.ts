@@ -45,12 +45,31 @@ export class CertificationsService {
   // ASSET DOCUMENTS
   // ---------------------------------------------------------------------------
 
-  async createAssetDocument(dto: CreateAssetDocumentDto, userId: string) {
+  async createAssetDocument(dto: CreateAssetDocumentDto, userParam?: any) {
     const asset = await this.prisma.asset.findUnique({
       where: { id: dto.assetId },
     });
     if (!asset) {
       throw new NotFoundException(`Maquinaria/Activo con ID ${dto.assetId} no encontrado`);
+    }
+
+    let userId: string | null = null;
+    if (typeof userParam === 'string' && userParam.trim()) {
+      userId = userParam.trim();
+    } else if (typeof userParam === 'object' && userParam !== null && userParam.id) {
+      userId = String(userParam.id);
+    }
+
+    if (!userId) {
+      const defaultUser = await this.prisma.user.findFirst({
+        where: { isActive: true },
+        select: { id: true },
+      });
+      userId = defaultUser?.id || null;
+    }
+
+    if (!userId) {
+      throw new BadRequestException('Usuario creador no identificado');
     }
 
     const doc = await this.prisma.assetDocument.create({
@@ -202,12 +221,31 @@ export class CertificationsService {
   // OPERATOR CERTIFICATIONS
   // ---------------------------------------------------------------------------
 
-  async createOperatorCertification(dto: CreateOperatorCertificationDto, userId: string) {
+  async createOperatorCertification(dto: CreateOperatorCertificationDto, userParam?: any) {
     if (dto.faenaId) {
       const faena = await this.prisma.faena.findUnique({ where: { id: dto.faenaId } });
       if (!faena) {
         throw new NotFoundException(`Faena con ID ${dto.faenaId} no encontrada`);
       }
+    }
+
+    let userId: string | null = null;
+    if (typeof userParam === 'string' && userParam.trim()) {
+      userId = userParam.trim();
+    } else if (typeof userParam === 'object' && userParam !== null && userParam.id) {
+      userId = String(userParam.id);
+    }
+
+    if (!userId) {
+      const defaultUser = await this.prisma.user.findFirst({
+        where: { isActive: true },
+        select: { id: true },
+      });
+      userId = defaultUser?.id || null;
+    }
+
+    if (!userId) {
+      throw new BadRequestException('Usuario creador no identificado');
     }
 
     const cert = await this.prisma.operatorCertification.create({

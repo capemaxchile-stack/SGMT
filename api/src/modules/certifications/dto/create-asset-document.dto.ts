@@ -28,10 +28,12 @@ export class CreateAssetDocumentDto {
   expirationDate: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   fileUrl?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   notes?: string;
 

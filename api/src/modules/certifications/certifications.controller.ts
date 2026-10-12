@@ -65,8 +65,9 @@ export class CertificationsController {
   @UseInterceptors(AuditInterceptor)
   createAssetDoc(
     @Body() dto: CreateAssetDocumentDto,
-    @CurrentUser('id') userId: string,
+    @CurrentUser() user: any,
   ) {
+    const userId = typeof user === 'string' ? user : (user?.id || user?.sub);
     return this.certificationsService.createAssetDocument(dto, userId);
   }
 
@@ -118,8 +119,9 @@ export class CertificationsController {
   @UseInterceptors(AuditInterceptor)
   createOperatorCert(
     @Body() dto: CreateOperatorCertificationDto,
-    @CurrentUser('id') userId: string,
+    @CurrentUser() user: any,
   ) {
+    const userId = typeof user === 'string' ? user : (user?.id || user?.sub);
     return this.certificationsService.createOperatorCertification(dto, userId);
   }
 
