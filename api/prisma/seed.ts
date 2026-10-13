@@ -216,12 +216,28 @@ async function main() {
   }
 
   // 4. Items
+  // 4. Items (20 Master Spare Parts & Consumables)
   const itemsData = [
-    { code: 'ITM-001', description: 'Diesel', unitOfMeasure: 'L', category: 'COMBUSTIBLE', minimumStock: 1000 },
-    { code: 'ITM-002', description: 'Aceite Hidráulico', unitOfMeasure: 'L', category: 'LUBRICANTE', minimumStock: 200 },
-    { code: 'ITM-003', description: 'Filtro de Aceite', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 50 },
-    { code: 'ITM-004', description: 'Grasa Multipropósito', unitOfMeasure: 'KG', category: 'LUBRICANTE', minimumStock: 100 },
-    { code: 'ITM-005', description: 'Pernos 1/2"', unitOfMeasure: 'UN', category: 'FERRETERIA', minimumStock: 500 },
+    { code: 'ITM-001', description: 'Diesel Ultra Bajo Azufre', unitOfMeasure: 'L', category: 'COMBUSTIBLE', minimumStock: 2000 },
+    { code: 'ITM-002', description: 'Aceite Hidráulico ISO VG 68', unitOfMeasure: 'L', category: 'LUBRICANTE', minimumStock: 200 },
+    { code: 'ITM-003', description: 'Filtro de Aceite Motor Heavy Duty', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 30 },
+    { code: 'ITM-004', description: 'Grasa Multipropósito Litio EP2', unitOfMeasure: 'KG', category: 'LUBRICANTE', minimumStock: 100 },
+    { code: 'ITM-005', description: 'Pernos Grado 8 1/2" x 2" con Tuerca', unitOfMeasure: 'UN', category: 'FERRETERIA', minimumStock: 500 },
+    { code: 'ITM-006', description: 'Filtro de Combustible Primario Racor', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 25 },
+    { code: 'ITM-007', description: 'Filtro de Aire Primario Radial Seal', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 20 },
+    { code: 'ITM-008', description: 'Filtro Hidráulico de Retorno', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 15 },
+    { code: 'ITM-009', description: 'Aceite Motor 15W40 CI-4 Heavy Duty', unitOfMeasure: 'L', category: 'LUBRICANTE', minimumStock: 400 },
+    { code: 'ITM-010', description: 'Refrigerante 50/50 Larga Duración', unitOfMeasure: 'L', category: 'LUBRICANTE', minimumStock: 150 },
+    { code: 'ITM-011', description: 'Correa Trapezoidal Alternador/Bomba', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 10 },
+    { code: 'ITM-012', description: 'Juego Pastillas de Freno Delanteras', unitOfMeasure: 'JGO', category: 'REPUESTO', minimumStock: 8 },
+    { code: 'ITM-013', description: 'Manguera Hidráulica 1/2" 5000 PSI', unitOfMeasure: 'MT', category: 'REPUESTO', minimumStock: 50 },
+    { code: 'ITM-014', description: 'Dientes / Calzas Balde Excavadora 320', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 24 },
+    { code: 'ITM-015', description: 'Pasador Balde 80mm Acero Templado', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 6 },
+    { code: 'ITM-016', description: 'Bomba de Agua Motor Diesel', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 4 },
+    { code: 'ITM-017', description: 'Termostato Motor 82°C', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 6 },
+    { code: 'ITM-018', description: 'Batería 12V 100Ah 850CCA Libre Mantención', unitOfMeasure: 'UN', category: 'ELECTRICO', minimumStock: 8 },
+    { code: 'ITM-019', description: 'Foco Faena LED 48W 12-24V IP68', unitOfMeasure: 'UN', category: 'ELECTRICO', minimumStock: 12 },
+    { code: 'ITM-020', description: 'Abrazadera Sinfín Inoxidable 2"-3"', unitOfMeasure: 'UN', category: 'FERRETERIA', minimumStock: 100 },
   ];
 
   for (const item of itemsData) {
@@ -234,11 +250,26 @@ async function main() {
 
   // 4.1 Initial Stock in Bodega Central
   const stockSeed = [
-    { code: 'ITM-001', quantity: 15000, averageCost: 1050 }, // 15,000 Liters Diesel
-    { code: 'ITM-002', quantity: 800, averageCost: 4800 },   // 800 Liters Aceite Hidráulico
-    { code: 'ITM-003', quantity: 60, averageCost: 18500 },   // 60 Filtros de Aceite
-    { code: 'ITM-004', quantity: 250, averageCost: 3500 },   // 250 KG Grasa Multipropósito
-    { code: 'ITM-005', quantity: 1200, averageCost: 250 },   // 1,200 Pernos
+    { code: 'ITM-001', quantity: 15000, averageCost: 1050 },
+    { code: 'ITM-002', quantity: 800, averageCost: 4800 },
+    { code: 'ITM-003', quantity: 50, averageCost: 18500 },
+    { code: 'ITM-004', quantity: 250, averageCost: 3500 },
+    { code: 'ITM-005', quantity: 1200, averageCost: 350 },
+    { code: 'ITM-006', quantity: 40, averageCost: 22000 },
+    { code: 'ITM-007', quantity: 30, averageCost: 35000 },
+    { code: 'ITM-008', quantity: 20, averageCost: 42000 },
+    { code: 'ITM-009', quantity: 600, averageCost: 5200 },
+    { code: 'ITM-010', quantity: 200, averageCost: 3800 },
+    { code: 'ITM-011', quantity: 15, averageCost: 12000 },
+    { code: 'ITM-012', quantity: 12, averageCost: 45000 },
+    { code: 'ITM-013', quantity: 80, averageCost: 14000 },
+    { code: 'ITM-014', quantity: 36, averageCost: 28000 },
+    { code: 'ITM-015', quantity: 8, averageCost: 65000 },
+    { code: 'ITM-016', quantity: 4, averageCost: 110000 },
+    { code: 'ITM-017', quantity: 8, averageCost: 19500 },
+    { code: 'ITM-018', quantity: 10, averageCost: 89000 },
+    { code: 'ITM-019', quantity: 20, averageCost: 15000 },
+    { code: 'ITM-020', quantity: 150, averageCost: 1200 },
   ];
 
   for (const s of stockSeed) {
