@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SGMT - Plan de Pruebas QA y Guía de Certificación Operacional</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --accent: #2563eb;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --success: #059669;
+      --warning: #d97706;
+      --danger: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 30px 20px; line-height: 1.6; }
+    .container { max-width: 1100px; margin: 0 auto; background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.05); overflow: hidden; }
+
+    header { background: linear-gradient(135deg, #090d16 0%, #1e293b 50%, #1e3a8a 100%); color: white; padding: 36px 40px; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 9999px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(147, 197, 253, 0.3); color: #93c5fd; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+    header h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+    header p { color: #cbd5e1; font-size: 14px; max-width: 800px; }
+
+    .content { padding: 40px; }
+    .section-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 36px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+    .section-title:first-of-type { margin-top: 0; }
+    .step-badge { background: #2563eb; color: white; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0 28px 0; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #f1f5f9; color: #334155; font-weight: 700; }
+    tr:hover { background: #f8fafc; }
+
+    .code-pill { font-family: monospace; background: #e2e8f0; color: #1e293b; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    .role-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+    .role-admin { background: #fee2e2; color: #991b1b; }
+    .role-super { background: #ede9fe; color: #5b21b6; }
+    .role-jefe { background: #fef3c7; color: #92400e; }
+    .role-comprador { background: #dbeafe; color: #1e40af; }
+    .role-bodeguero { background: #d1fae5; color: #065f46; }
+
+    /* Scenario Card */
+    .scenario-card { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
+    .scenario-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .scenario-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+    .scenario-meta { font-size: 12px; color: var(--muted); }
+    
+    .checklist { list-style: none; padding: 0; margin-top: 12px; }
+    .checklist li { font-size: 13px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 10px; line-height: 1.5; }
+    .checklist input[type="checkbox"] { margin-top: 3px; cursor: pointer; transform: scale(1.1); }
+    .expected-box { background: #f0fdf4; border-left: 3px solid #16a34a; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-top: 8px; font-size: 12px; color: #166534; }
+
+    .print-btn { background: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; margin-top: 12px; }
+    .print-btn:hover { background: #1d4ed8; }
+
+    @media print {
+      body { padding: 0; background: white; }
+      .container { border: none; box-shadow: none; max-width: 100%; }
+      .print-btn { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Control de Calidad (QA) & Capacitación</div>
+      <h1>Plan de Pruebas Operacionales SGMT</h1>
+      <p>Guía paso a paso para testear y certificar todos los flujos del sistema con diferentes roles, perfiles y datos de prueba.</p>
+      <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
+    </header>
+
+    <div class="content">
+
+      <!-- 1. MATRIZ DE USUARIOS Y CREDENCIALES -->
+      <h2 class="section-title">
+        <span class="step-badge">1</span>
+        Matriz de Usuarios y Credenciales de Prueba
+      </h2>
+      <p style="font-size: 13px; color: #64748b;">Todas las cuentas están precargadas en la base de datos con la contraseña estándar <code class="code-pill">password123</code> (o credenciales maestras).</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Rol Operacional</th>
+            <th>Usuario (Email)</th>
+            <th>Contraseña</th>
+            <th>Atribución / Límite</th>
+            <th>Módulos Clave</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="role-badge role-admin">ADMIN_SISTEMA</span></td>
+            <td><code class="code-pill">admin@sgmt.local</code></td>
+            <td><code class="code-pill">admin123</code></td>
+            <td>Sin límite / Control total</td>
+            <td>Administración, Perfiles, Canales, Auditoría</td>
+          </tr>
+          <tr>
+            <td><span class="role-badge role-super">SUPER_USUARIO</span></td>
+            <td><code class="code-pill">super@sgmt.local</code></td>
+            <td><code class="code-pill">super123</code></td>
+            <td>SuperKey: <code class="code-pill">super_auth_2026</code></td>
+            <td>Aprobación de OCs por Excepción (2FA)</td>
+          </tr>
+          <tr>
+            <td><span class="role-badge role-jefe">JEFE_FAENA</span></td>
+            <td><code class="code-pill">jefefaena@sgmt.local</code></td>
+            <td><code class="code-pill">password123</code></td>
+            <td>Tope: $1.000.000 CLP</td>
+            <td>Aprobación Solicitudes, Faenas, Combustible</td>
+          </tr>
+          <tr>
+            <td><span class="role-badge role-comprador">COMPRADOR</span></td>
+            <td><code class="code-pill">comprador@sgmt.local</code></td>
+            <td><code class="code-pill">password123</code></td>
+            <td>Licitación & Emisión</td>
+            <td>Cotizaciones, Proveedores, Órdenes de Compra</td>
+          </tr>
+          <tr>
+            <td><span class="role-badge role-bodeguero">BODEGUERO</span></td>
+            <td><code class="code-pill">bodeguero@sgmt.local</code></td>
+            <td><code class="code-pill">password123</code></td>
+            <td>Recepción & Kardex</td>
+            <td>Bodega, Recepciones OC, Garitas, Stock</td>
+          </tr>
+          <tr>
+            <td><span class="role-badge" style="background:#f1f5f9;">TERRENO (Móvil)</span></td>
+            <td><em>Acceso Directo</em></td>
+            <td>Ruta: <code class="code-pill">/terreno</code></td>
+            <td>Offline First</td>
+            <td>Carga Combustible & Pedidos Terreno</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 2. ESCENARIOS DE PRUEBA QA -->
+      <h2 class="section-title">
+        <span class="step-badge">2</span>
+        Escenarios de Prueba Paso a Paso (End-to-End)
+      </h2>
+
+      <!-- ESCENARIO 1 -->
+      <div class="scenario-card">
+        <div class="scenario-header">
+          <div>
+            <span class="role-badge" style="background:#e0f2fe; color:#0369a1; margin-bottom:4px;">Escenario 01</span>
+            <div class="scenario-title">Operaciones de Terreno y Despacho Móvil de Combustible</div>
+          </div>
+          <span class="scenario-meta">Dispositivo: Móvil / Tablet / PC (Ruta <code>/terreno</code>)</span>
+        </div>
+
+        <ul class="checklist">
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 1.1: Acceder al Portal Móvil</strong>
+              <p>Navegá a la URL <code>/terreno</code>. Verificá que la barra superior muestre el estado de conexión (🟢 En línea).</p>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 1.2: Registrar Despacho de Combustible</strong>
+              <p>Seleccioná la pestaña <strong>"Carga Combustible"</strong>. Elegí una maquinaria del listado (ej: <em>EX-01 o Retroexcavadora</em>). Observá cómo se precarga automáticamente el último horómetro.</p>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 1.3: Carga Rápida y Verificación de Consumo</strong>
+              <p>Presioná el botón rápido <strong>+200L</strong>. Modificá el horómetro aumentándolo en 10 horas. Verificá que aparezca el recuadro verde con el cálculo en tiempo real (ej. <em>20.00 L/h</em>).</p>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 1.4: Guardar y Testear Modo Offline</strong>
+              <p>Hacé clic en <strong>"Registrar Despacho de Combustible"</strong>. Para probar el modo offline, desconectá el WiFi o activá modo avión: registrá otra carga de 100L y verificá que quede guardada en la cola local de terreno con badge amarillo.</p>
+            </div>
+          </li>
+        </ul>
+
+        <div class="expected-box">
+          <strong>Resultado Esperado:</strong> Mensaje de confirmación verde. Al reconectar la red y pulsar "Sincronizar", el despacho offline sube al servidor y actualiza el Kardex de combustible.
+        </div>
+      </div>
+
+      <!-- ESCENARIO 2 -->
+      <div class="scenario-card">
+        <div class="scenario-header">
+          <div>
+            <span class="role-badge role-jefe" style="margin-bottom:4px;">Escenario 02</span>
+            <div class="scenario-title">Generación de Pedido y Visado del Jefe de Faena</div>
+          </div>
+          <span class="scenario-meta">Usuario: <code>jefefaena@sgmt.local</code></span>
+        </div>
+
+        <ul class="checklist">
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 2.1: Crear Solicitud de Repuestos</strong>
+              <p>Ingresá al módulo <strong>Compras & Abastecimiento</strong> → pestaña <strong>Solicitudes de Terreno</strong>. Hacé clic en <strong>"Nueva Solicitud"</strong>.</p>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 2.2: Cargar Insumos y Urgencia</strong>
+              <p>Seleccioná la Faena, ingresá la justificación (<em>"Filtro de aceite urgente para mantención programada"</em>), agregá el ítem <code>ITM-003 (Filtro de Aceite)</code> con cantidad <strong>4 UN</strong> y marcá urgencia <strong>Normal</strong>.</p>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 2.3: Aprobar la Solicitud (Visto Bueno)</strong>
+              <p>La solicitud nace con estado <span class="role-badge" style="background:#fef3c7; color:#92400e;">PENDIENTE</span>. En la tabla, hacé clic en el ícono de check verde (<strong>Aprobar</strong>). Su estado debe cambiar a <span class="role-badge" style="background:#d1fae5; color:#065f46;">APROBADA</span>.</p>
+            </div>
+          </li>
+        </ul>
+
+        <div class="expected-box">
+          <strong>Resultado Esperado:</strong> La solicitud queda habilitada para que el departamento de compras pueda cotizarla y convertirla a Orden de Compra.
+        </div>
+      </div>
+
+      <!-- ESCENARIO 3 -->
+      <div class="scenario-card">
+        <div class="scenario-header">
+          <div>
+            <span class="role-badge role-comprador" style="margin-bottom:4px;">Escenario 03</span>
+            <div class="scenario-title">Licitación de Cotizaciones y Adjudicación Ganadora</div>
+          </div>
+          <span class="scenario-meta">Usuario: <code>comprador@sgmt.local</code></span>
+        </div>
+
+        <ul class="checklist">
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 3.1: Iniciar Cotización desde el Pedido</strong>
+              <p>Ingresá a la pestaña <strong>Cotizaciones & Proveedores</strong> y hacé clic en <strong>"Registrar Solicitud / Cotización"</strong>.</p>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 3.2: Verificar Autocompletado Inteligente</strong>
+              <p>En el selector <em>"Solicitud de Compra"</em>, seleccioná la solicitud aprobada del Escenario 2. <strong>Verificá que el ítem <code>ITM-003</code> y su cantidad (4 UN) se carguen solos en el formulario.</strong></p>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 3.3: Registrar Ofertas de 2 Proveedores</strong>
+              <p>Cargá la primera cotización con <em>Proveedor Maquinarias Spa</em> ($20.000 unitario, 3 días). Luego repetí para <em>Filtros & Repuestos Mineros</em> ($18.000 unitario, 2 días).</p>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 3.4: Adjudicar y Generar Orden de Compra</strong>
+              <p>Hacé clic en <strong>"Adjudicar"</strong> sobre la oferta más económica ($18.000). Su estado pasa a <code>SELECCIONADA</code>. Luego presioná <strong>"Generar Orden de Compra"</strong>.</p>
+            </div>
+          </li>
+        </ul>
+
+        <div class="expected-box">
+          <strong>Resultado Esperado:</strong> Se emite la Orden de Compra <code>OC-202610-XXXX</code> por $72.000 CLP y la solicitud de terreno pasa automáticamente a <code>CONVERTIDA</code>.
+        </div>
+      </div>
+
+      <!-- ESCENARIO 4 -->
+      <div class="scenario-card">
+        <div class="scenario-header">
+          <div>
+            <span class="role-badge role-super" style="margin-bottom:4px;">Escenario 04</span>
+            <div class="scenario-title">Autorización por Excepción con Clave de Súper Usuario</div>
+          </div>
+          <span class="scenario-meta">Usuario: <code>super@sgmt.local</code> (o <code>admin@sgmt.local</code>)</span>
+        </div>
+
+        <ul class="checklist">
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 4.1: Inspeccionar la Bandeja de Órdenes de Compra</strong>
+              <p>En <strong>Compras & Abastecimiento</strong> → <strong>Órdenes de Compra</strong>, observá la orden generada con estado <code>PENDIENTE_APROBACION</code>.</p>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 4.2: Prueba de Doble Llave (Excepción)</strong>
+              <p>Hacé clic en el ícono de alerta ámbar (<strong>Aprobación Especial Súper Usuario</strong>). Se abrirá el modal exigiendo motivo justificado y Clave de Súper Usuario.</p>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 4.3: Validar Seguridad Criptográfica</strong>
+              <p>Ingresá una clave incorrecta para comprobar el rechazo. Luego ingresá la clave correcta: <code class="code-pill">super_auth_2026</code> con el motivo <em>"Aprobación urgente para faena"</em>.</p>
+            </div>
+          </li>
+        </ul>
+
+        <div class="expected-box">
+          <strong>Resultado Esperado:</strong> La OC pasa a estado <code>APROBADA_EXCEPCION</code> / <code>EMITIDA</code> y la firma con IP y hora queda auditada en la base de datos.
+        </div>
+      </div>
+
+      <!-- ESCENARIO 5 -->
+      <div class="scenario-card">
+        <div class="scenario-header">
+          <div>
+            <span class="role-badge role-bodeguero" style="margin-bottom:4px;">Escenario 05</span>
+            <div class="scenario-title">Recepción de Materiales, Kardex y Auditoría Inmutable</div>
+          </div>
+          <span class="scenario-meta">Usuario: <code>bodeguero@sgmt.local</code></span>
+        </div>
+
+        <ul class="checklist">
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 5.1: Recepcionar la Orden de Compra</strong>
+              <p>En <strong>Órdenes de Compra</strong>, localizá la orden aprobada y hacé clic en el botón de recepción (ícono caja/camión). Seleccioná destino <strong>BODEGA</strong> y elegí <em>Bodega Central</em>.</p>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 5.2: Validar Ingreso en Kardex de Inventario</strong>
+              <p>Ingresá al módulo <strong>Bodega & Inventario</strong>. Verificá que el ítem <code>ITM-003</code> haya incrementado su stock físico en +4 unidades y que se haya recalculado su costo promedio (PMP).</p>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox">
+            <div>
+              <strong>Paso 5.3: Chequear Bitácora de Auditoría</strong>
+              <p>Ingresá con <code>admin@sgmt.local</code> al <strong>Panel de Administración</strong> → pestaña <strong>Auditoría</strong>. Verificá que aparezcan los registros con fecha válida (formato es-CL), usuario, acción <code>RECEIVE_PURCHASE_ORDER</code> e IP de origen.</p>
+            </div>
+          </li>
+        </ul>
+
+        <div class="expected-box">
+          <strong>Resultado Esperado:</strong> Trazabilidad 100% cerrada y auditada de punta a punta, sin fugas ni quiebres de información contable.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
