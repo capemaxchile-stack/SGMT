@@ -27,7 +27,9 @@ api.interceptors.response.use(
         }
         return api(originalRequest);
       } catch (refreshError) {
-        useAuthStore.getState().logout();
+        if (!window.location.pathname.startsWith('/terreno') && !window.location.pathname.startsWith('/login')) {
+          useAuthStore.getState().logout();
+        }
         return Promise.reject(refreshError);
       }
     }

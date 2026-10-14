@@ -20,6 +20,7 @@ export function LoginPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const login = useAuthStore((state) => state.login);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const navigate = useNavigate();
 
   // Animated Terrain & Ambient Particles Canvas
@@ -112,6 +113,22 @@ export function LoginPage() {
       navigate('/');
     } catch {
       setError('Credenciales inválidas o error de conexión con el servidor');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleTerrainAccess = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      if (!isAuthenticated()) {
+        await login({ email: 'terreno@sgmt.local', password: 'password123' });
+      }
+      navigate('/terreno');
+    } catch {
+      // In case server is unreachable (pure offline mode), proceed to /terreno with local cache
+      navigate('/terreno');
     } finally {
       setIsLoading(false);
     }
@@ -253,8 +270,9 @@ export function LoginPage() {
 
             <button
               type="button"
-              onClick={() => navigate('/terreno')}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-amber-300 hover:text-amber-200 text-xs font-semibold transition shadow-sm"
+              onClick={handleTerrainAccess}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-amber-300 hover:text-amber-200 text-xs font-semibold transition shadow-sm disabled:opacity-50"
             >
               <Smartphone size={15} className="text-amber-400" />
               <span>Acceso Móvil / Pedidos Terreno (Offline)</span>
