@@ -6,7 +6,7 @@ import { UpdateRequestStatusDto } from './dto/update-request-status.dto';
 import { RequestStatus, RequestUrgency, Prisma } from '@prisma/client';
 
 const ALLOWED_REQUEST_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
-  [RequestStatus.BORRADOR]: [RequestStatus.PENDIENTE, RequestStatus.RECHAZADA],
+  [RequestStatus.BORRADOR]: [RequestStatus.PENDIENTE, RequestStatus.APROBADA, RequestStatus.RECHAZADA],
   [RequestStatus.PENDIENTE]: [RequestStatus.APROBADA, RequestStatus.RECHAZADA],
   [RequestStatus.APROBADA]: [RequestStatus.CONVERTIDA, RequestStatus.RECHAZADA],
   [RequestStatus.RECHAZADA]: [],
@@ -124,7 +124,7 @@ export class RequestsService {
           faenaId: createRequestDto.faenaId,
           justification: createRequestDto.justification.trim(),
           requesterId,
-          status: createRequestDto.status || RequestStatus.BORRADOR,
+          status: createRequestDto.status || RequestStatus.PENDIENTE,
           lines: linesCreate.length > 0 ? { create: linesCreate } : undefined,
         },
         include: {

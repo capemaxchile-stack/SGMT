@@ -16,7 +16,7 @@ import { Modal } from '../../../components/ui/Modal';
 import { useToast } from '../../../components/ui/Toast';
 import { ProcurementTimelineModal } from '../../../components/procurement/ProcurementTimelineModal';
 import { PurchaseRequest, RequestUrgency } from '../../../types/compras';
-import { Plus, Search, AlertCircle, CheckCircle, XCircle, History, Trash2 } from 'lucide-react';
+import { Plus, Search, AlertCircle, CheckCircle, XCircle, History, Trash2, Send } from 'lucide-react';
 
 interface RequestLineForm {
   itemId: string;
@@ -100,6 +100,7 @@ export function PurchaseRequestsTab() {
         requestNumber,
         faenaId: targetFaenaId,
         justification: justification.trim(),
+        status: 'PENDIENTE',
         lines: lines.map((l) => ({
           itemId: l.itemId,
           quantity: Number(l.quantity),
@@ -115,6 +116,20 @@ export function PurchaseRequestsTab() {
       const msg = error?.response?.data?.message || 'Error al crear la solicitud de compra.';
       setErrorMsg(msg);
       toast.error(msg);
+    }
+  };
+
+  const handleSendToReview = async (id: string) => {
+    setMutatingRequestId(id);
+    try {
+      await updateStatusMutation.mutateAsync({ id, status: 'PENDIENTE' });
+      toast.success('Solicitud enviada a revisión exitosamente');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      const msg = error?.response?.data?.message || 'Error al enviar la solicitud.';
+      toast.error(msg);
+    } finally {
+      setMutatingRequestId(null);
     }
   };
 
@@ -205,6 +220,41 @@ export function PurchaseRequestsTab() {
           >
             <History size={16} />
           </Button>
+
+          {item.status === 'BORRADOR' && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary-600 hover:text-primary-700 disabled:opacity-50"
+                title="Enviar a Revisión (Pendiente)"
+                disabled={updateStatusMutation.isPending && mutatingRequestId === item.id}
+                onClick={() => handleSendToReview(item.id)}
+              >
+                <Send size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-emerald-600 hover:text-emerald-700 disabled:opacity-50"
+                title="Aprobar Solicitud Directamente"
+                disabled={updateStatusMutation.isPending && mutatingRequestId === item.id}
+                onClick={() => handleApprove(item.id)}
+              >
+                <CheckCircle size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:text-red-700 disabled:opacity-50"
+                title="Rechazar Borrador"
+                disabled={updateStatusMutation.isPending && mutatingRequestId === item.id}
+                onClick={() => handleReject(item.id)}
+              >
+                <XCircle size={16} />
+              </Button>
+            </>
+          )}
 
           {item.status === 'PENDIENTE' && (
             <>
