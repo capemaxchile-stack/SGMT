@@ -9,6 +9,7 @@ import { AssetIcon } from '../../components/ui/AssetIcon';
 import { Modal } from '../../components/ui/Modal';
 import { Asset, AssetType, AssetOperationalStatus } from '../../types/models';
 import { Search, Plus, Gauge, MapPin, AlertCircle, Edit2, Trash2 } from 'lucide-react';
+import { useAuthStore } from '../../stores/auth.store';
 
 const ASSET_TYPES: { value: AssetType; label: string }[] = [
   { value: 'EXCAVADORA', label: 'Excavadora' },
@@ -53,6 +54,9 @@ export function FlotaPage() {
 
   // Form: Assign Asset
   const [selectedFaenaId, setSelectedFaenaId] = useState('');
+
+  const { can } = useAuthStore();
+  const canWrite = can('FLOTA', 'write');
 
   const { data: assets, isLoading } = useFlota({
     type: typeFilter === 'TODOS' ? undefined : typeFilter,
@@ -290,31 +294,35 @@ export function FlotaPage() {
           >
             <Gauge size={15} />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            title="Asignar a Faena"
-            onClick={() => handleOpenAssignModal(item)}
-          >
-            <MapPin size={15} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            title="Editar Equipo"
-            onClick={() => handleOpenEditModal(item)}
-          >
-            <Edit2 size={15} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-red-600 hover:text-red-700"
-            title="Eliminar Equipo"
-            onClick={() => handleOpenDeleteModal(item)}
-          >
-            <Trash2 size={15} />
-          </Button>
+          {canWrite && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Asignar a Faena"
+                onClick={() => handleOpenAssignModal(item)}
+              >
+                <MapPin size={15} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Editar Equipo"
+                onClick={() => handleOpenEditModal(item)}
+              >
+                <Edit2 size={15} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:text-red-700"
+                title="Eliminar Equipo"
+                onClick={() => handleOpenDeleteModal(item)}
+              >
+                <Trash2 size={15} />
+              </Button>
+            </>
+          )}
         </div>
       ),
     },
@@ -330,10 +338,12 @@ export function FlotaPage() {
             Gestion tecnica de equipos, horometros y asignaciones a faenas
           </p>
         </div>
-        <Button onClick={handleOpenCreateModal}>
-          <Plus size={16} className="mr-2" />
-          Nuevo Equipo
-        </Button>
+        {canWrite && (
+          <Button onClick={handleOpenCreateModal}>
+            <Plus size={16} className="mr-2" />
+            Nuevo Equipo
+          </Button>
+        )}
       </div>
 
       {/* Stats Cards */}

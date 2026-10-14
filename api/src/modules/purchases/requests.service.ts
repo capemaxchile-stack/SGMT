@@ -25,6 +25,7 @@ export class RequestsService {
       include: {
         faena: true,
         requester: { select: { id: true, name: true, email: true } },
+        approvedBy: { select: { id: true, name: true, email: true } },
         lines: {
           include: {
             item: true,
@@ -48,6 +49,7 @@ export class RequestsService {
       include: {
         faena: true,
         requester: { select: { id: true, name: true, email: true } },
+        approvedBy: { select: { id: true, name: true, email: true } },
         lines: {
           include: {
             item: true,
@@ -164,7 +166,7 @@ export class RequestsService {
     return request;
   }
 
-  async updateStatus(id: string, updateDto: UpdateRequestStatusDto) {
+  async updateStatus(id: string, updateDto: UpdateRequestStatusDto, user?: any) {
     const request = await this.prisma.purchaseRequest.findUnique({ where: { id } });
     if (!request) {
       throw new NotFoundException(`Purchase request with id ${id} not found`);
@@ -183,14 +185,28 @@ export class RequestsService {
       throw new BadRequestException(`Invalid status transition from ${request.status} to ${updateDto.status}`);
     }
 
+    const updateData: any = {
+      status: updateDto.status,
+    };
+
+    if (updateDto.status === RequestStatus.APROBADA) {
+      updateData.approvedById = user?.id || null;
+      updateData.approvedAt = new Date();
+    } else if (updateDto.status === RequestStatus.RECHAZADA) {
+      updateData.approvedById = user?.id || null;
+      updateData.approvedAt = new Date();
+      if (updateDto.rejectionReason) {
+        updateData.rejectionReason = updateDto.rejectionReason;
+      }
+    }
+
     return this.prisma.purchaseRequest.update({
       where: { id },
-      data: {
-        status: updateDto.status,
-      },
+      data: updateData,
       include: {
         faena: true,
         requester: { select: { id: true, name: true, email: true } },
+        approvedBy: { select: { id: true, name: true, email: true } },
         lines: { include: { item: true } },
       },
     });
@@ -215,10 +231,10 @@ export class RequestsService {
       step: 1,
       phase: 'SOLICITUD',
       title: `Solicitud de Pedido ${req.requestNumber}`,
-      description: `Generada por ${req.requester.name} en faena ${req.faena.name}. Justificación: "${req.justification}"`,
+      description: `Generada por ${req.requester.name} (${req.requester.email}) en faena ${req.faena.name}. Justificación: "${req.justification}"`,
       timestamp: req.createdAt,
-      status: req.status === RequestStatus.RECHAZADA ? 'REJECTED' : 'COMPLETED',
-      badge: req.status,
+      status: 'COMPLETED',
+      badge: req.status === RequestStatus.BORRADOR ? 'BORRADOR' : 'SOLICITADA',
       meta: {
         totalLines: req.lines.length,
         items: req.lines.map((l) => ({
@@ -231,16 +247,63 @@ export class RequestsService {
       },
     });
 
-    // Phase 2: Cotizaciones
+    // Phase 2: Visado y Aprobación Operacional (Jefatura de Faena)
+    if (req.status === RequestStatus.APROBADA || req.status === RequestStatus.CONVERTIDA) {
+      timelineEvents.push({
+        step: 2,
+        phase: 'APROBACION',
+        title: 'Visado y Aprobación Operacional de Faena',
+        description: req.approvedBy
+          ? `Aprobada por ${req.approvedBy.name} (${req.approvedBy.email}). Solicitud visada para licitación y compra.`
+          : 'Aprobada por Jefatura de Faena. Solicitud visada para licitación y compra.',
+        timestamp: req.approvedAt || req.updatedAt,
+        status: 'COMPLETED',
+        badge: 'APROBADA',
+        meta: {
+          approver: req.approvedBy ? `${req.approvedBy.name} (${req.approvedBy.email})` : 'Jefatura de Faena',
+          approvedAt: req.approvedAt || req.updatedAt,
+        },
+      });
+    } else if (req.status === RequestStatus.RECHAZADA) {
+      timelineEvents.push({
+        step: 2,
+        phase: 'APROBACION',
+        title: 'Rechazo Operacional de Faena',
+        description: req.approvedBy
+          ? `Rechazada por ${req.approvedBy.name} (${req.approvedBy.email}). Motivo: "${req.rejectionReason || 'Requerimiento no autorizado'}"`
+          : `Rechazada. Motivo: "${req.rejectionReason || 'Requerimiento no autorizado'}"`,
+        timestamp: req.approvedAt || req.updatedAt,
+        status: 'REJECTED',
+        badge: 'RECHAZADA',
+        meta: {
+          rejectedBy: req.approvedBy?.name,
+          reason: req.rejectionReason,
+        },
+      });
+    } else {
+      timelineEvents.push({
+        step: 2,
+        phase: 'APROBACION',
+        title: 'Visado de Jefatura de Faena',
+        description: req.status === RequestStatus.PENDIENTE
+          ? 'En espera de visto bueno del Jefe de Faena para avanzar a compras (SLA: < 24 hrs)'
+          : 'Borrador en preparación, pendiente de envío a revisión operacional',
+        timestamp: req.updatedAt,
+        status: req.status === RequestStatus.PENDIENTE ? 'IN_PROGRESS' : 'PENDING',
+        badge: req.status,
+      });
+    }
+
+    // Phase 3: Cotizaciones
     if (req.quotations && req.quotations.length > 0) {
       const selected = req.quotations.find((q) => q.status === 'SELECCIONADA');
       timelineEvents.push({
-        step: 2,
+        step: 3,
         phase: 'COTIZACIONES',
         title: `Proceso de Cotizaciones (${req.quotations.length} proveedores consultados)`,
         description: selected
           ? `Cotización ${selected.quotationNumber} seleccionada con proveedor ${selected.supplier.businessName} por $${Number(selected.totalAmount).toLocaleString('es-CL')}`
-          : `${req.quotations.length} cotización(es) en evaluación o trámite.`,
+          : `${req.quotations.length} cotización(es) en evaluación o trámite por Adquisiciones.`,
         timestamp: selected ? selected.updatedAt : req.quotations[0].createdAt,
         status: selected ? 'COMPLETED' : 'IN_PROGRESS',
         badge: selected ? 'SELECCIONADA' : 'EN_EVALUACION',
@@ -255,20 +318,22 @@ export class RequestsService {
       });
     } else {
       timelineEvents.push({
-        step: 2,
+        step: 3,
         phase: 'COTIZACIONES',
-        title: 'Cotizaciones de Proveedores',
-        description: req.status === RequestStatus.APROBADA ? 'Pendiente de solicitar cotizaciones' : 'A la espera de aprobación de solicitud',
+        title: 'Licitación de Cotizaciones (Adquisiciones)',
+        description: req.status === RequestStatus.APROBADA
+          ? 'Responsable: Departamento de Compras (comprador@sgmt.local). Pendiente de solicitar cotizaciones (SLA: < 48 hrs)'
+          : 'A la espera de aprobación operacional de la solicitud',
         timestamp: req.updatedAt,
         status: req.status === RequestStatus.APROBADA ? 'IN_PROGRESS' : 'PENDING',
       });
     }
 
-    // Phase 3: Orden de Compra
+    // Phase 4: Orden de Compra
     if (req.purchaseOrder && req.purchaseOrder.length > 0) {
       for (const po of req.purchaseOrder) {
         timelineEvents.push({
-          step: 3,
+          step: 4,
           phase: 'ORDEN_COMPRA',
           title: `Orden de Compra ${po.orderNumber}`,
           description: `Emitida a ${po.supplier.businessName} por $${Number(po.totalAmount).toLocaleString('es-CL')}. Estado: ${po.status}`,
@@ -279,10 +344,10 @@ export class RequestsService {
       }
     } else {
       timelineEvents.push({
-        step: 3,
+        step: 4,
         phase: 'ORDEN_COMPRA',
         title: 'Emisión de Orden de Compra',
-        description: 'Pendiente de emisión de OC',
+        description: 'Pendiente de emisión de OC tras selección de cotización',
         timestamp: req.updatedAt,
         status: 'PENDING',
       });

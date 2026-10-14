@@ -16,6 +16,7 @@ import { useDashboardMetrics } from '../api/dashboard';
 import { APP_VERSION, BUILD_DATE } from '../components/layout/Sidebar';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { OperationsPipelineCard } from '../components/dashboard/OperationsPipelineCard';
 
 export function DashboardPage() {
   const { data: metrics, isLoading: loadingMetrics, refetch: refetchMetrics } = useDashboardMetrics();
@@ -204,6 +205,9 @@ export function DashboardPage() {
           <span>Reportes & Cierres</span>
         </Link>
       </div>
+
+      {/* Operations Lifecycle & SLA Monitoring Pipeline */}
+      <OperationsPipelineCard />
 
       {/* 4 Activity Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

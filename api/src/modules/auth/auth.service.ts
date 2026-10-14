@@ -35,7 +35,10 @@ export class AuthService {
       'COMBUSTIBLE',
       'BODEGA',
       'COMPRAS',
+      'TERRENO',
+      'COPILOT',
       'REPORTES',
+      'DOCUMENTACION',
       'ADMINISTRACION',
     ];
 

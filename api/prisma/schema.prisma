@@ -21,7 +21,8 @@ model User {
   authorizations   Authorization[]
   faenasAsChief    Faena[]           @relation("FaenaChief")
   movementsCreated WarehouseMovement[]
-  requestsCreated  PurchaseRequest[]
+  requestsCreated  PurchaseRequest[] @relation("RequestsCreated")
+  requestsApproved PurchaseRequest[] @relation("RequestsApproved")
   workOrdersCreated WorkOrder[]
   fuelLogsCreated  FuelLog[]
   auditLogs        AuditLog[]
@@ -305,14 +306,18 @@ model PurchaseRequest {
   id            String                @id @default(uuid())
   requestNumber String                @unique
   faenaId       String
-  requesterId   String
-  status        RequestStatus
-  justification String
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
-  faena         Faena                 @relation(fields: [faenaId], references: [id])
-  requester     User                  @relation(fields: [requesterId], references: [id])
-  lines         PurchaseRequestLine[]
+  requesterId     String
+  status          RequestStatus
+  justification   String
+  approvedById    String?
+  approvedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  faena           Faena                 @relation(fields: [faenaId], references: [id])
+  requester       User                  @relation("RequestsCreated", fields: [requesterId], references: [id])
+  approvedBy      User?                 @relation("RequestsApproved", fields: [approvedById], references: [id])
+  lines           PurchaseRequestLine[]
   quotations    Quotation[]
   purchaseOrder PurchaseOrder[]
 }

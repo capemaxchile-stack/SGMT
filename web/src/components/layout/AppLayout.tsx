@@ -4,13 +4,18 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { CopilotDrawer } from '../copilot/CopilotDrawer';
 import { CopilotFloatingButton } from '../copilot/CopilotFloatingButton';
+import { useAuthStore } from '../../stores/auth.store';
 
 export function AppLayout() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const { can } = useAuthStore();
+  const hasCopilotAccess = can('COPILOT', 'read');
 
   // Global Keyboard Shortcut: Ctrl+K or Cmd+K to toggle Copilot
   useEffect(() => {
+    if (!hasCopilotAccess) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -23,7 +28,7 @@ export function AppLayout() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCopilotOpen]);
+  }, [isCopilotOpen, hasCopilotAccess]);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-slate-950">
@@ -34,21 +39,23 @@ export function AppLayout() {
       <div className="flex flex-col flex-1 min-w-0">
         <Header
           onOpenMobileMenu={() => setIsMobileNavOpen(true)}
-          onOpenCopilot={() => setIsCopilotOpen(true)}
+          onOpenCopilot={() => hasCopilotAccess && setIsCopilotOpen(true)}
         />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
 
-      {/* Copilot Floating Trigger Button */}
-      <CopilotFloatingButton onClick={() => setIsCopilotOpen(true)} />
+      {/* Copilot Floating Trigger Button (governed by COPILOT permission) */}
+      {hasCopilotAccess && <CopilotFloatingButton onClick={() => setIsCopilotOpen(true)} />}
 
       {/* Copilot Drawer Panel */}
-      <CopilotDrawer
-        isOpen={isCopilotOpen}
-        onClose={() => setIsCopilotOpen(false)}
-      />
+      {hasCopilotAccess && (
+        <CopilotDrawer
+          isOpen={isCopilotOpen}
+          onClose={() => setIsCopilotOpen(false)}
+        />
+      )}
     </div>
   );
 }

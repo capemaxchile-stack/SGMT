@@ -66,8 +66,12 @@ export interface PurchaseRequest extends BaseEntity {
   requesterId: string;
   status: RequestStatus;
   justification: string;
+  approvedById?: string;
+  approvedAt?: string;
+  rejectionReason?: string;
   faena?: Faena;
   requester?: User;
+  approvedBy?: User;
   lines?: PurchaseRequestLine[];
   quotations?: Quotation[];
   purchaseOrder?: PurchaseOrder[];

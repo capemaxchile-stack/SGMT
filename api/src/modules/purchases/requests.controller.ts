@@ -46,7 +46,8 @@ export class RequestsController {
   updateStatus(
     @Param('id') id: string,
     @Body() updateDto: UpdateRequestStatusDto,
+    @CurrentUser() user: any,
   ) {
-    return this.requestsService.updateStatus(id, updateDto);
+    return this.requestsService.updateStatus(id, updateDto, user);
   }
 }

@@ -40,7 +40,10 @@ const MODULES: ModuleConfig[] = [
   { key: 'COMBUSTIBLE', name: 'Combustible', description: 'Registro de despachos, tanques y rendimiento por máquina' },
   { key: 'BODEGA', name: 'Bodega y Kardex', description: 'Inventario de repuestos, movimientos y valorización PMP' },
   { key: 'COMPRAS', name: 'Compras y OCs', description: 'Solicitudes de compra, órdenes de compra y recepción de insumos' },
+  { key: 'TERRENO', name: 'App Móvil / Terreno', description: 'Acceso a la interfaz móvil para carga de combustible y pedidos en faena' },
+  { key: 'COPILOT', name: 'Copilot AI', description: 'Asistente de inteligencia artificial y consultas analíticas' },
   { key: 'REPORTES', name: 'Reportes y Cierres', description: 'Cierre mensual de faena, balances ejecutivos y descargas CSV' },
+  { key: 'DOCUMENTACION', name: 'Manual de Operación', description: 'Documentación técnica, manuales y guías del sistema' },
   { key: 'ADMINISTRACION', name: 'Administración', description: 'Gestión de usuarios, auditoría, canales de alerta y perfiles' },
 ];
 

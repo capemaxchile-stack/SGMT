@@ -7,6 +7,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Modal } from '../../components/ui/Modal';
 import { Faena, FaenaStatus } from '../../types/models';
 import { Search, Plus, MapPin, Building2, Calendar, FileText, UserCheck, AlertCircle, Edit2, Trash2 } from 'lucide-react';
+import { useAuthStore } from '../../stores/auth.store';
 
 export function FaenasPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,6 +33,9 @@ export function FaenasPage() {
   });
 
   const { data: users } = useUsers();
+  const { can } = useAuthStore();
+  const canWrite = can('FAENAS', 'write');
+
   const createFaenaMutation = useCreateFaena();
   const updateFaenaMutation = useUpdateFaena();
   const deleteFaenaMutation = useDeleteFaena();
@@ -167,25 +171,29 @@ export function FaenasPage() {
         </div>
       ),
     },
-    {
-      header: 'Acciones',
-      cell: (item: Faena) => (
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" title="Editar Faena" onClick={() => handleOpenEditModal(item)}>
-            <Edit2 size={15} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-red-600 hover:text-red-700"
-            title="Eliminar Faena"
-            onClick={() => handleOpenDeleteModal(item)}
-          >
-            <Trash2 size={15} />
-          </Button>
-        </div>
-      ),
-    },
+    ...(canWrite
+      ? [
+          {
+            header: 'Acciones',
+            cell: (item: Faena) => (
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" title="Editar Faena" onClick={() => handleOpenEditModal(item)}>
+                  <Edit2 size={15} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700"
+                  title="Eliminar Faena"
+                  onClick={() => handleOpenDeleteModal(item)}
+                >
+                  <Trash2 size={15} />
+                </Button>
+              </div>
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -195,10 +203,12 @@ export function FaenasPage() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Gestion de Faenas</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Administra los proyectos, obras y sus contratos asociados</p>
         </div>
-        <Button onClick={handleOpenCreateModal}>
-          <Plus size={16} className="mr-2" />
-          Nueva Faena
-        </Button>
+        {canWrite && (
+          <Button onClick={handleOpenCreateModal}>
+            <Plus size={16} className="mr-2" />
+            Nueva Faena
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">

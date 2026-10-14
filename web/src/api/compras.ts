@@ -129,11 +129,13 @@ export const createPurchaseRequest = async (payload: CreatePurchaseRequestDto): 
 export const updatePurchaseRequestStatus = async ({
   id,
   status,
+  rejectionReason,
 }: {
   id: string;
   status: string;
+  rejectionReason?: string;
 }): Promise<PurchaseRequest> => {
-  const { data } = await api.patch<PurchaseRequest>(`/purchases/requests/${id}/status`, { status });
+  const { data } = await api.patch<PurchaseRequest>(`/purchases/requests/${id}/status`, { status, rejectionReason });
   return data;
 };
 

@@ -36,9 +36,13 @@ import {
   OfflineFuelItem,
 } from '../../lib/offlineQueue';
 import { RequestUrgency } from '../../types/compras';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
+import { useAuthStore } from '../../stores/auth.store';
+import { ShieldAlert } from 'lucide-react';
 
 export function TerrainRequestMobileView() {
   const navigate = useNavigate();
+  const { user, can } = useAuthStore();
   const [mobileMode, setMobileMode] = useState<'repuestos' | 'combustible'>('combustible');
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [offlineQueue, setOfflineQueue] = useState<OfflineRequestItem[]>(getOfflineQueue());
@@ -296,6 +300,30 @@ export function TerrainRequestMobileView() {
     setTimeout(() => setSuccessMessage(''), 6000);
   };
 
+  if (user && !can('TERRENO', 'read')) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center shadow-lg space-y-4">
+          <div className="w-12 h-12 bg-red-100 dark:bg-red-950/70 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto">
+            <ShieldAlert size={28} />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Acceso a Terreno Deshabilitado</h2>
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            Tu perfil de usuario no cuenta con permisos para operar la aplicación móvil de Terreno (Módulo TERRENO). Contacta a un administrador para gestionar tu perfil.
+          </p>
+          <div className="pt-2 flex justify-center">
+            <button
+              onClick={() => navigate('/')}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors"
+            >
+              <ArrowLeft size={16} /> Volver al Inicio
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-xl mx-auto p-4 space-y-4 pb-20">
       {/* Mobile Header & Connectivity Bar */}
@@ -451,25 +479,25 @@ export function TerrainRequestMobileView() {
             </p>
           </div>
 
-          {/* Maquinaria Selection */}
+          {/* Maquinaria Selection with Combobox Search */}
           <div>
             <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
               <Truck size={14} className="text-slate-500" />
               Maquinaria o Vehículo Receptor *
             </label>
-            <select
+            <SearchableSelect
               required
               value={fuelAssetId}
-              onChange={(e) => handleFuelAssetChange(e.target.value)}
-              className="w-full text-xs font-medium border border-slate-300 dark:border-slate-700 rounded-xl p-3 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500"
-            >
-              <option value="">Seleccione equipo de la flota...</option>
-              {assets.map((a: any) => (
-                <option key={a.id} value={a.id}>
-                  {a.internalNumber} — {a.brand} {a.model} ({a.type})
-                </option>
-              ))}
-            </select>
+              onChange={(val) => handleFuelAssetChange(val)}
+              placeholder="Seleccione equipo de la flota..."
+              searchPlaceholder="Buscar por N° interno, marca, modelo o tipo..."
+              options={assets.map((a: any) => ({
+                value: a.id,
+                label: `${a.internalNumber} — ${a.brand} ${a.model}`,
+                badge: a.type,
+                sublabel: a.licensePlate ? `Patente: ${a.licensePlate}` : undefined,
+              }))}
+            />
           </div>
 
           {/* Liters Entry with Quick Presets */}
@@ -713,18 +741,17 @@ export function TerrainRequestMobileView() {
               <Truck size={14} className="text-slate-500" />
               Maquinaria en Terreno (Opcional)
             </label>
-            <select
+            <SearchableSelect
               value={targetAssetId}
-              onChange={(e) => setTargetAssetId(e.target.value)}
-              className="w-full text-xs border border-slate-300 dark:border-slate-700 rounded-xl p-3 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-            >
-              <option value="">Sin equipo específico / Uso general</option>
-              {assets.map((a: any) => (
-                <option key={a.id} value={a.id}>
-                  {a.internalNumber} - {a.brand} {a.model} ({a.type})
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setTargetAssetId(val)}
+              placeholder="Sin equipo específico / Uso general..."
+              searchPlaceholder="Buscar por N° interno, marca o modelo..."
+              options={assets.map((a: any) => ({
+                value: a.id,
+                label: `${a.internalNumber} — ${a.brand} ${a.model}`,
+                badge: a.type,
+              }))}
+            />
           </div>
 
           {/* Justification */}
@@ -762,19 +789,19 @@ export function TerrainRequestMobileView() {
                   <div className="flex items-center gap-2">
                     <div className="flex-1">
                       <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">Repuesto *</label>
-                      <select
+                      <SearchableSelect
                         required
                         value={item.itemId}
-                        onChange={(e) => handleItemChange(idx, 'itemId', e.target.value)}
-                        className="w-full text-xs border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
-                      >
-                        <option value="">Seleccione repuesto del catálogo...</option>
-                        {items.map((it: any) => (
-                          <option key={it.id} value={it.id}>
-                            {it.code} - {it.description} ({it.unitOfMeasure})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(val) => handleItemChange(idx, 'itemId', val)}
+                        placeholder="Seleccione repuesto del catálogo..."
+                        searchPlaceholder="Buscar por código (ej: ITM-003) o descripción..."
+                        options={items.map((it: any) => ({
+                          value: it.id,
+                          label: `${it.code} — ${it.description}`,
+                          badge: it.unitOfMeasure,
+                          sublabel: it.category ? `Categoría: ${it.category}` : undefined,
+                        }))}
+                      />
                     </div>
 
                     <div className="w-24">

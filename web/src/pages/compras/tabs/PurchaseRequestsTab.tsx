@@ -119,6 +119,18 @@ export function PurchaseRequestsTab() {
     }
   };
 
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    type: 'APPROVE' | 'REJECT';
+    request: PurchaseRequest | null;
+    rejectionReason: string;
+  }>({
+    isOpen: false,
+    type: 'APPROVE',
+    request: null,
+    rejectionReason: '',
+  });
+
   const handleSendToReview = async (id: string) => {
     setMutatingRequestId(id);
     try {
@@ -133,28 +145,37 @@ export function PurchaseRequestsTab() {
     }
   };
 
-  const handleApprove = async (id: string) => {
-    setMutatingRequestId(id);
-    try {
-      await updateStatusMutation.mutateAsync({ id, status: 'APROBADA' });
-      toast.success('Solicitud de compra aprobada exitosamente');
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      const msg = error?.response?.data?.message || 'Error al aprobar la solicitud de compra.';
-      toast.error(msg);
-    } finally {
-      setMutatingRequestId(null);
-    }
+  const handleOpenConfirm = (type: 'APPROVE' | 'REJECT', request: PurchaseRequest) => {
+    setConfirmDialog({
+      isOpen: true,
+      type,
+      request,
+      rejectionReason: '',
+    });
   };
 
-  const handleReject = async (id: string) => {
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.request) return;
+    const { id, requestNumber } = confirmDialog.request;
     setMutatingRequestId(id);
     try {
-      await updateStatusMutation.mutateAsync({ id, status: 'RECHAZADA' });
-      toast.info('Solicitud de compra rechazada');
+      if (confirmDialog.type === 'APPROVE') {
+        await updateStatusMutation.mutateAsync({ id, status: 'APROBADA' });
+        toast.success(
+          `Solicitud ${requestNumber} APROBADA exitosamente. Paso siguiente: El departamento de Compras (comprador@sgmt.local) debe cotizar con proveedores.`
+        );
+      } else {
+        await updateStatusMutation.mutateAsync({
+          id,
+          status: 'RECHAZADA',
+          rejectionReason: confirmDialog.rejectionReason.trim() || undefined,
+        });
+        toast.info(`Solicitud ${requestNumber} rechazada`);
+      }
+      setConfirmDialog({ isOpen: false, type: 'APPROVE', request: null, rejectionReason: '' });
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      const msg = error?.response?.data?.message || 'Error al rechazar la solicitud de compra.';
+      const msg = error?.response?.data?.message || 'Error al procesar la acción.';
       toast.error(msg);
     } finally {
       setMutatingRequestId(null);
@@ -239,7 +260,7 @@ export function PurchaseRequestsTab() {
                 className="text-emerald-600 hover:text-emerald-700 disabled:opacity-50"
                 title="Aprobar Solicitud Directamente"
                 disabled={updateStatusMutation.isPending && mutatingRequestId === item.id}
-                onClick={() => handleApprove(item.id)}
+                onClick={() => handleOpenConfirm('APPROVE', item)}
               >
                 <CheckCircle size={16} />
               </Button>
@@ -249,7 +270,7 @@ export function PurchaseRequestsTab() {
                 className="text-red-600 hover:text-red-700 disabled:opacity-50"
                 title="Rechazar Borrador"
                 disabled={updateStatusMutation.isPending && mutatingRequestId === item.id}
-                onClick={() => handleReject(item.id)}
+                onClick={() => handleOpenConfirm('REJECT', item)}
               >
                 <XCircle size={16} />
               </Button>
@@ -264,7 +285,7 @@ export function PurchaseRequestsTab() {
                 className="text-emerald-600 hover:text-emerald-700 disabled:opacity-50"
                 title="Aprobar Solicitud"
                 disabled={updateStatusMutation.isPending && mutatingRequestId === item.id}
-                onClick={() => handleApprove(item.id)}
+                onClick={() => handleOpenConfirm('APPROVE', item)}
               >
                 <CheckCircle size={16} />
               </Button>
@@ -274,7 +295,7 @@ export function PurchaseRequestsTab() {
                 className="text-red-600 hover:text-red-700 disabled:opacity-50"
                 title="Rechazar Solicitud"
                 disabled={updateStatusMutation.isPending && mutatingRequestId === item.id}
-                onClick={() => handleReject(item.id)}
+                onClick={() => handleOpenConfirm('REJECT', item)}
               >
                 <XCircle size={16} />
               </Button>
@@ -450,6 +471,75 @@ export function PurchaseRequestsTab() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Confirmation Modal */}
+      <Modal
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+        title={confirmDialog.type === 'APPROVE' ? 'Confirmar Aprobación Operacional' : 'Rechazar Solicitud de Pedido'}
+      >
+        <div className="space-y-4">
+          {confirmDialog.type === 'APPROVE' ? (
+            <div className="space-y-3">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-900 dark:text-emerald-200">
+                <p className="font-bold flex items-center gap-1.5 text-sm">
+                  <CheckCircle size={17} className="text-emerald-600 dark:text-emerald-400" />
+                  ¿Desea otorgar el visto bueno a la solicitud {confirmDialog.request?.requestNumber}?
+                </p>
+                <div className="mt-2 text-slate-700 dark:text-slate-300 space-y-1">
+                  <p>📍 Faena: <strong className="text-slate-900 dark:text-white">{confirmDialog.request?.faena?.name}</strong></p>
+                  <p>👤 Solicitante: <strong className="text-slate-900 dark:text-white">{confirmDialog.request?.requester?.name}</strong></p>
+                  <p>📝 Motivo: <em>"{confirmDialog.request?.justification}"</em></p>
+                </div>
+                <div className="mt-3 p-2 bg-white/70 dark:bg-slate-900/70 rounded-lg border border-emerald-100 dark:border-emerald-900 text-[11px] text-slate-600 dark:text-slate-400">
+                  ⚡ <strong>Siguiente paso en el flujo:</strong> Al aprobar, la solicitud pasará al estado <strong>APROBADA</strong> y quedará disponible para que el <strong>Departamento de Compras (comprador@sgmt.local)</strong> comience la licitación y cotización con proveedores.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 rounded-xl text-xs text-rose-900 dark:text-rose-200">
+                <p className="font-bold flex items-center gap-1.5 text-sm">
+                  <AlertCircle size={17} className="text-rose-600 dark:text-rose-400" />
+                  ¿Está seguro de rechazar la solicitud {confirmDialog.request?.requestNumber}?
+                </p>
+                <p className="mt-2 text-slate-600 dark:text-slate-400">
+                  Esta acción cancelará el requerimiento de terreno y no podrá ser cotizado.
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Motivo u Observación del Rechazo (Opcional):
+                </label>
+                <textarea
+                  rows={2}
+                  value={confirmDialog.rejectionReason}
+                  onChange={(e) => setConfirmDialog({ ...confirmDialog, rejectionReason: e.target.value })}
+                  placeholder="Ej: Stock disponible en bodega central o especificación técnica errónea"
+                  className="w-full text-xs p-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-rose-500"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant={confirmDialog.type === 'APPROVE' ? 'primary' : 'danger'}
+              onClick={handleConfirmAction}
+              disabled={updateStatusMutation.isPending && mutatingRequestId === confirmDialog.request?.id}
+            >
+              {confirmDialog.type === 'APPROVE' ? 'Sí, Aprobar Solicitud' : 'Confirmar Rechazo'}
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       {/* Timeline Modal */}

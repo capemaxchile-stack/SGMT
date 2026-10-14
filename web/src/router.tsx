@@ -41,7 +41,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/terreno',
-    element: withSuspense(TerrainRequestMobileView),
+    element: <ProtectedRoute module="TERRENO">{withSuspense(TerrainRequestMobileView)}</ProtectedRoute>,
   },
   {
     path: '/',
@@ -53,55 +53,55 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: withSuspense(DashboardPage),
+        element: <ProtectedRoute module="DASHBOARD">{withSuspense(DashboardPage)}</ProtectedRoute>,
       },
       {
         path: 'dashboard',
-        element: withSuspense(DashboardPage),
+        element: <ProtectedRoute module="DASHBOARD">{withSuspense(DashboardPage)}</ProtectedRoute>,
       },
       {
         path: 'faenas',
-        element: withSuspense(FaenasPage),
+        element: <ProtectedRoute module="FAENAS">{withSuspense(FaenasPage)}</ProtectedRoute>,
       },
       {
         path: 'flota',
-        element: withSuspense(FlotaPage),
+        element: <ProtectedRoute module="FLOTA">{withSuspense(FlotaPage)}</ProtectedRoute>,
       },
       {
         path: 'mantenimiento',
-        element: withSuspense(MantenimientoPage),
+        element: <ProtectedRoute module="MANTENIMIENTO">{withSuspense(MantenimientoPage)}</ProtectedRoute>,
       },
       {
         path: 'combustible',
-        element: withSuspense(CombustiblePage),
+        element: <ProtectedRoute module="COMBUSTIBLE">{withSuspense(CombustiblePage)}</ProtectedRoute>,
       },
       {
         path: 'bodega',
-        element: withSuspense(BodegaPage),
+        element: <ProtectedRoute module="BODEGA">{withSuspense(BodegaPage)}</ProtectedRoute>,
       },
       {
         path: 'compras',
-        element: withSuspense(ComprasPage),
+        element: <ProtectedRoute module="COMPRAS">{withSuspense(ComprasPage)}</ProtectedRoute>,
       },
       {
         path: 'compras/terreno',
-        element: withSuspense(TerrainRequestMobileView),
+        element: <ProtectedRoute module="TERRENO">{withSuspense(TerrainRequestMobileView)}</ProtectedRoute>,
       },
       {
         path: 'reportes',
-        element: withSuspense(ReportesPage),
+        element: <ProtectedRoute module="REPORTES">{withSuspense(ReportesPage)}</ProtectedRoute>,
       },
       {
         path: 'certificaciones',
-        element: withSuspense(CertificacionesPage),
+        element: <ProtectedRoute module="CERTIFICACIONES">{withSuspense(CertificacionesPage)}</ProtectedRoute>,
       },
       {
         path: 'documentacion',
-        element: withSuspense(DocumentacionPage),
+        element: <ProtectedRoute module="DOCUMENTACION">{withSuspense(DocumentacionPage)}</ProtectedRoute>,
       },
       {
         path: 'admin',
-        element: withSuspense(AdminPage),
+        element: <ProtectedRoute module="ADMINISTRACION">{withSuspense(AdminPage)}</ProtectedRoute>,
       },
     ],
   },

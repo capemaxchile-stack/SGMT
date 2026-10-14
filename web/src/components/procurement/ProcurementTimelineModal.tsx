@@ -30,6 +30,8 @@ export function ProcurementTimelineModal({
     switch (phase) {
       case 'SOLICITUD':
         return <Package className="w-5 h-5 text-blue-600" />;
+      case 'APROBACION':
+        return <ShieldCheck className="w-5 h-5 text-emerald-600" />;
       case 'COTIZACIONES':
         return <ShoppingCart className="w-5 h-5 text-amber-600" />;
       case 'AUTORIZACION':
