@@ -15,8 +15,9 @@ import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { Modal } from '../../../components/ui/Modal';
 import { useToast } from '../../../components/ui/Toast';
 import { ProcurementTimelineModal } from '../../../components/procurement/ProcurementTimelineModal';
+import { RfqModal } from '../../../components/procurement/RfqModal';
 import { PurchaseRequest, RequestUrgency } from '../../../types/compras';
-import { Plus, Search, AlertCircle, CheckCircle, XCircle, History, Trash2, Send, Package, Truck } from 'lucide-react';
+import { Plus, Search, AlertCircle, CheckCircle, XCircle, History, Trash2, Send, Package, Truck, ShoppingCart } from 'lucide-react';
 
 interface RequestLineForm {
   itemId: string;
@@ -36,6 +37,9 @@ export function PurchaseRequestsTab() {
   // Timeline Modal State
   const [selectedRequestIdForTimeline, setSelectedRequestIdForTimeline] = useState<string | null>(null);
   const { data: timelineData, isLoading: isTimelineLoading } = useRequestTimeline(selectedRequestIdForTimeline);
+
+  // RFQ Modal State
+  const [rfqTargetRequest, setRfqTargetRequest] = useState<PurchaseRequest | null>(null);
 
   // Form State
   const [requestNumber, setRequestNumber] = useState('');
@@ -300,6 +304,19 @@ export function PurchaseRequestsTab() {
                 <XCircle size={16} />
               </Button>
             </>
+          )}
+
+          {item.status === 'APROBADA' && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800 hover:bg-primary-50 dark:hover:bg-primary-950/60 font-semibold text-xs flex items-center gap-1 shadow-2xs"
+              title="Solicitar Cotizaciones a Proveedores (RFQ)"
+              onClick={() => setRfqTargetRequest(item)}
+            >
+              <ShoppingCart size={14} />
+              <span>Cotizar (RFQ)</span>
+            </Button>
           )}
         </div>
       ),
@@ -638,6 +655,15 @@ export function PurchaseRequestsTab() {
           subtitle={`Faena: ${timelineData?.faena || ''} • Solicitante: ${timelineData?.requester || ''}`}
           events={timelineData?.timeline || []}
           isLoading={isTimelineLoading}
+        />
+      )}
+
+      {/* RFQ Multi-Supplier Invitation Modal */}
+      {rfqTargetRequest && (
+        <RfqModal
+          isOpen={!!rfqTargetRequest}
+          onClose={() => setRfqTargetRequest(null)}
+          request={rfqTargetRequest}
         />
       )}
     </div>
