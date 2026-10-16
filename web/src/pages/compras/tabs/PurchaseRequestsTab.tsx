@@ -16,7 +16,7 @@ import { Modal } from '../../../components/ui/Modal';
 import { useToast } from '../../../components/ui/Toast';
 import { ProcurementTimelineModal } from '../../../components/procurement/ProcurementTimelineModal';
 import { PurchaseRequest, RequestUrgency } from '../../../types/compras';
-import { Plus, Search, AlertCircle, CheckCircle, XCircle, History, Trash2, Send } from 'lucide-react';
+import { Plus, Search, AlertCircle, CheckCircle, XCircle, History, Trash2, Send, Package, Truck } from 'lucide-react';
 
 interface RequestLineForm {
   itemId: string;
@@ -478,6 +478,7 @@ export function PurchaseRequestsTab() {
         isOpen={confirmDialog.isOpen}
         onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
         title={confirmDialog.type === 'APPROVE' ? 'Confirmar Aprobación Operacional' : 'Rechazar Solicitud de Pedido'}
+        size="xl"
       >
         <div className="space-y-4">
           {confirmDialog.type === 'APPROVE' ? (
@@ -492,6 +493,70 @@ export function PurchaseRequestsTab() {
                   <p>👤 Solicitante: <strong className="text-slate-900 dark:text-white">{confirmDialog.request?.requester?.name}</strong></p>
                   <p>📝 Motivo: <em>"{confirmDialog.request?.justification}"</em></p>
                 </div>
+
+                {/* Items & Target Machinery Detail */}
+                <div className="mt-3 pt-2 border-t border-emerald-200/60 dark:border-emerald-800/60">
+                  <p className="font-bold text-slate-900 dark:text-white text-xs mb-1.5 flex items-center gap-1.5">
+                    <Package size={14} className="text-emerald-700 dark:text-emerald-300" />
+                    Detalle de Repuestos Solicitados y Equipo Destino ({confirmDialog.request?.lines?.length || 0}):
+                  </p>
+                  <div className="max-h-52 overflow-y-auto space-y-1.5 border border-emerald-200/80 dark:border-emerald-900/60 rounded-lg p-2 bg-white/90 dark:bg-slate-900/90">
+                    {confirmDialog.request?.lines && confirmDialog.request.lines.length > 0 ? (
+                      confirmDialog.request.lines.map((line, idx) => (
+                        <div
+                          key={line.id || idx}
+                          className="flex items-center justify-between p-2 rounded-md bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 text-xs gap-2"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-slate-900 dark:text-slate-100 truncate">
+                              {line.item?.code ? `[${line.item.code}] ` : ''}
+                              {line.item?.description || 'Repuesto'}
+                            </p>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex-wrap">
+                              <span className="flex items-center gap-1 font-medium">
+                                <Truck size={12} className="text-amber-500" />
+                                {line.targetAsset?.internalNumber ? (
+                                  <span className="text-slate-700 dark:text-slate-300 font-semibold">
+                                    Equipo: {line.targetAsset.internalNumber} {line.targetAsset.type ? `(${line.targetAsset.type})` : ''}
+                                  </span>
+                                ) : (
+                                  <span className="italic text-slate-400">Stock general de faena</span>
+                                )}
+                              </span>
+                              {line.notes && (
+                                <span className="text-slate-500 dark:text-slate-400 truncate max-w-[200px]" title={line.notes}>
+                                  • {line.notes}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <span className="font-black text-slate-900 dark:text-white text-xs">
+                              {line.quantity} {line.item?.unitOfMeasure || 'UN'}
+                            </span>
+                            <div className="mt-0.5">
+                              <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                                  line.urgency === 'DETIENE_EQUIPO'
+                                    ? 'bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 font-black'
+                                    : line.urgency === 'ALTA'
+                                    ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                }`}
+                              >
+                                {line.urgency}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[11px] text-slate-400 py-2 text-center">Sin líneas detalladas</p>
+                    )}
+                  </div>
+                </div>
+
                 <div className="mt-3 p-2 bg-white/70 dark:bg-slate-900/70 rounded-lg border border-emerald-100 dark:border-emerald-900 text-[11px] text-slate-600 dark:text-slate-400">
                   ⚡ <strong>Siguiente paso en el flujo:</strong> Al aprobar, la solicitud pasará al estado <strong>APROBADA</strong> y quedará disponible para que el <strong>Departamento de Compras (comprador@sgmt.local)</strong> comience la licitación y cotización con proveedores.
                 </div>
@@ -504,9 +569,31 @@ export function PurchaseRequestsTab() {
                   <AlertCircle size={17} className="text-rose-600 dark:text-rose-400" />
                   ¿Está seguro de rechazar la solicitud {confirmDialog.request?.requestNumber}?
                 </p>
-                <p className="mt-2 text-slate-600 dark:text-slate-400">
-                  Esta acción cancelará el requerimiento de terreno y no podrá ser cotizado.
-                </p>
+                <div className="mt-2 text-slate-700 dark:text-slate-300 space-y-1">
+                  <p>📍 Faena: <strong className="text-slate-900 dark:text-white">{confirmDialog.request?.faena?.name}</strong></p>
+                  <p>👤 Solicitante: <strong className="text-slate-900 dark:text-white">{confirmDialog.request?.requester?.name}</strong></p>
+                  <p>📝 Motivo: <em>"{confirmDialog.request?.justification}"</em></p>
+                </div>
+
+                {/* Items & Target Machinery Detail on Reject */}
+                {confirmDialog.request?.lines && confirmDialog.request.lines.length > 0 && (
+                  <div className="mt-2.5 pt-2 border-t border-rose-200/60 dark:border-rose-800/60">
+                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] mb-1">
+                      Repuestos que serán descartados ({confirmDialog.request.lines.length}):
+                    </p>
+                    <div className="max-h-36 overflow-y-auto space-y-1 border border-rose-200/80 dark:border-rose-900/60 rounded-lg p-1.5 bg-white/90 dark:bg-slate-900/90 text-[11px]">
+                      {confirmDialog.request.lines.map((line, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-slate-700 dark:text-slate-300 py-0.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                          <span className="truncate max-w-[280px]">
+                            {line.quantity}x {line.item?.description || 'Repuesto'}
+                            {line.targetAsset?.internalNumber ? ` [${line.targetAsset.internalNumber}]` : ''}
+                          </span>
+                          <span className="font-bold text-slate-500">{line.urgency}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
