@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   ShoppingCart,
   FileText,
@@ -19,7 +20,24 @@ import { ProcurementAuditTab } from './tabs/ProcurementAuditTab';
 type ComprasTabKey = 'orders' | 'requests' | 'quotations' | 'pending' | 'budget' | 'suggestions' | 'audit';
 
 export function ComprasPage() {
-  const [activeTab, setActiveTab] = useState<ComprasTabKey>('orders');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as ComprasTabKey | null;
+  const validTabs: ComprasTabKey[] = ['orders', 'requests', 'quotations', 'pending', 'budget', 'suggestions', 'audit'];
+
+  const [activeTab, setActiveTabState] = useState<ComprasTabKey>(
+    tabParam && validTabs.includes(tabParam) ? tabParam : 'orders'
+  );
+
+  useEffect(() => {
+    if (tabParam && validTabs.includes(tabParam) && tabParam !== activeTab) {
+      setActiveTabState(tabParam);
+    }
+  }, [tabParam]);
+
+  const setActiveTab = (tab: ComprasTabKey) => {
+    setActiveTabState(tab);
+    setSearchParams({ tab });
+  };
 
   const tabs: Array<{ id: ComprasTabKey; name: string; shortName: string; icon: React.ReactNode; color: string }> = [
     { id: 'orders', name: 'Órdenes de Compra', shortName: 'Órdenes', icon: <ShoppingCart size={16} />, color: 'text-primary-600' },

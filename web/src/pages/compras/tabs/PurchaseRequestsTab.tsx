@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   usePurchaseRequests,
   useCreatePurchaseRequest,
@@ -28,6 +29,7 @@ interface RequestLineForm {
 }
 
 export function PurchaseRequestsTab() {
+  const navigate = useNavigate();
   const toast = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -222,7 +224,19 @@ export function PurchaseRequestsTab() {
     },
     {
       header: 'Estado',
-      cell: (item: PurchaseRequest) => <StatusBadge status={item.status} />,
+      cell: (item: PurchaseRequest) => {
+        const quotesCount = item.quotations?.length || 0;
+        return (
+          <div className="flex flex-col gap-1 items-start">
+            <StatusBadge status={item.status} />
+            {item.status === 'APROBADA' && quotesCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-800 px-1.5 py-0.5 rounded">
+                📋 Cotizando ({quotesCount} prov.)
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       header: 'Fecha',
@@ -307,16 +321,41 @@ export function PurchaseRequestsTab() {
           )}
 
           {item.status === 'APROBADA' && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800 hover:bg-primary-50 dark:hover:bg-primary-950/60 font-semibold text-xs flex items-center gap-1 shadow-2xs"
-              title="Solicitar Cotizaciones a Proveedores (RFQ)"
-              onClick={() => setRfqTargetRequest(item)}
-            >
-              <ShoppingCart size={14} />
-              <span>Cotizar (RFQ)</span>
-            </Button>
+            item.quotations && item.quotations.length > 0 ? (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 font-semibold text-xs flex items-center gap-1 shadow-2xs"
+                  title="Ver cotizaciones emitidas para esta solicitud"
+                  onClick={() => navigate(`/compras?tab=quotations&requestId=${item.id}`)}
+                >
+                  <ShoppingCart size={13} />
+                  <span>Cotizaciones ({item.quotations.length})</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-600 dark:text-slate-400 hover:text-slate-900 text-xs px-2"
+                  title="Invitar a otro proveedor a cotizar"
+                  onClick={() => setRfqTargetRequest(item)}
+                >
+                  <Plus size={13} className="mr-0.5" />
+                  <span className="hidden sm:inline">Invitar</span>
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-primary-600 dark:text-primary-400 border-primary-200 dark:border-primary-800 hover:bg-primary-50 dark:hover:bg-primary-950/60 font-semibold text-xs flex items-center gap-1 shadow-2xs"
+                title="Solicitar Cotizaciones a Proveedores (RFQ)"
+                onClick={() => setRfqTargetRequest(item)}
+              >
+                <ShoppingCart size={14} />
+                <span>Cotizar (RFQ)</span>
+              </Button>
+            )
           )}
         </div>
       ),

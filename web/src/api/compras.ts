@@ -162,6 +162,10 @@ export const selectQuotation = async (id: string): Promise<Quotation> => {
   return data;
 };
 
+export const deleteQuotation = async (id: string): Promise<void> => {
+  await api.delete(`/purchases/quotations/${id}`);
+};
+
 export const fetchItemProcurementInsights = async (itemId: string): Promise<ProcurementInsights> => {
   const { data } = await api.get<ProcurementInsights>(`/purchases/quotations/insights/${itemId}`);
   return data;
@@ -295,6 +299,17 @@ export const useSelectQuotation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: selectQuotation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: comprasKeys.quotations() });
+      queryClient.invalidateQueries({ queryKey: comprasKeys.requests() });
+    },
+  });
+};
+
+export const useDeleteQuotation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteQuotation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: comprasKeys.quotations() });
       queryClient.invalidateQueries({ queryKey: comprasKeys.requests() });

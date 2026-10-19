@@ -175,7 +175,7 @@ export function OperationsPipelineCard() {
         border: 'border-blue-200 dark:border-blue-900/60',
         accent: 'text-blue-600 dark:text-blue-400',
       },
-      link: '/compras',
+      link: '/compras?tab=requests',
       items: stage1Items,
     },
     {
@@ -193,7 +193,7 @@ export function OperationsPipelineCard() {
         border: 'border-indigo-200 dark:border-indigo-900/60',
         accent: 'text-indigo-600 dark:text-indigo-400',
       },
-      link: '/compras',
+      link: '/compras?tab=quotations',
       items: stage2Items,
     },
     {
@@ -211,7 +211,7 @@ export function OperationsPipelineCard() {
         border: 'border-purple-200 dark:border-purple-900/60',
         accent: 'text-purple-600 dark:text-purple-400',
       },
-      link: '/compras',
+      link: '/compras?tab=orders',
       items: stage3Items,
     },
     {
@@ -229,7 +229,7 @@ export function OperationsPipelineCard() {
         border: 'border-emerald-200 dark:border-emerald-900/60',
         accent: 'text-emerald-600 dark:text-emerald-400',
       },
-      link: '/bodega',
+      link: '/compras?tab=pending',
       items: stage4Items,
     },
   ];

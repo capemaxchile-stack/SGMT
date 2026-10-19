@@ -11,6 +11,7 @@ import {
   CheckCircle,
   ExternalLink,
   X,
+  Clock,
 } from 'lucide-react';
 
 export function NotificationsPopover() {
@@ -240,12 +241,26 @@ export function NotificationsPopover() {
                         {n.title}
                       </span>
                       {getPriorityBadge(n.priority)}
+                      {n.slaLabel && (
+                        <span
+                          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                            n.slaStatus === 'breached'
+                              ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-900'
+                              : n.slaStatus === 'warning'
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-900'
+                              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900'
+                          }`}
+                        >
+                          <Clock size={9} />
+                          {n.slaLabel}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 leading-tight">
                       {n.description}
                     </p>
                     <div className="flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-1.5 group-hover:underline">
-                      <span>Ir al módulo</span>
+                      <span>{n.actionText || 'Ir a gestionar'}</span>
                       <ExternalLink size={10} />
                     </div>
                   </div>

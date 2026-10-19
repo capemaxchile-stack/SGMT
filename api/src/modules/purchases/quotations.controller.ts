@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Patch, Body, Param, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, UseInterceptors } from '@nestjs/common';
 import { QuotationsService } from './quotations.service';
 import { CreateQuotationDto } from './dto/create-quotation.dto';
 import { UpdateQuotationDto } from './dto/update-quotation.dto';
@@ -52,5 +52,11 @@ export class QuotationsController {
   @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'COMPRADOR', 'GERENTE_OPERACIONES')
   selectQuotation(@Param('id') id: string) {
     return this.quotationsService.selectQuotation(id);
+  }
+
+  @Delete(':id')
+  @Roles('ADMIN_SISTEMA', 'SUPER_USUARIO', 'COMPRADOR')
+  remove(@Param('id') id: string) {
+    return this.quotationsService.remove(id);
   }
 }

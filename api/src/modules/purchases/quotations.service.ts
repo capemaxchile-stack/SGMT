@@ -63,6 +63,23 @@ export class QuotationsService {
       throw new NotFoundException(`Supplier with id ${createDto.supplierId} not found`);
     }
 
+    if (createDto.purchaseRequestId) {
+      const existingQuote = await this.prisma.quotation.findFirst({
+        where: {
+          purchaseRequestId: createDto.purchaseRequestId,
+          supplierId: createDto.supplierId,
+          status: {
+            in: [QuotationStatus.SOLICITADA, QuotationStatus.RECIBIDA, QuotationStatus.SELECCIONADA],
+          },
+        },
+      });
+      if (existingQuote) {
+        throw new BadRequestException(
+          `El proveedor "${supplier.businessName}" ya cuenta con una cotización activa (${existingQuote.quotationNumber}) para esta solicitud.`,
+        );
+      }
+    }
+
     // Check exclusive suppliers for these items
     const itemIds = createDto.lines.map((l) => l.itemId);
     const exclusiveCatalogs = await this.prisma.supplierCatalog.findMany({
@@ -383,5 +400,21 @@ export class QuotationsService {
       recommendation,
       hasEnoughStock: totalStock >= item.minimumStock && totalStock > 0,
     };
+  }
+
+  async remove(id: string) {
+    const quote = await this.prisma.quotation.findUnique({
+      where: { id },
+      include: { purchaseOrders: true },
+    });
+    if (!quote) {
+      throw new NotFoundException(`Quotation with id ${id} not found`);
+    }
+    if (quote.purchaseOrders && quote.purchaseOrders.length > 0) {
+      throw new BadRequestException('No se puede eliminar una cotización que ya cuenta con Orden de Compra asociada');
+    }
+    await this.prisma.quotationLine.deleteMany({ where: { quotationId: id } });
+    await this.prisma.quotation.delete({ where: { id } });
+    return { success: true, message: `Cotización ${quote.quotationNumber} eliminada exitosamente` };
   }
 }

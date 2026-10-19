@@ -17,6 +17,7 @@ import { APP_VERSION, BUILD_DATE } from '../components/layout/Sidebar';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { OperationsPipelineCard } from '../components/dashboard/OperationsPipelineCard';
+import { WorkflowActionInbox } from '../components/dashboard/WorkflowActionInbox';
 
 export function DashboardPage() {
   const { data: metrics, isLoading: loadingMetrics, refetch: refetchMetrics } = useDashboardMetrics();
@@ -205,6 +206,9 @@ export function DashboardPage() {
           <span>Reportes & Cierres</span>
         </Link>
       </div>
+
+      {/* Workflow Action Inbox: Pending Approvals, Quotes & SLA Tracking */}
+      <WorkflowActionInbox />
 
       {/* Operations Lifecycle & SLA Monitoring Pipeline */}
       <OperationsPipelineCard />

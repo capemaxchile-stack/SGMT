@@ -396,6 +396,9 @@ export interface SystemNotification {
   priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'INFO';
   timestamp: string;
   entityId?: string;
+  slaStatus?: 'on_track' | 'warning' | 'breached';
+  slaLabel?: string;
+  actionText?: string;
 }
 
 export interface NotificationsResponse {

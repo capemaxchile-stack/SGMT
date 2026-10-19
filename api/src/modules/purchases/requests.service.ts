@@ -33,7 +33,14 @@ export class RequestsService {
           },
         },
         quotations: {
-          select: { id: true, quotationNumber: true, status: true, totalAmount: true },
+          select: {
+            id: true,
+            quotationNumber: true,
+            status: true,
+            totalAmount: true,
+            supplierId: true,
+            supplier: { select: { id: true, businessName: true, rut: true } },
+          },
         },
         purchaseOrder: {
           select: { id: true, orderNumber: true, status: true, totalAmount: true },

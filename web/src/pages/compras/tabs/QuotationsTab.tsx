@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   ShoppingCart,
   Plus,
@@ -11,15 +12,18 @@ import {
   Copy,
   Edit3,
   Send,
+  Trash2,
 } from 'lucide-react';
 import {
   useQuotations,
   usePurchaseRequests,
   useCreateQuotation,
   useSelectQuotation,
+  useDeleteQuotation,
   useItemProcurementInsights,
   useCreatePurchaseOrder,
 } from '../../../api/compras';
+import { useToast } from '../../../components/ui/Toast';
 import { useSuppliers } from '../../../api/bodega';
 import { useItems } from '../../../api/bodega';
 import { Quotation, QuotationStatus, PurchaseRequest } from '../../../types/compras';
@@ -28,15 +32,25 @@ import { LoadSupplierOfferModal } from '../../../components/procurement/LoadSupp
 import { RfqSheetModal } from '../../../components/procurement/RfqSheetModal';
 
 export function QuotationsTab() {
+  const toast = useToast();
+  const [searchParams] = useSearchParams();
+  const requestIdParam = searchParams.get('requestId');
+
   const { data: quotations = [], isLoading } = useQuotations();
   const { data: requests = [] } = usePurchaseRequests();
   const { data: suppliers = [] } = useSuppliers();
   const { data: items = [] } = useItems();
 
-  const [selectedRequestId, setSelectedRequestId] = useState<string>('all');
+  const [selectedRequestId, setSelectedRequestId] = useState<string>(requestIdParam || 'all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [isNewQuoteOpen, setIsNewQuoteOpen] = useState(false);
   const [selectedItemIdForInsights, setSelectedItemIdForInsights] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (requestIdParam) {
+      setSelectedRequestId(requestIdParam);
+    }
+  }, [requestIdParam]);
 
   // RFQ and Offer Loading Modals
   const [rfqTargetRequest, setRfqTargetRequest] = useState<PurchaseRequest | null>(null);
@@ -47,7 +61,20 @@ export function QuotationsTab() {
   // Mutations
   const createQuotationMutation = useCreateQuotation();
   const selectQuotationMutation = useSelectQuotation();
+  const deleteQuotationMutation = useDeleteQuotation();
   const createOrderMutation = useCreatePurchaseOrder();
+
+  const handleDeleteQuote = async (quote: Quotation) => {
+    if (window.confirm(`¿Está seguro de descartar y eliminar la cotización ${quote.quotationNumber} (${quote.supplier.businessName})?`)) {
+      try {
+        await deleteQuotationMutation.mutateAsync(quote.id);
+        toast.success(`Cotización ${quote.quotationNumber} eliminada exitosamente.`);
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { message?: string } } };
+        toast.error(error?.response?.data?.message || 'Error al eliminar cotización.');
+      }
+    }
+  };
 
   // New quote form state
   const [formData, setFormData] = useState({
@@ -335,15 +362,26 @@ export function QuotationsTab() {
 
                     {/* Si está en SOLICITADA: Botón destacado para Cargar Precios Proveedor */}
                     {quote.status === 'SOLICITADA' && (
-                      <button
-                        type="button"
-                        onClick={() => setQuoteToLoadOffer(quote)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition-colors shadow-xs"
-                        title="Cargar la cotización recibida de este proveedor"
-                      >
-                        <DollarSign size={14} />
-                        <span>Cargar Oferta</span>
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setQuoteToLoadOffer(quote)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition-colors shadow-xs"
+                          title="Cargar la cotización recibida de este proveedor"
+                        >
+                          <DollarSign size={14} />
+                          <span>Cargar Oferta</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteQuote(quote)}
+                          disabled={deleteQuotationMutation.isPending}
+                          className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition-colors"
+                          title="Descartar / Eliminar cotización emitida"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
                     )}
 
                     {/* Si está en RECIBIDA: Botón para Modificar precios */}

@@ -10,6 +10,9 @@ export interface SystemNotification {
   priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'INFO';
   timestamp: string;
   entityId?: string;
+  slaStatus?: 'on_track' | 'warning' | 'breached';
+  slaLabel?: string;
+  actionText?: string;
 }
 
 @Injectable()
@@ -23,8 +26,112 @@ export class NotificationsService {
     highCount: number;
   }> {
     const notifications: SystemNotification[] = [];
+    const now = Date.now();
 
-    // 1. Pending Purchase Orders
+    // 1. Pending Purchase Requests (Visado Faena) with SLA
+    const pendingRequests = await this.prisma.purchaseRequest.findMany({
+      where: { status: 'PENDIENTE' },
+      include: {
+        faena: true,
+        requester: { select: { name: true, email: true } },
+        lines: { select: { urgency: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+
+    for (const req of pendingRequests) {
+      const hasStoppedAsset = req.lines.some((l) => l.urgency === 'DETIENE_EQUIPO');
+      const hasHighUrgency = req.lines.some((l) => l.urgency === 'ALTA');
+      const slaLimitHours = hasStoppedAsset ? 4 : hasHighUrgency ? 12 : 24;
+      const hoursElapsed = Math.max(0, (now - req.createdAt.getTime()) / (1000 * 60 * 60));
+
+      let priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' = 'HIGH';
+      let slaStatus: 'on_track' | 'warning' | 'breached' = 'on_track';
+      let slaLabel = `${Math.round(hoursElapsed)}h / ${slaLimitHours}h`;
+      let title = `Solicitud ${req.requestNumber} por Aprobar`;
+
+      if (hoursElapsed > slaLimitHours) {
+        const overdue = Math.round(hoursElapsed - slaLimitHours);
+        priority = 'CRITICAL';
+        slaStatus = 'breached';
+        slaLabel = `+${overdue}h Excedido`;
+        title = `⚠️ [SLA VENCIDO] Solicitud ${req.requestNumber} pendiente de V°B°`;
+      } else if (hoursElapsed >= slaLimitHours * 0.75) {
+        const remaining = Math.max(1, Math.round(slaLimitHours - hoursElapsed));
+        priority = 'HIGH';
+        slaStatus = 'warning';
+        slaLabel = `${remaining}h restantes`;
+        title = `⏰ [SLA EN RIESGO] Solicitud ${req.requestNumber} por Aprobar`;
+      }
+
+      notifications.push({
+        id: `pr-pending-${req.id}`,
+        category: 'COMPRAS',
+        title,
+        description: `Faena: ${req.faena?.name || 'Terreno'} • ${req.lines.length} repuestos requeridos • Solicitado por ${req.requester?.name || 'Terreno'}`,
+        link: '/compras?tab=requests',
+        priority,
+        timestamp: req.createdAt.toISOString(),
+        entityId: req.id,
+        slaStatus,
+        slaLabel,
+        actionText: 'Revisar Solicitud',
+      });
+    }
+
+    // 2. Approved Requests Awaiting Quotations (Compras RFQ) with SLA
+    const approvedWithoutQuotes = await this.prisma.purchaseRequest.findMany({
+      where: {
+        status: 'APROBADA',
+        quotations: { none: {} },
+      },
+      include: {
+        faena: true,
+        lines: true,
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 10,
+    });
+
+    for (const req of approvedWithoutQuotes) {
+      const refDate = req.approvedAt || req.updatedAt || req.createdAt;
+      const hoursElapsed = Math.max(0, (now - refDate.getTime()) / (1000 * 60 * 60));
+      const slaLimitHours = 48; // 48h SLA for purchasing team to issue RFQ
+
+      let priority: 'CRITICAL' | 'HIGH' = 'HIGH';
+      let slaStatus: 'on_track' | 'warning' | 'breached' = 'on_track';
+      let slaLabel = `${Math.round(hoursElapsed)}h / ${slaLimitHours}h`;
+      let title = `Solicitud ${req.requestNumber} lista para Cotizar (RFQ)`;
+
+      if (hoursElapsed > slaLimitHours) {
+        const overdue = Math.round(hoursElapsed - slaLimitHours);
+        priority = 'CRITICAL';
+        slaStatus = 'breached';
+        slaLabel = `+${overdue}h Excedido`;
+        title = `⚠️ [SLA VENCIDO] Solicitud ${req.requestNumber} sin cotizaciones`;
+      } else if (hoursElapsed >= slaLimitHours * 0.75) {
+        priority = 'HIGH';
+        slaStatus = 'warning';
+        slaLabel = `${Math.max(1, Math.round(slaLimitHours - hoursElapsed))}h restantes`;
+      }
+
+      notifications.push({
+        id: `pr-quote-${req.id}`,
+        category: 'COMPRAS',
+        title,
+        description: `Faena: ${req.faena?.name || 'Terreno'} • ${req.lines.length} repuestos aprobados sin licitar a proveedores`,
+        link: '/compras?tab=requests',
+        priority,
+        timestamp: refDate.toISOString(),
+        entityId: req.id,
+        slaStatus,
+        slaLabel,
+        actionText: 'Cotizar (RFQ)',
+      });
+    }
+
+    // 3. Pending Purchase Orders (Aprobación Financiera) with SLA
     const pendingOrders = await this.prisma.purchaseOrder.findMany({
       where: {
         status: 'PENDIENTE_APROBACION',
@@ -37,15 +144,38 @@ export class NotificationsService {
     });
 
     for (const po of pendingOrders) {
+      const hoursElapsed = Math.max(0, (now - po.createdAt.getTime()) / (1000 * 60 * 60));
+      const slaLimitHours = 24; // 24h SLA for financial approval
+
+      let priority: 'CRITICAL' | 'HIGH' = 'HIGH';
+      let slaStatus: 'on_track' | 'warning' | 'breached' = 'on_track';
+      let slaLabel = `${Math.round(hoursElapsed)}h / ${slaLimitHours}h`;
+      let title = `Orden de Compra ${po.orderNumber} por Aprobar`;
+
+      if (hoursElapsed > slaLimitHours) {
+        const overdue = Math.round(hoursElapsed - slaLimitHours);
+        priority = 'CRITICAL';
+        slaStatus = 'breached';
+        slaLabel = `+${overdue}h Excedido`;
+        title = `⚠️ [SLA VENCIDO] OC ${po.orderNumber} por Autorizar`;
+      } else if (hoursElapsed >= slaLimitHours * 0.75) {
+        priority = 'HIGH';
+        slaStatus = 'warning';
+        slaLabel = `${Math.max(1, Math.round(slaLimitHours - hoursElapsed))}h restantes`;
+      }
+
       notifications.push({
         id: `po-${po.id}`,
         category: 'COMPRAS',
-        title: `Orden de Compra ${po.orderNumber} por Aprobar`,
+        title,
         description: `Monto: $${Number(po.totalAmount).toLocaleString('es-CL')} - Proveedor: ${po.supplier?.businessName || 'N/A'}`,
-        link: '/compras',
-        priority: 'HIGH',
+        link: '/compras?tab=orders',
+        priority,
         timestamp: po.createdAt.toISOString(),
         entityId: po.id,
+        slaStatus,
+        slaLabel,
+        actionText: 'Autorizar OC',
       });
     }
 

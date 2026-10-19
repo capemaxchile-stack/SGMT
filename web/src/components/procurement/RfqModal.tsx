@@ -35,9 +35,20 @@ export function RfqModal({ isOpen, onClose, request, onSuccess }: RfqModalProps)
     supplierNames: string[];
   } | null>(null);
 
-  // Set default validUntil (5 business days) when request changes
+  // Map of suppliers already quoted for this request
+  const alreadyQuotedMap = new Map<string, string>();
+  if (request?.quotations) {
+    for (const q of request.quotations) {
+      if (['SOLICITADA', 'RECIBIDA', 'SELECCIONADA'].includes(q.status)) {
+        alreadyQuotedMap.set(q.supplierId, q.quotationNumber);
+      }
+    }
+  }
+  const availableSuppliers = suppliers.filter((s) => !alreadyQuotedMap.has(s.id));
+
+  // Set default validUntil and reset selections ONLY when modal opens for a new request
   useEffect(() => {
-    if (request) {
+    if (isOpen && request) {
       const defaultDate = new Date();
       defaultDate.setDate(defaultDate.getDate() + 7);
       setValidUntil(defaultDate.toISOString().split('T')[0]);
@@ -47,19 +58,21 @@ export function RfqModal({ isOpen, onClose, request, onSuccess }: RfqModalProps)
       setSelectedSupplierIds([]);
       setSuccessResult(null);
     }
-  }, [request, isOpen]);
+  }, [isOpen, request?.id]);
 
   const toggleSupplier = (supplierId: string) => {
+    if (alreadyQuotedMap.has(supplierId)) return;
     setSelectedSupplierIds((prev) =>
       prev.includes(supplierId) ? prev.filter((id) => id !== supplierId) : [...prev, supplierId]
     );
   };
 
   const selectAllSuppliers = () => {
-    if (selectedSupplierIds.length === suppliers.length) {
+    const availableIds = availableSuppliers.map((s) => s.id);
+    if (selectedSupplierIds.length === availableIds.length) {
       setSelectedSupplierIds([]);
     } else {
-      setSelectedSupplierIds(suppliers.map((s) => s.id));
+      setSelectedSupplierIds(availableIds);
     }
   };
 
@@ -77,10 +90,11 @@ export function RfqModal({ isOpen, onClose, request, onSuccess }: RfqModalProps)
     }
 
     setIsSubmitting(true);
-    const chosenSuppliers = suppliers.filter((s) => selectedSupplierIds.includes(s.id));
+    const supplierIdsToProcess = [...selectedSupplierIds];
+    const chosenSuppliers = suppliers.filter((s) => supplierIdsToProcess.includes(s.id));
 
     try {
-      for (const supplierId of selectedSupplierIds) {
+      for (const supplierId of supplierIdsToProcess) {
         await createQuotationMutation.mutateAsync({
           purchaseRequestId: request.id,
           supplierId,
@@ -97,12 +111,12 @@ export function RfqModal({ isOpen, onClose, request, onSuccess }: RfqModalProps)
       }
 
       setSuccessResult({
-        count: selectedSupplierIds.length,
+        count: supplierIdsToProcess.length,
         supplierNames: chosenSuppliers.map((s) => s.businessName),
       });
 
       toast.success(
-        `Se generaron ${selectedSupplierIds.length} solicitudes de cotización (RFQ) en estado SOLICITADA.`
+        `Se generaron ${supplierIdsToProcess.length} solicitudes de cotización (RFQ) en estado SOLICITADA.`
       );
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
@@ -367,13 +381,17 @@ comprador@sgmt.local`;
                 <Building size={14} className="text-primary-600" />
                 Seleccionar Proveedores a Invitar ({selectedSupplierIds.length} seleccionados):
               </label>
-              <button
-                type="button"
-                onClick={selectAllSuppliers}
-                className="text-[11px] text-primary-600 dark:text-primary-400 font-semibold hover:underline"
-              >
-                {selectedSupplierIds.length === suppliers.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
-              </button>
+              {availableSuppliers.length > 0 && (
+                <button
+                  type="button"
+                  onClick={selectAllSuppliers}
+                  className="text-[11px] text-primary-600 dark:text-primary-400 font-semibold hover:underline"
+                >
+                  {selectedSupplierIds.length === availableSuppliers.length
+                    ? 'Deseleccionar todos'
+                    : `Seleccionar disponibles (${availableSuppliers.length})`}
+                </button>
+              )}
             </div>
 
             {loadingSuppliers ? (
@@ -382,32 +400,56 @@ comprador@sgmt.local`;
               <div className="p-3 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 rounded-lg text-xs text-amber-800">
                 No hay proveedores registrados en el catálogo maestro.
               </div>
+            ) : availableSuppliers.length === 0 ? (
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 rounded-lg text-xs text-blue-900 dark:text-blue-300">
+                ℹ️ Todos los proveedores registrados ({suppliers.length}) ya cuentan con una cotización activa para esta solicitud.
+              </div>
             ) : (
-              <div className="max-h-44 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 border border-slate-200 dark:border-slate-800 rounded-lg p-2 bg-white dark:bg-slate-900">
+              <div className="max-h-48 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 border border-slate-200 dark:border-slate-800 rounded-lg p-2 bg-white dark:bg-slate-900">
                 {suppliers.map((sup) => {
+                  const alreadyQuotedFolio = alreadyQuotedMap.get(sup.id);
+                  const isAlreadyQuoted = !!alreadyQuotedFolio;
                   const isChecked = selectedSupplierIds.includes(sup.id);
+
                   return (
-                    <label
+                    <div
                       key={sup.id}
-                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
-                        isChecked
-                          ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/30 text-slate-900 dark:text-white font-medium'
-                          : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
+                      onClick={() => {
+                        if (!isAlreadyQuoted && !isSubmitting) {
+                          toggleSupplier(sup.id);
+                        }
+                      }}
+                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs select-none transition-colors ${
+                        isAlreadyQuoted
+                          ? 'border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/40 opacity-70 cursor-not-allowed'
+                          : isChecked
+                          ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/30 text-slate-900 dark:text-white font-medium cursor-pointer ring-1 ring-primary-500'
+                          : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 cursor-pointer'
                       }`}
                     >
                       <input
                         type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggleSupplier(sup.id)}
-                        className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                        checked={isChecked || isAlreadyQuoted}
+                        disabled={isAlreadyQuoted || isSubmitting}
+                        onChange={() => {}} // Purely driven by card click
+                        className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 shrink-0 pointer-events-none"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold">{sup.businessName}</p>
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="truncate font-semibold text-slate-900 dark:text-white">
+                            {sup.businessName}
+                          </p>
+                          {isAlreadyQuoted && (
+                            <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-1.5 py-0.2 rounded font-mono font-bold shrink-0">
+                              {alreadyQuotedFolio}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[10px] text-slate-400 truncate">
                           {sup.rut} {sup.contactEmail ? `• ${sup.contactEmail}` : ''}
                         </p>
                       </div>
-                    </label>
+                    </div>
                   );
                 })}
               </div>
