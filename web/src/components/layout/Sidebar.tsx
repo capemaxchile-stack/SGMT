@@ -13,7 +13,6 @@ import {
   BookOpen,
   Settings,
   X,
-  Server,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useEffect } from 'react';
@@ -143,20 +142,13 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
         ))}
       </div>
 
-      {/* Version Footer */}
+      {/* Corporate Footer */}
       <div className="p-4 mx-3 mb-3 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-400 text-xs">
-        <div className="flex items-center justify-between font-semibold text-slate-300 mb-1">
-          <span>SGMT Core</span>
-          <span className="px-1.5 py-0.5 rounded bg-blue-900/80 text-blue-300 font-mono text-[10px]">
-            {APP_VERSION}
-          </span>
+        <div className="flex items-center justify-between font-semibold text-slate-300">
+          <span>KATEI Plataforma Corporativa</span>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-          <Server size={12} className="text-emerald-400" />
-          <span>LXC Contenedor 106</span>
-        </div>
-        <div className="text-[10px] text-slate-500 mt-1">
-          Build {BUILD_DATE} (Producción)
+        <div className="text-[10px] text-slate-400 mt-1">
+          Gestión Operativa & Abastecimiento
         </div>
       </div>
     </div>

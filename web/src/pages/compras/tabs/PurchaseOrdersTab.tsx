@@ -241,7 +241,7 @@ export function PurchaseOrdersTab() {
         notes: receiveNotes || 'Recepción de OC ' + selectedOrder.orderNumber,
       });
       setIsReceiveModalOpen(false);
-      toast.success('Recepción de materiales registrada exitosamente');
+      toast.success('Recepción de repuestos registrada exitosamente');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       const msg = error?.response?.data?.message || 'Error al recepcionar la orden.';

@@ -105,7 +105,7 @@ export interface Asset extends BaseEntity {
   assignments?: AssetAssignment[];
 }
 
-export const ITEM_CATEGORIES = ['COMBUSTIBLE', 'LUBRICANTE', 'REPUESTO', 'FILTRO', 'FERRETERIA', 'EPP', 'HERRAMIENTA', 'DESGASTE', 'OTRO'] as const;
+export const ITEM_CATEGORIES = ['COMBUSTIBLE', 'LUBRICANTE', 'REPUESTO', 'FILTRO', 'FERRETERIA', 'EPP', 'HERRAMIENTA', 'PIEZA DE DESGASTE', 'OTRO'] as const;
 export type ItemCategory = typeof ITEM_CATEGORIES[number];
 
 export interface Item extends BaseEntity {
@@ -114,6 +114,8 @@ export interface Item extends BaseEntity {
   unitOfMeasure: string;
   category: ItemCategory | string;
   minimumStock: number;
+  compatibleModels?: string | null;
+  compatibleAssetIds?: string[];
   isActive: boolean;
   totalStock?: number;
 }

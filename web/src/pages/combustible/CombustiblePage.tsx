@@ -149,7 +149,7 @@ export function CombustiblePage() {
         description="El registro de combustible calcula automáticamente los litros consumidos por hora (L/h) para maquinaria pesada y km/L para vehículos livianos, comparando la lectura de horómetro actual con la anterior."
         tips={[
           'Ingresá la lectura exacta del horómetro de la máquina en cada carga para tener un cálculo de rendimiento confiable.',
-          'Si seleccionás una Bodega/Estanque de origen, el stock de diésel se rebajará automáticamente en Kardex.',
+          'Si seleccionás una Bodega/Estanque de origen, el stock de diésel se rebajará automáticamente en Inventario / Stock.',
           'Revisá la pestaña de Rendimiento para detectar posibles fugas mecánicas o desvíos en el consumo esperado.'
         ]}
       />

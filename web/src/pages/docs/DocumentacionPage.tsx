@@ -41,7 +41,7 @@ export function DocumentacionPage() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
             <BookOpen className="text-blue-400" size={30} />
-            Centro de Ayuda y Procedimientos SGMT PRO
+            Centro de Ayuda y Procedimientos KATEI
           </h1>
           <p className="text-sm text-slate-300 mt-1 max-w-3xl leading-relaxed">
             Manual interactivo con diagramas de flujo operativos, guías paso a paso para terreno y compras, y procedimientos estándar para faenas mineras y maquinaria pesada.
@@ -174,7 +174,7 @@ export function DocumentacionPage() {
               }`}
             >
               <Box size={18} className="text-emerald-500 shrink-0" />
-              <span>5. Bodega & Kardex</span>
+              <span>5. Bodega & Inventario / Stock</span>
             </button>
 
             <button
@@ -450,7 +450,7 @@ export function DocumentacionPage() {
               <CardHeader className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                 <CardTitle className="text-lg font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <Box className="text-emerald-600" size={22} />
-                  Flujo del Proceso: Control de Bodegas y Movimientos Kardex
+                  Flujo del Proceso: Control de Bodegas e Inventario / Stock
                 </CardTitle>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Control de stock físico, traslados entre faenas, valorización PMP y sugerencia de compra con IA
@@ -634,7 +634,7 @@ export function DocumentacionPage() {
                 <div>
                   Seleccioná el canal de ingreso real:
                   <ul className="list-disc pl-4 mt-1 space-y-0.5">
-                    <li><strong>Bodega Central/Faena:</strong> Ingresa formalmente al Kardex de stock.</li>
+                    <li><strong>Bodega Central/Faena:</strong> Ingresa formalmente al Inventario / Stock.</li>
                     <li><strong>Garita de Entrada:</strong> Queda en tránsito bajo custodia de portería.</li>
                     <li><strong>Directo a Máquina:</strong> Se entrega de inmediato al equipo o camión en faena.</li>
                   </ul>
@@ -812,11 +812,11 @@ export function DocumentacionPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Box size={18} className="text-emerald-500" />
-                Bodega & Kardex
+                Bodega & Inventario / Stock
               </CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-slate-600 dark:text-slate-300 space-y-2">
-              <p>Control de stock físico en bodegas centrales y faenas, movimientos de Kardex, valorización PMP, traslados y sugerencias predictivas de reorden con IA.</p>
+              <p>Control de stock físico en bodegas centrales y faenas, movimientos de Inventario / Stock, valorización PMP, traslados y sugerencias predictivas de reorden con IA.</p>
             </CardContent>
           </Card>
 
@@ -901,7 +901,7 @@ export function DocumentacionPage() {
                     <td className="p-3 font-bold text-emerald-600">Bodeguero / Garita</td>
                     <td className="p-3">1</td>
                     <td className="p-3">Sin aprobación</td>
-                    <td className="p-3">Recepciona compras físicamente, registra movimientos Kardex, traslados y despachos de combustible.</td>
+                    <td className="p-3">Recepciona compras físicamente, registra movimientos de Inventario / Stock, traslados y despachos de combustible.</td>
                   </tr>
                   <tr>
                     <td className="p-3 font-bold text-indigo-600">Comprador</td>

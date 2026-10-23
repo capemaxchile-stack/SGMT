@@ -30,21 +30,21 @@ export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
             <Menu size={22} />
           </Button>
           <div className="font-semibold text-slate-800 dark:text-slate-200 hidden md:block">
-            Sistema de Gestión Movimiento de Tierra
+            KATEI — Gestión de Operaciones y Maquinaria
           </div>
           <div className="font-bold text-xl md:hidden text-primary-600 dark:text-blue-400 tracking-wider">
-            SGMT
+            KATEI
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* SGMT Copilot AI Shortcut (governed by COPILOT permission) */}
+          {/* KATEI Copilot AI Shortcut (governed by COPILOT permission) */}
           {can('COPILOT', 'read') && (
             <button
               type="button"
               onClick={onOpenCopilot}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-amber-500/10 hover:from-blue-600/20 hover:to-amber-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 transition-all shadow-sm"
-              title="Abrir SGMT Copilot (Ctrl + K)"
+              title="Abrir KATEI Copilot (Ctrl + K)"
             >
               <Sparkles size={16} className="text-amber-500 animate-pulse" />
               <span className="text-xs font-bold hidden sm:inline">Copilot AI</span>

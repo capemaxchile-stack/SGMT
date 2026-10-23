@@ -87,7 +87,7 @@ export function WorkflowActionInbox() {
       type: 'VISADO_FAENA',
       category: 'FAENA',
       code: req.requestNumber,
-      title: `Visado de Solicitud de Pedido`,
+      title: `Aprobación de Solicitud de Pedido`,
       secondary: `Faena: ${req.faena?.name || 'Terreno'} • ${req.lines?.length || 0} repuestos requeridos`,
       urgency: req.lines?.[0]?.urgency,
       slaStatus: sla.slaStatus,
@@ -276,7 +276,7 @@ export function WorkflowActionInbox() {
               : 'text-slate-600 dark:text-slate-400 hover:text-blue-600'
           }`}
         >
-          Visado Faena ({pendingRequests.length})
+          Aprobación Jefatura ({pendingRequests.length})
         </button>
         <button
           onClick={() => setActiveFilter('COMPRAS')}

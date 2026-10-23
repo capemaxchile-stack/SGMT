@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/axios';
 import { Item, Warehouse, Supplier, WarehouseType } from '../types/models';
 
@@ -20,6 +20,8 @@ export const createItem = async (payload: {
   unitOfMeasure: string;
   category: string;
   minimumStock: number;
+  compatibleModels?: string;
+  compatibleAssetIds?: string[];
 }): Promise<Item> => {
   const { data } = await api.post<Item>('/items', payload);
   return data;

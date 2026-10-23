@@ -95,7 +95,7 @@ export function BodegaMovementsTab() {
       .filter((l) => l.itemId && l.quantity > 0);
 
     if (validLines.length === 0) {
-      const msg = 'Debe agregar al menos un material con cantidad mayor a 0.';
+      const msg = 'Debe agregar al menos un repuesto con cantidad mayor a 0.';
       setErrorMsg(msg);
       toast.error(msg);
       return;
@@ -144,7 +144,7 @@ export function BodegaMovementsTab() {
         { header: 'Faena Imputada', key: (m) => m.faena?.name || 'N/A' },
         { header: 'Equipo Imputado', key: (m) => m.asset ? `${m.asset.internalNumber} (${m.asset.brand} ${m.asset.model})` : 'N/A' },
         {
-          header: 'Detalle Materiales',
+          header: 'Detalle Repuestos',
           key: (m) =>
             m.lines
               ?.map((l) => `${l.item?.description} x ${Number(l.quantity)} ${l.item?.unitOfMeasure}`)
@@ -154,18 +154,18 @@ export function BodegaMovementsTab() {
         { header: 'Fecha', key: (m) => m.createdAt ? new Date(m.createdAt).toLocaleString('es-CL') : '' },
         { header: 'Notas', key: (m) => m.notes || '' },
       ],
-      'SGMT_Movimientos_Bodega'
+      'KATEI_Movimientos_Bodega'
     );
     toast.success('Movimientos exportados a Excel/CSV');
   };
 
   const handleExportKardex = () => {
     if (!kardexData || kardexData.length === 0) {
-      toast.info('No hay registros de Kardex para exportar');
+      toast.info('No hay registros de historial de stock para exportar');
       return;
     }
     const selectedItemObj = items?.find((i) => i.id === selectedKardexItemId);
-    const itemName = selectedItemObj ? `${selectedItemObj.code}_${selectedItemObj.description}` : 'Item';
+    const itemName = selectedItemObj ? `${selectedItemObj.code}_${selectedItemObj.description}` : 'Repuesto';
 
     exportToCSV(
       kardexData,
@@ -179,14 +179,14 @@ export function BodegaMovementsTab() {
         { header: 'Costo Unitario ($ CLP)', key: (k) => Number(k.unitCost || 0) },
         { header: 'Saldo Stock', key: (k) => Number(k.balance || 0) },
       ],
-      `SGMT_Kardex_${itemName.replace(/[^a-zA-Z0-9_-]/g, '_')}`
+      `KATEI_Historial_Stock_${itemName.replace(/[^a-zA-Z0-9_-]/g, '_')}`
     );
-    toast.success('Kardex exportado a Excel/CSV');
+    toast.success('Historial de stock exportado a Excel/CSV');
   };
 
   const handlePrintKardex = () => {
     const selectedItemObj = items?.find((i) => i.id === selectedKardexItemId);
-    const title = selectedItemObj ? `Kardex Valorizado: ${selectedItemObj.code} - ${selectedItemObj.description}` : 'Kardex Valorizado';
+    const title = selectedItemObj ? `Historial Valorizado de Stock: ${selectedItemObj.code} - ${selectedItemObj.description}` : 'Historial Valorizado de Stock';
     printElement('kardex-printable-table', title);
   };
 
@@ -224,7 +224,7 @@ export function BodegaMovementsTab() {
       ),
     },
     {
-      header: 'Materiales & Cantidad',
+      header: 'Repuestos & Cantidad',
       cell: (item: Movement) => (
         <div className="text-xs text-slate-700 dark:text-slate-300 space-y-0.5">
           {item.lines?.map((l, idx) => (
@@ -254,7 +254,7 @@ export function BodegaMovementsTab() {
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">Movimientos de Bodega y Control de Stock</h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
-            Registro de ingresos, salidas de materiales a faena/equipo y ajustes contables
+            Registro de ingresos, salidas de repuestos a faena/equipo y ajustes de inventario
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -276,7 +276,7 @@ export function BodegaMovementsTab() {
             className="flex items-center gap-1.5"
           >
             <FileSpreadsheet size={15} />
-            Ver Kardex
+            Ver Stock / Historial
           </Button>
           <Button onClick={handleOpenModal} className="flex items-center gap-1.5">
             <Plus size={16} />
@@ -289,7 +289,7 @@ export function BodegaMovementsTab() {
       <div className="flex flex-col sm:flex-row gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 transition-colors">
         <div className="flex-1">
           <Input
-            placeholder="Buscar por N° movimiento, bodega, material o notas..."
+            placeholder="Buscar por N° movimiento, bodega, repuesto o notas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             icon={<Search size={18} />}
@@ -411,7 +411,7 @@ export function BodegaMovementsTab() {
           <div className="space-y-2 pt-2">
             <div className="flex justify-between items-center">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                Detalle de Materiales
+                Detalle de Repuestos
               </label>
               <Button variant="ghost" size="sm" type="button" onClick={handleAddLine} className="text-blue-600 dark:text-blue-400">
                 <Plus size={14} className="mr-1" /> Agregar Fila
@@ -427,7 +427,7 @@ export function BodegaMovementsTab() {
                         onChange={(e) => handleLineChange(idx, 'itemId', e.target.value)}
                         className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">-- Seleccione Material --</option>
+                        <option value="">-- Seleccione Repuesto --</option>
                         {items?.map((i) => (
                           <option key={i.id} value={i.id}>
                             {i.code} - {i.description} ({i.unitOfMeasure})
@@ -496,18 +496,18 @@ export function BodegaMovementsTab() {
         </form>
       </Modal>
 
-      {/* Modal: Kardex por Item con Exportación e Impresión */}
+      {/* Modal: Historial de Stock e Inventario Valorizado */}
       <Modal
         isOpen={isKardexModalOpen}
         onClose={() => setIsKardexModalOpen(false)}
-        title="Kardex Valorizado de Inventario"
+        title="Historial Valorizado de Stock e Inventario"
         size="5xl"
       >
         <div className="space-y-4 pt-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
             <div className="flex-1">
               <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                Seleccionar Material / Repuesto
+                Seleccionar Repuesto / Insumo
               </label>
               <select
                 value={selectedKardexItemId}
@@ -528,7 +528,7 @@ export function BodegaMovementsTab() {
                 size="sm"
                 onClick={handleExportKardex}
                 className="flex items-center gap-1.5"
-                title="Descargar este Kardex en formato Excel/CSV"
+                title="Descargar este Historial de Stock en formato Excel/CSV"
               >
                 <Download size={14} />
                 Excel
@@ -569,9 +569,9 @@ export function BodegaMovementsTab() {
 
           <div id="kardex-printable-table" className="max-h-96 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800">
             {loadingKardex ? (
-              <p className="text-center py-8 text-slate-500 text-xs">Cargando movimientos del kardex...</p>
+              <p className="text-center py-8 text-slate-500 text-xs">Cargando historial de stock...</p>
             ) : !kardexData || kardexData.length === 0 ? (
-              <p className="text-center py-8 text-slate-500 text-xs">No hay movimientos registrados para este item.</p>
+              <p className="text-center py-8 text-slate-500 text-xs">No hay movimientos de stock registrados para este repuesto.</p>
             ) : (
               <table className="w-full text-left text-xs border-collapse">
                 <thead>

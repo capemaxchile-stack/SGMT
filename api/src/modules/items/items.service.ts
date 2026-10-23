@@ -9,7 +9,11 @@ export class ItemsService {
 
   async create(createItemDto: CreateItemDto) {
     return this.prisma.item.create({
-      data: createItemDto,
+      data: {
+        ...createItemDto,
+        compatibleModels: createItemDto.compatibleModels ?? null,
+        compatibleAssetIds: createItemDto.compatibleAssetIds ?? [],
+      },
     });
   }
 
@@ -49,7 +53,11 @@ export class ItemsService {
     if (!item) throw new NotFoundException(`Item ${id} not found`);
     return this.prisma.item.update({
       where: { id },
-      data: updateItemDto,
+      data: {
+        ...updateItemDto,
+        ...(updateItemDto.compatibleModels !== undefined && { compatibleModels: updateItemDto.compatibleModels }),
+        ...(updateItemDto.compatibleAssetIds !== undefined && { compatibleAssetIds: updateItemDto.compatibleAssetIds }),
+      },
     });
   }
 

@@ -259,7 +259,7 @@ export class RequestsService {
       timelineEvents.push({
         step: 2,
         phase: 'APROBACION',
-        title: 'Visado y Aprobación Operacional de Faena',
+        title: 'Aprobación de Jefatura de Faena',
         description: req.approvedBy
           ? `Aprobada por ${req.approvedBy.name} (${req.approvedBy.email}). Solicitud visada para licitación y compra.`
           : 'Aprobada por Jefatura de Faena. Solicitud visada para licitación y compra.',
@@ -291,7 +291,7 @@ export class RequestsService {
       timelineEvents.push({
         step: 2,
         phase: 'APROBACION',
-        title: 'Visado de Jefatura de Faena',
+        title: 'Aprobación de Jefatura de Faena',
         description: req.status === RequestStatus.PENDIENTE
           ? 'En espera de visto bueno del Jefe de Faena para avanzar a compras (SLA: < 24 hrs)'
           : 'Borrador en preparación, pendiente de envío a revisión operacional',

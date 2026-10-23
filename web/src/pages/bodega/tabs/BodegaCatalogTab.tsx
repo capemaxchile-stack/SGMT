@@ -13,6 +13,7 @@ import {
   useUpdateSupplier,
   useDeleteSupplier,
 } from '../../../api/bodega';
+import { useAssets } from '../../../api/flota';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { DataTable } from '../../../components/ui/DataTable';
@@ -20,7 +21,7 @@ import { Modal } from '../../../components/ui/Modal';
 import { Item, Warehouse, Supplier, WarehouseType, ITEM_CATEGORIES } from '../../../types/models';
 import { useToast } from '../../../components/ui/Toast';
 import { exportToCSV } from '../../../lib/export';
-import { Search, Plus, Edit2, Trash2, AlertCircle, Filter, Download } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, AlertCircle, Filter, Download, Truck } from 'lucide-react';
 
 interface BodegaCatalogTabProps {
   type: 'items' | 'warehouses' | 'suppliers';
@@ -45,6 +46,8 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
   const [itemCategory, setItemCategory] = useState('REPUESTO');
   const [itemUnit, setItemUnit] = useState('UN');
   const [itemMinStock, setItemMinStock] = useState<number>(0);
+  const [itemCompatibleModels, setItemCompatibleModels] = useState('');
+  const [itemCompatibleAssetIds, setItemCompatibleAssetIds] = useState<string[]>([]);
 
   // Form: Warehouse
   const [warehouseName, setWarehouseName] = useState('');
@@ -63,6 +66,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
   const { data: items, isLoading: loadingItems } = useItems();
   const { data: warehouses, isLoading: loadingWarehouses } = useWarehouses();
   const { data: suppliers, isLoading: loadingSuppliers } = useSuppliers();
+  const { data: assets } = useAssets();
 
   const createItemMutation = useCreateItem();
   const updateItemMutation = useUpdateItem();
@@ -76,6 +80,12 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
   const updateSupplierMutation = useUpdateSupplier();
   const deleteSupplierMutation = useDeleteSupplier();
 
+  const toggleAssetCompatibility = (assetId: string) => {
+    setItemCompatibleAssetIds((prev) =>
+      prev.includes(assetId) ? prev.filter((id) => id !== assetId) : [...prev, assetId]
+    );
+  };
+
   // Handlers: Open Create
   const handleOpenCreate = () => {
     setErrorMsg('');
@@ -85,6 +95,8 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
       setItemCategory('REPUESTO');
       setItemUnit('UN');
       setItemMinStock(0);
+      setItemCompatibleModels('');
+      setItemCompatibleAssetIds([]);
     } else if (type === 'warehouses') {
       setWarehouseName('');
       setWarehouseLocation('');
@@ -110,6 +122,8 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
       setItemCategory(record.category);
       setItemUnit(record.unitOfMeasure);
       setItemMinStock(record.minimumStock);
+      setItemCompatibleModels(record.compatibleModels || '');
+      setItemCompatibleAssetIds(record.compatibleAssetIds || []);
     } else if (type === 'warehouses') {
       setSelectedWarehouse(record);
       setWarehouseName(record.name);
@@ -147,6 +161,8 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
           category: itemCategory.trim().toUpperCase(),
           unitOfMeasure: itemUnit,
           minimumStock: Number(itemMinStock) || 0,
+          compatibleModels: itemCompatibleModels.trim() || undefined,
+          compatibleAssetIds: itemCompatibleAssetIds,
         });
       } else if (type === 'warehouses') {
         await createWarehouseMutation.mutateAsync({
@@ -184,6 +200,8 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
             category: itemCategory.trim().toUpperCase(),
             unitOfMeasure: itemUnit,
             minimumStock: Number(itemMinStock) || 0,
+            compatibleModels: itemCompatibleModels.trim() || null,
+            compatibleAssetIds: itemCompatibleAssetIds,
           },
         });
       } else if (type === 'warehouses' && selectedWarehouse) {
@@ -232,11 +250,31 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
     }
   };
 
+  const getCompatibilityLabel = (item: Item) => {
+    const parts: string[] = [];
+    if (item.compatibleModels) {
+      parts.push(item.compatibleModels);
+    }
+    if (item.compatibleAssetIds && item.compatibleAssetIds.length > 0) {
+      const matchedAssets = (assets || [])
+        .filter((a) => item.compatibleAssetIds?.includes(a.id))
+        .map((a) => a.internalNumber);
+      if (matchedAssets.length > 0) {
+        parts.push(matchedAssets.join(', '));
+      } else {
+        parts.push(`${item.compatibleAssetIds.length} equipo(s)`);
+      }
+    }
+    return parts.join(' | ');
+  };
+
   // Filtered
   const filteredItems = (items || []).filter(
     (i) => {
-      const matchesSearch = i.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.code.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch =
+        i.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        i.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (i.compatibleModels && i.compatibleModels.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesCategory = categoryFilter === 'TODOS' || i.category === categoryFilter;
       return matchesSearch && matchesCategory;
     }
@@ -259,7 +297,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
   const handleExport = () => {
     if (type === 'items') {
       if (!filteredItems.length) {
-        toast.info('No hay materiales para exportar');
+        toast.info('No hay repuestos para exportar');
         return;
       }
       exportToCSV(
@@ -268,13 +306,14 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
           { header: 'Código', key: 'code' },
           { header: 'Descripción', key: 'description' },
           { header: 'Categoría', key: 'category' },
+          { header: 'Compatibilidad', key: (i) => getCompatibilityLabel(i) || 'Universal (Toda la flota)' },
           { header: 'Unidad', key: 'unitOfMeasure' },
           { header: 'Stock Mínimo', key: 'minimumStock' },
           { header: 'Estado', key: (i) => (i.isActive ? 'Activo' : 'Inactivo') },
         ],
-        'SGMT_Catalogo_Materiales'
+        'KATEI_Catalogo_Repuestos'
       );
-      toast.success('Catálogo de materiales exportado a Excel');
+      toast.success('Catálogo de repuestos exportado a Excel');
     } else if (type === 'warehouses') {
       if (!filteredWarehouses.length) {
         toast.info('No hay bodegas para exportar');
@@ -288,7 +327,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
           { header: 'Tipo', key: 'type' },
           { header: 'Estado', key: (w) => (w.isActive ? 'Activa' : 'Inactiva') },
         ],
-        'SGMT_Listado_Bodegas'
+        'KATEI_Listado_Bodegas'
       );
       toast.success('Listado de bodegas exportado a Excel');
     } else if (type === 'suppliers') {
@@ -306,7 +345,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
           { header: 'Email', key: (s) => s.contactEmail || '' },
           { header: 'Dirección', key: (s) => s.address || '' },
         ],
-        'SGMT_Directorio_Proveedores'
+        'KATEI_Directorio_Proveedores'
       );
       toast.success('Directorio de proveedores exportado a Excel');
     }
@@ -317,11 +356,11 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {type === 'items' ? 'Catalogo de Materiales e Insumos' : type === 'warehouses' ? 'Listado de Bodegas' : 'Directorio de Proveedores'}
+            {type === 'items' ? 'Catálogo de Repuestos e Insumos' : type === 'warehouses' ? 'Listado de Bodegas' : 'Directorio de Proveedores'}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
             {type === 'items'
-              ? 'Administracion de repuestos, lubricantes y combustibles'
+              ? 'Administración de repuestos, piezas de desgaste, lubricantes y combustibles'
               : type === 'warehouses'
               ? 'Bodegas centrales y de faena'
               : 'Proveedores autorizados con RUT'}
@@ -334,7 +373,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
           </Button>
           <Button onClick={handleOpenCreate} className="flex items-center gap-1.5">
             <Plus size={16} />
-            {type === 'items' ? 'Nuevo Material' : type === 'warehouses' ? 'Nueva Bodega' : 'Nuevo Proveedor'}
+            {type === 'items' ? 'Nuevo Repuesto' : type === 'warehouses' ? 'Nueva Bodega' : 'Nuevo Proveedor'}
           </Button>
         </div>
       </div>
@@ -352,7 +391,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
           <div className="w-full sm:w-64">
             <div className="flex items-center gap-2 mb-1">
               <Filter size={16} className="text-slate-500 dark:text-slate-400" />
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Filtrar por Categoria</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Filtrar por Categoría</label>
             </div>
             <select
               value={categoryFilter}
@@ -373,7 +412,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
           data={filteredItems}
           columns={[
             {
-              header: 'Codigo',
+              header: 'Código',
               cell: (i: Item) => (
                 <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs">
                   {i.code}
@@ -381,19 +420,32 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
               ),
             },
             {
-              header: 'Descripcion',
+              header: 'Descripción',
               cell: (i: Item) => <span className="font-medium text-slate-800 dark:text-slate-200">{i.description}</span>,
             },
             {
-              header: 'Categoria',
+              header: 'Categoría',
               cell: (i: Item) => <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs px-2 py-1 rounded">{i.category}</span>,
+            },
+            {
+              header: 'Vehículos / Modelos Compatibles',
+              cell: (i: Item) => {
+                const compat = getCompatibilityLabel(i);
+                return compat ? (
+                  <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs px-2 py-0.5 rounded font-medium">
+                    🚜 Aplica a: {compat}
+                  </span>
+                ) : (
+                  <span className="text-slate-400 dark:text-slate-500 text-xs">Universal (Toda la flota)</span>
+                );
+              },
             },
             {
               header: 'Unidad',
               cell: (i: Item) => <span className="text-slate-600 dark:text-slate-400 text-sm">{i.unitOfMeasure}</span>,
             },
             {
-              header: 'Stock Minimo',
+              header: 'Stock Mínimo',
               cell: (i: Item) => <span className="text-slate-600 dark:text-slate-400 text-sm">{i.minimumStock}</span>,
             },
             {
@@ -411,7 +463,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
             },
           ]}
           isLoading={loadingItems}
-          emptyMessage="No hay materiales registrados"
+          emptyMessage="No hay repuestos registrados"
         />
       )}
 
@@ -509,7 +561,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
           setIsCreateModalOpen(false);
           setIsEditModalOpen(false);
         }}
-        title={type === 'items' ? (isEditModalOpen ? 'Editar Material' : 'Nuevo Material') : type === 'warehouses' ? (isEditModalOpen ? 'Editar Bodega' : 'Nueva Bodega') : isEditModalOpen ? 'Editar Proveedor' : 'Nuevo Proveedor'}
+        title={type === 'items' ? (isEditModalOpen ? 'Editar Repuesto' : 'Nuevo Repuesto') : type === 'warehouses' ? (isEditModalOpen ? 'Editar Bodega' : 'Nueva Bodega') : isEditModalOpen ? 'Editar Proveedor' : 'Nuevo Proveedor'}
       >
         <form onSubmit={isEditModalOpen ? handleEditSubmit : handleCreateSubmit} className="space-y-4 pt-2">
           {errorMsg && (
@@ -522,9 +574,9 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
           {type === 'items' && (
             <>
               <div className="grid grid-cols-2 gap-4">
-                <Input label="Codigo *" placeholder="Ej: ITM-006" value={itemCode} onChange={(e) => setItemCode(e.target.value)} required />
+                <Input label="Código *" placeholder="Ej: REP-006" value={itemCode} onChange={(e) => setItemCode(e.target.value)} required />
                 <div className="flex flex-col w-full">
-                  <label className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Categoria *</label>
+                  <label className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Categoría *</label>
                   <select value={itemCategory} onChange={(e) => setItemCategory(e.target.value)} className="flex w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                     {ITEM_CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -532,7 +584,7 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
                   </select>
                 </div>
               </div>
-              <Input label="Descripcion *" placeholder="Ej: Filtro de Petroleo" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} required />
+              <Input label="Descripción *" placeholder="Ej: Filtro de Petróleo Primario" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} required />
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col w-full">
                   <label className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Unidad de Medida *</label>
@@ -544,7 +596,48 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
                     <option value="GL">GL (Galones)</option>
                   </select>
                 </div>
-                <Input label="Stock Minimo" type="number" value={itemMinStock} onChange={(e) => setItemMinStock(Number(e.target.value))} />
+                <Input label="Stock Mínimo" type="number" value={itemMinStock} onChange={(e) => setItemMinStock(Number(e.target.value))} />
+              </div>
+
+              <div className="border-t border-slate-200 dark:border-slate-800 pt-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Truck size={16} className="text-primary-600 dark:text-primary-400" />
+                  <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    Compatibilidad con Maquinaria / Vehículos
+                  </h3>
+                </div>
+                <Input
+                  label="Modelos / Marcas Compatibles (Opcional)"
+                  placeholder="Ej: Excavadora CAT 320, Cargador Komatsu WA380"
+                  value={itemCompatibleModels}
+                  onChange={(e) => setItemCompatibleModels(e.target.value)}
+                />
+                {assets && assets.length > 0 && (
+                  <div>
+                    <label className="block mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                      Vincular a Equipos Específicos de la Flota (dejar vacío si es de uso universal)
+                    </label>
+                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                      {assets.map((asset) => {
+                        const selected = itemCompatibleAssetIds.includes(asset.id);
+                        return (
+                          <button
+                            key={asset.id}
+                            type="button"
+                            onClick={() => toggleAssetCompatibility(asset.id)}
+                            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                              selected
+                                ? 'bg-primary-600 text-white border-primary-600 font-semibold'
+                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-primary-400'
+                            }`}
+                          >
+                            {asset.internalNumber} ({asset.brand} {asset.model})
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -592,11 +685,11 @@ export function BodegaCatalogTab({ type }: BodegaCatalogTabProps) {
       </Modal>
 
       {/* Modal: Confirmar Eliminacion */}
-      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirmar Eliminacion">
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirmar Eliminación">
         <div className="space-y-4 pt-2">
           {errorMsg && <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm border border-red-200">{errorMsg}</div>}
           <p className="text-slate-700 dark:text-slate-300 text-sm">
-            ¿Estas seguro de que deseas eliminar este registro? Esta accion no se puede deshacer.
+            ¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer.
           </p>
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)}>Cancelar</Button>

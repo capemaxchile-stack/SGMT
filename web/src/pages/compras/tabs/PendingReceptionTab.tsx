@@ -87,7 +87,7 @@ export function PendingReceptionTab() {
               Control de Compras en Tránsito y Garitas ({pendingOrders.length})
             </h3>
             <p className="text-xs text-amber-800">
-              Alertas de órdenes emitidas o recepcionadas en control de garita que aún no ingresan físicamente al kardex de bodega.
+              Alertas de órdenes emitidas o recepcionadas en control de garita que aún no ingresan físicamente al inventario / stock de bodega.
             </p>
           </div>
         </div>

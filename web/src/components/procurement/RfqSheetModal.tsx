@@ -30,7 +30,7 @@ export function RfqSheetModal({ isOpen, onClose, quotation }: RfqSheetModalProps
 
 Junto con saludar, solicitamos su cotización formal para el siguiente requerimiento técnico de repuestos:
 
-• Folio RFQ SGMT: ${quotation.quotationNumber}
+• Folio RFQ KATEI: ${quotation.quotationNumber}
 ${quotation.purchaseRequest ? `• Solicitud de Origen: ${quotation.purchaseRequest.requestNumber}` : ''}
 ${quotation.purchaseRequest?.faena ? `• Faena de Destino: ${quotation.purchaseRequest.faena.name}` : ''}
 • Fecha Límite de Recepción: ${
@@ -47,7 +47,7 @@ Favor enviar su cotización formal en respuesta a este correo (comprador@sgmt.lo
 
 Atentamente,
 Departamento de Adquisiciones & Abastecimiento
-SGMT PRO — Sistema de Gestión Movimiento de Tierra`;
+KATEI — Gestión de Operaciones y Abastecimiento`;
   };
 
   const handleCopy = () => {
@@ -97,7 +97,7 @@ SGMT PRO — Sistema de Gestión Movimiento de Tierra`;
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 16px;">
             <div>
               <h1>SOLICITUD DE COTIZACIÓN (RFQ)</h1>
-              <p style="margin: 0; font-size: 12px; color: #64748b;">SGMT PRO — Sistema de Gestión Movimiento de Tierra</p>
+              <p style="margin: 0; font-size: 12px; color: #64748b;">KATEI — Gestión de Operaciones y Abastecimiento</p>
             </div>
             <div style="text-align: right; font-size: 12px;">
               <strong>Folio:</strong> ${quotation.quotationNumber}<br>
@@ -134,7 +134,7 @@ SGMT PRO — Sistema de Gestión Movimiento de Tierra`;
           </table>
 
           <div style="margin-top: 40px; border-top: 1px dashed #cbd5e1; padding-top: 12px; font-size: 11px; color: #64748b;">
-            Documento emitido por SGMT PRO para gestión de compras. Enviar propuesta a comprador@sgmt.local.
+            Documento emitido por KATEI para gestión de compras. Enviar propuesta a comprador@sgmt.local.
           </div>
         </body>
       </html>

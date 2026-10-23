@@ -162,7 +162,7 @@ export function OperationsPipelineCard() {
   const stages: StageColumn[] = [
     {
       id: 'faena-visado',
-      title: 'Visado Faena',
+      title: 'Aprobación Jefatura',
       stepNumber: 1,
       responsibleRole: 'Jefe de Faena',
       responsibleEmail: 'jefefaena@sgmt.local',

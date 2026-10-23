@@ -38,7 +38,7 @@ const MODULES: ModuleConfig[] = [
   { key: 'CERTIFICACIONES', name: 'Certificaciones', description: 'Documentos legales de maquinaria y credenciales de operadores' },
   { key: 'MANTENIMIENTO', name: 'Mantenimiento', description: 'Planes preventivos y órdenes de trabajo (OTs)' },
   { key: 'COMBUSTIBLE', name: 'Combustible', description: 'Registro de despachos, tanques y rendimiento por máquina' },
-  { key: 'BODEGA', name: 'Bodega y Kardex', description: 'Inventario de repuestos, movimientos y valorización PMP' },
+  { key: 'BODEGA', name: 'Bodega e Inventario (Stock)', description: 'Inventario de repuestos, movimientos y valorización PMP' },
   { key: 'COMPRAS', name: 'Compras y OCs', description: 'Solicitudes de compra, órdenes de compra y recepción de insumos' },
   { key: 'TERRENO', name: 'App Móvil / Terreno', description: 'Acceso a la interfaz móvil para carga de combustible y pedidos en faena' },
   { key: 'COPILOT', name: 'Copilot AI', description: 'Asistente de inteligencia artificial y consultas analíticas' },

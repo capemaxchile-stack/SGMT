@@ -65,17 +65,12 @@ export function Logo({
                 textColor
               )}
             >
-              SGMT
+              KATEI
             </span>
-            {variant === 'full' && (
-              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                PRO
-              </span>
-            )}
           </div>
           {variant === 'full' && (
             <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight mt-0.5 hidden sm:block">
-              Gestión Movimiento de Tierra
+              Gestión de Operaciones
             </span>
           )}
         </div>

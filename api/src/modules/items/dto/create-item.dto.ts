@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsArray } from 'class-validator';
 
 export class CreateItemDto {
   @IsString()
@@ -16,4 +16,13 @@ export class CreateItemDto {
   @IsOptional()
   @IsNumber()
   minimumStock?: number;
+
+  @IsOptional()
+  @IsString()
+  compatibleModels?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  compatibleAssetIds?: string[];
 }

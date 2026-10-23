@@ -40,11 +40,25 @@ export const useAuthStore = create<AuthState>()(
       can: (module, action = 'read') => {
         const user = get().user;
         if (!user) return false;
+        const perm = user.permissions?.[module];
+        if (module === 'COPILOT' && perm !== undefined) {
+          switch (action) {
+            case 'read':
+              return perm.canRead;
+            case 'write':
+              return perm.canWrite;
+            case 'approve':
+              return perm.canApprove;
+            case 'admin':
+              return perm.canAdmin;
+            default:
+              return false;
+          }
+        }
         const roles = user.roles || [];
         if (roles.includes('ADMIN_SISTEMA') || roles.includes('SUPER_USUARIO')) {
           return true;
         }
-        const perm = user.permissions?.[module];
         if (!perm) return false;
         switch (action) {
           case 'read':

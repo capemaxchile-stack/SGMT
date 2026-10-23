@@ -28,7 +28,7 @@ export function CopilotDrawer({ isOpen, onClose }: Props) {
     {
       id: 'welcome',
       role: 'assistant',
-      content: `### ¡Hola ${user?.name || 'Colega'}! 🚜🤖\nSoy tu **Copiloto Agéntico SGMT**.\n\nPuedo consultar el estado de la flota, alertas del radar de mantenimiento, insumos en stock crítico, órdenes de compra por autorizar o los costos consolidados de faenas.\n\n¿En qué te puedo ayudar hoy?`,
+      content: `### ¡Hola ${user?.name || 'Colega'}! 🚜🤖\nSoy tu **Copiloto Agéntico KATEI**.\n\nPuedo consultar el estado de la flota, alertas del radar de mantenimiento, repuestos en stock crítico, órdenes de compra por autorizar o los costos consolidados de faenas.\n\n¿En qué te puedo ayudar hoy?`,
       timestamp: new Date().toISOString(),
       suggestedQuestions: [
         '🚨 ¿Qué equipos tienen mantención vencida o próxima?',
@@ -210,7 +210,7 @@ export function CopilotDrawer({ isOpen, onClose }: Props) {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h3 className="font-bold text-sm text-white">SGMT Copilot</h3>
+                <h3 className="font-bold text-sm text-white">KATEI Copilot</h3>
                 <span className="px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-md bg-blue-500/20 text-blue-400 border border-blue-500/30">
                   Agéntico
                 </span>

@@ -38,7 +38,7 @@ export function NotificationChannelsTab() {
       enabled: false,
       apiKey: '',
       senderEmail: 'alertas@sgmt.local',
-      senderName: 'SGMT Alertas Operacionales',
+      senderName: 'KATEI Alertas Operacionales',
       recipientEmails: [],
       events: { radarAlerts: true, lowStock: true, pendingApprovals: true, abnormalFuel: true },
     },
@@ -612,7 +612,7 @@ export function NotificationChannelsTab() {
                 <Input
                   label="Nombre Remitente"
                   type="text"
-                  placeholder="SGMT Alertas"
+                  placeholder="KATEI Alertas"
                   value={formData.brevo.senderName || ''}
                   onChange={(e) =>
                     setFormData({

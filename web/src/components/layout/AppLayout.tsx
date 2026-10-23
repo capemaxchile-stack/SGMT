@@ -5,12 +5,14 @@ import { Header } from './Header';
 import { CopilotDrawer } from '../copilot/CopilotDrawer';
 import { CopilotFloatingButton } from '../copilot/CopilotFloatingButton';
 import { useAuthStore } from '../../stores/auth.store';
+import { useThemeStore } from '../../stores/theme.store';
 
 export function AppLayout() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const { can } = useAuthStore();
-  const hasCopilotAccess = can('COPILOT', 'read');
+  const { copilotEnabled } = useThemeStore();
+  const hasCopilotAccess = copilotEnabled && can('COPILOT', 'read');
 
   // Global Keyboard Shortcut: Ctrl+K or Cmd+K to toggle Copilot
   useEffect(() => {

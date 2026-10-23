@@ -347,7 +347,7 @@ export function TerrainRequestMobileView() {
           <div>
             <h1 className="text-sm font-bold flex items-center gap-1.5">
               <Smartphone size={16} />
-              SGMT Terreno
+              KATEI Terreno
             </h1>
             <p className="text-[11px] opacity-80">
               {isOnline ? '🟢 En línea - Red minera conectada' : '🟠 Modo Offline - Sin señal celular / WiFi'}

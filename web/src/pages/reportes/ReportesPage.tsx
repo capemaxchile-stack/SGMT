@@ -84,7 +84,7 @@ export function ReportesPage() {
         { header: 'Monto Contrato ($ CLP)', key: 'montoContrato' },
         { header: '% Presupuesto Consumido', key: 'porcentajePresupuesto' },
       ],
-      'SGMT_Resumen_Ejecutivo_Faenas'
+      'KATEI_Resumen_Ejecutivo_Faenas'
     );
   };
 
@@ -124,7 +124,7 @@ export function ReportesPage() {
         { header: 'Costo Total ($ CLP)', key: 'costoTotal' },
         { header: 'Costo por Hora ($/hr)', key: 'costoPorHora' },
       ],
-      'SGMT_Rendimiento_Costos_Maquinaria'
+      'KATEI_Rendimiento_Costos_Maquinaria'
     );
   };
 
@@ -148,7 +148,7 @@ export function ReportesPage() {
         monto: closingData.totals.totalSparePartsCost,
       },
       {
-        concepto: 'Materiales Directos de Bodega',
+        concepto: 'Repuestos Directos de Bodega',
         detalle: `${closingData.warehouseMovements.length} Movimientos de Salida`,
         monto: closingData.totals.totalWarehouseDispatchesCost,
       },
@@ -166,7 +166,7 @@ export function ReportesPage() {
         { header: 'Detalle Operativo', key: 'detalle' },
         { header: 'Total ($ CLP)', key: 'monto' },
       ],
-      `SGMT_Cierre_Faena_${closingData.faena.name.replace(/\s+/g, '_')}`
+      `KATEI_Cierre_Faena_${closingData.faena.name.replace(/\s+/g, '_')}`
     );
   };
 
@@ -338,11 +338,11 @@ export function ReportesPage() {
               <Layers size={24} />
             </div>
             <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Insumos y Salidas Bodega</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Repuestos y Salidas Bodega</p>
               <h3 className="text-2xl font-black text-purple-600 dark:text-purple-400">
                 ${Number(kpis?.directWarehouseMaterialsCost || 0).toLocaleString('es-CL')}
               </h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">Materiales directos a faena</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Repuestos directos a faena</p>
             </div>
           </CardContent>
         </Card>
@@ -681,7 +681,7 @@ export function ReportesPage() {
             <div className="border-b-2 border-slate-900 dark:border-slate-700 pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <span className="text-xs font-bold text-blue-600 dark:text-blue-400 tracking-wider uppercase">
-                  SGMT PRO — Sistema de Gestión Movimiento de Tierra
+                  KATEI — Plataforma de Gestión Operativa y Abastecimiento
                 </span>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight mt-1">
                   Liquidación Operativa & Cierre Mensual de Faena
@@ -827,7 +827,7 @@ export function ReportesPage() {
                 <p className="font-bold text-slate-800 dark:text-slate-200">
                   Gerencia de Operaciones / Finanzas
                 </p>
-                <p className="text-[11px]">Control Central SGMT</p>
+                <p className="text-[11px]">Control Central KATEI</p>
               </div>
             </div>
           </div>
@@ -900,7 +900,7 @@ export function ReportesPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Imprime o genera un archivo PDF formal con membrete de SGMT PRO, detalle de partidas y casillas de firma para el cliente y jefatura.
+                Imprime o genera un archivo PDF formal con membrete de KATEI, detalle de partidas y casillas de firma para el cliente y jefatura.
               </p>
               <Button
                 onClick={() => {

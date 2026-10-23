@@ -699,7 +699,7 @@ export class OrdersService {
           title: isDirect ? `Entrega Directa a Terreno (${m.movementNumber})` : `Ingreso a Bodega Central/Faena (${m.movementNumber})`,
           description: isDirect
             ? `Repuestos entregados directamente a la máquina ${m.asset?.internalNumber || 'Asignada'} en faena sin almacenaje intermedio.`
-            : `Mercadería recepcionada en ${m.warehouse.name}. Kardex y costo promedio ponderado actualizados.`,
+            : `Mercadería recepcionada en ${m.warehouse.name}. Stock de inventario y costo promedio ponderado actualizados.`,
           timestamp: m.createdAt,
           status: 'COMPLETED',
           badge: m.destination,

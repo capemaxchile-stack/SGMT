@@ -5,8 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../components/ui/Card';
 import { Logo } from '../components/ui/Logo';
-import { Mail, Lock, ShieldCheck, Video, VideoOff, Eye, EyeOff, Activity, Smartphone } from 'lucide-react';
-import { APP_VERSION } from '../components/layout/Sidebar';
+import { Mail, Lock, ShieldCheck, Video, VideoOff, Eye, EyeOff, Smartphone } from 'lucide-react';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -279,14 +278,10 @@ export function LoginPage() {
             </button>
 
             {/* Footer Security Badge */}
-            <div className="w-full flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+            <div className="w-full flex items-center justify-center pt-2 border-t border-slate-800 text-[11px] text-slate-400">
               <span className="flex items-center gap-1.5">
                 <ShieldCheck size={14} className="text-emerald-400" />
-                <span>SGMT PRO {APP_VERSION}</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <Activity size={12} className="text-blue-400" />
-                <span>LXC Node 106</span>
+                <span>KATEI — Plataforma de Gestión Operativa</span>
               </span>
             </div>
           </CardFooter>

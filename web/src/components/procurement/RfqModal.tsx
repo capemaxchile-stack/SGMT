@@ -160,7 +160,7 @@ CONDICIONES REQUERIDAS:
 
 Atentamente,
 Departamento de Adquisiciones & Abastecimiento
-SGMT PRO - Sistema de Gestión Movimiento de Tierra
+KATEI - Gestión de Operaciones
 comprador@sgmt.local`;
   };
 
@@ -215,7 +215,7 @@ comprador@sgmt.local`;
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 16px;">
             <div>
               <h1>SOLICITUD DE COTIZACIÓN (RFQ)</h1>
-              <p style="margin: 0; font-size: 12px; color: #64748b;">SGMT PRO — Sistema de Gestión Movimiento de Tierra</p>
+              <p style="margin: 0; font-size: 12px; color: #64748b;">KATEI — Gestión de Operaciones y Abastecimiento</p>
             </div>
             <div style="text-align: right; font-size: 12px;">
               <strong>Folio Requerimiento:</strong> ${request.requestNumber}<br>

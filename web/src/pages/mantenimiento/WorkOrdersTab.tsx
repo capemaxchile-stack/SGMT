@@ -829,7 +829,7 @@ export function WorkOrdersTab() {
           />
 
           <p className="text-xs text-slate-500 bg-blue-50 dark:bg-blue-950/40 p-2.5 rounded-lg border border-blue-200 dark:border-blue-900/50">
-            Al confirmar, se generará un movimiento de <strong>SALIDA automática</strong> en Kardex y se rebajará el stock del almacén seleccionado.
+            Al confirmar, se generará un movimiento de <strong>SALIDA automática</strong> en Inventario / Stock y se rebajará el stock del almacén seleccionado.
           </p>
 
           <div className="flex justify-end gap-2 pt-2">

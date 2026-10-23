@@ -1,5 +1,5 @@
 /**
- * SGMT Data Export & Reporting Utilities
+ * KATEI Data Export & Reporting Utilities
  */
 
 export interface ExportColumn<T> {
@@ -60,7 +60,7 @@ export function printElement(elementId: string, title: string) {
     <!DOCTYPE html>
     <html>
       <head>
-        <title>${title} - SGMT</title>
+        <title>${title} - KATEI</title>
         <style>
           body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -125,8 +125,8 @@ export function printElement(elementId: string, title: string) {
       <body>
         <div class="header">
           <div>
-            <div class="title">SGMT — ${title}</div>
-            <div class="meta">Sistema de Gestión de Movimiento de Tierra</div>
+            <div class="title">KATEI — ${title}</div>
+            <div class="meta">Plataforma de Gestión Operativa y Abastecimiento</div>
           </div>
           <div class="meta text-right">
             <div>Fecha de emisión: ${new Date().toLocaleString('es-CL')}</div>

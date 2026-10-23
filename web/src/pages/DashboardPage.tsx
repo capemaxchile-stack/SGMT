@@ -7,13 +7,13 @@ import {
   Wrench,
   Fuel,
   ArrowRight,
-  Server,
   RefreshCw,
   Droplet,
   BarChart3,
+  BadgePercent,
 } from 'lucide-react';
 import { useDashboardMetrics } from '../api/dashboard';
-import { APP_VERSION, BUILD_DATE } from '../components/layout/Sidebar';
+import { useQuotations } from '../api/compras';
 import { Link } from 'react-router-dom';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { OperationsPipelineCard } from '../components/dashboard/OperationsPipelineCard';
@@ -21,9 +21,15 @@ import { WorkflowActionInbox } from '../components/dashboard/WorkflowActionInbox
 
 export function DashboardPage() {
   const { data: metrics, isLoading: loadingMetrics, refetch: refetchMetrics } = useDashboardMetrics();
+  const { data: quotations = [], isLoading: loadingQuotations, refetch: refetchQuotations } = useQuotations();
+
+  const pendingQuotations = quotations.filter(
+    (q) => q.status === 'SOLICITADA' || q.status === 'RECIBIDA'
+  );
 
   const handleRefresh = () => {
     refetchMetrics();
+    refetchQuotations();
   };
 
   const stats = [
@@ -61,12 +67,20 @@ export function DashboardPage() {
       link: '/combustible',
     },
     {
-      title: 'Ítems en Bodega',
+      title: 'Repuestos en Bodega',
       value: metrics?.totalStockItemsCount || 0,
       icon: <Box className="text-emerald-500" size={22} />,
       trend: `${metrics?.lowStockItemsCount || 0} bajo stock mínimo`,
       bg: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900',
       link: '/bodega',
+    },
+    {
+      title: 'Cotizaciones Activas',
+      value: pendingQuotations.length,
+      icon: <BadgePercent className="text-cyan-500" size={22} />,
+      trend: 'RFQs y ofertas en evaluación',
+      bg: 'bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-900',
+      link: '/compras?tab=quotations',
     },
     {
       title: 'OC Pendientes',
@@ -80,23 +94,11 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Deployment & Environment Banner */}
+      {/* Executive Banner */}
       <div className="bg-gradient-to-r from-blue-700 via-blue-800 to-slate-900 rounded-2xl p-5 sm:p-6 text-white shadow-lg border border-blue-600/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 flex-wrap mb-1.5">
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/30 border border-blue-400/40 text-blue-200 text-xs font-mono font-bold tracking-wider">
-              {APP_VERSION} PROD
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              API Online
-            </span>
-            <span className="text-xs text-blue-200/70">
-              Build {BUILD_DATE}
-            </span>
-          </div>
           <h1 className="text-2xl font-black tracking-tight text-white">
-            Sistema de Gestión Movimiento de Tierra (SGMT PRO)
+            KATEI — Plataforma de Gestión Operativa y Abastecimiento
           </h1>
           <p className="text-sm text-blue-100/80 mt-1 max-w-2xl">
             Control integral de faenas, maquinaria, mantenimiento preventivo/correctivo, abastecimiento y combustible en terreno.
@@ -104,26 +106,19 @@ export function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <div className="hidden lg:block text-right text-xs text-blue-200/80 bg-blue-900/40 px-3.5 py-2 rounded-xl border border-blue-500/20">
-            <div className="flex items-center gap-1.5 justify-end font-semibold text-white">
-              <Server size={13} className="text-blue-400" />
-              <span>Homelab LXC 106</span>
-            </div>
-            <div className="text-[11px] text-blue-200/60 mt-0.5">PostgreSQL 16 + Docker</div>
-          </div>
           <button
             onClick={handleRefresh}
             className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-xl text-xs font-semibold text-white transition-colors border border-white/20"
             title="Refrescar métricas en vivo"
           >
-            <RefreshCw size={14} className={loadingMetrics ? 'animate-spin' : ''} />
+            <RefreshCw size={14} className={loadingMetrics || loadingQuotations ? 'animate-spin' : ''} />
             <span className="hidden sm:inline">Actualizar</span>
           </button>
         </div>
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3.5">
         {stats.map((stat, i) => (
           <Link key={i} to={stat.link} className="block group">
             <Card className="h-full bg-white dark:bg-slate-900 dark:border-slate-800 transition-all group-hover:border-blue-500 group-hover:shadow-md">
@@ -155,7 +150,34 @@ export function DashboardPage() {
       </div>
 
       {/* Quick Action Shortcuts */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+        <Link
+          to="/compras?tab=requests"
+          className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-cyan-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs"
+        >
+          <div className="p-2 bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 rounded-lg">
+            <BadgePercent size={16} />
+          </div>
+          <span>Emitir Cotización (RFQ)</span>
+        </Link>
+
+        <Link
+          to="/compras?tab=quotations"
+          className="flex items-center justify-between gap-2 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-2 bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-lg shrink-0">
+              <FileText size={16} />
+            </div>
+            <span className="truncate">Estado de Cotizaciones</span>
+          </div>
+          {pendingQuotations.length > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 text-[10px] font-black shrink-0">
+              {pendingQuotations.length}
+            </span>
+          )}
+        </Link>
+
         <Link
           to="/mantenimiento"
           className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs"
@@ -183,11 +205,11 @@ export function DashboardPage() {
           <div className="p-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-lg">
             <Box size={16} />
           </div>
-          <span>Movimiento de Bodega</span>
+          <span>Inventario / Stock</span>
         </Link>
 
         <Link
-          to="/compras"
+          to="/compras?tab=orders"
           className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-400 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs"
         >
           <div className="p-2 bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 rounded-lg">
@@ -213,8 +235,74 @@ export function DashboardPage() {
       {/* Operations Lifecycle & SLA Monitoring Pipeline */}
       <OperationsPipelineCard />
 
-      {/* 4 Activity Cards */}
+      {/* Activity Cards Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Cotizaciones Pendientes & En Evaluación */}
+        <Card className="h-[380px] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm lg:col-span-2">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-900/80">
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
+              <BadgePercent size={16} className="text-cyan-500" />
+              Cotizaciones Pendientes & En Evaluación
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300">
+                {pendingQuotations.length}
+              </span>
+            </h3>
+            <Link
+              to="/compras?tab=quotations"
+              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+            >
+              Ver estado de cotizaciones <ArrowRight size={13} />
+            </Link>
+          </div>
+          <div className="p-4 flex-1 overflow-auto">
+            {pendingQuotations.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-slate-400 text-xs">
+                <BadgePercent size={32} className="stroke-1 mb-2 text-slate-300 dark:text-slate-600" />
+                <span>No hay cotizaciones pendientes de evaluación en este momento</span>
+              </div>
+            ) : (
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {pendingQuotations.map((quote) => (
+                  <li
+                    key={quote.id}
+                    className="flex justify-between items-center text-xs p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <span className="font-mono text-primary-600 dark:text-primary-400">
+                          {quote.quotationNumber}
+                        </span>
+                        <span className="truncate">— {quote.supplier?.businessName || 'Proveedor'}</span>
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                        Solicitud: {quote.purchaseRequest?.requestNumber || 'General'} •{' '}
+                        {quote.lines?.length || 0} repuesto(s)
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0 ml-3 flex flex-col items-end gap-1">
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                          quote.status === 'RECIBIDA'
+                            ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                            : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
+                        }`}
+                      >
+                        {quote.status === 'RECIBIDA' ? 'Oferta Recibida' : 'Solicitada'}
+                      </span>
+                      <Link
+                        to={`/compras?tab=quotations&requestId=${quote.purchaseRequestId || ''}`}
+                        className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Gestionar
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Card>
+
         {/* 1. Mantenimiento Reciente */}
         <Card className="h-[380px] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
           <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-900/80">
@@ -320,7 +408,7 @@ export function DashboardPage() {
           <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-900/80">
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
               <Box size={16} className="text-emerald-500" />
-              Movimientos Recientes en Bodega
+              Movimientos Recientes de Inventario / Stock
             </h3>
             <Link
               to="/bodega"
@@ -340,7 +428,7 @@ export function DashboardPage() {
                 {metrics.recentMovements.map((mov: any) => {
                   const lineDesc =
                     mov.lines && mov.lines.length > 0
-                      ? (mov.lines[0].item?.description || 'Material') +
+                      ? (mov.lines[0].item?.description || 'Repuesto') +
                         (mov.lines.length > 1 ? ` (+${mov.lines.length - 1})` : '')
                       : 'Sin detalle';
                   const totalQty = mov.lines?.reduce((acc: number, l: any) => acc + Number(l.quantity), 0) || 0;

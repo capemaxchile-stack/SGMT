@@ -1,7 +1,7 @@
 {
-  "short_name": "SGMT Terreno",
-  "name": "SGMT - Gestión Minera & Pedidos de Terreno",
-  "description": "Sistema de Gestión de Maquinaria y Abastecimiento para Minería",
+  "short_name": "KATEI Terreno",
+  "name": "KATEI - Gestión Operativa & Pedidos de Terreno",
+  "description": "Sistema de Gestión Operativa, Maquinaria y Abastecimiento",
   "icons": [
     {
       "src": "/favicon.svg",
