@@ -6,11 +6,22 @@ export interface ModulePermission {
   canAdmin: boolean;
 }
 
+export interface TenantInfo {
+  id: string;
+  name: string;
+  slug: string;
+  planTier: 'BASICO' | 'PRO' | 'ENTERPRISE' | 'PERSONALIZADO';
+  status: 'ACTIVO' | 'SUSPENDIDO' | 'EN_PRUEBA' | 'CANCELADO';
+  enabledModules: string[];
+}
+
 export interface User {
   id: string;
   email: string;
   name: string;
   roles: string[];
+  tenantId?: string | null;
+  tenant?: TenantInfo | null;
   permissions?: Record<string, ModulePermission>;
 }
 

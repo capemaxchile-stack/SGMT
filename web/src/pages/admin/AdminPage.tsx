@@ -20,6 +20,8 @@ import { User } from '../../types/models';
 import { exportToCSV } from '../../lib/export';
 import { NotificationChannelsTab } from './NotificationChannelsTab';
 import { RolePermissionsTab } from './RolePermissionsTab';
+import { TenantsTab } from './TenantsTab';
+import { useAuthStore } from '../../stores/auth.store';
 import {
   useThemeStore,
   COLOR_PALETTES,
@@ -48,10 +50,12 @@ import {
   Moon,
   Sparkles,
   BookOpen,
+  Building2,
 } from 'lucide-react';
 
 export function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'aprobaciones' | 'usuarios' | 'perfiles' | 'auditoria' | 'alertas' | 'personalizacion'>('aprobaciones');
+  const { hasRole } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<'aprobaciones' | 'usuarios' | 'perfiles' | 'auditoria' | 'alertas' | 'personalizacion' | 'empresas'>('aprobaciones');
   const {
     theme,
     setTheme,
@@ -688,6 +692,19 @@ export function AdminPage() {
             <Palette size={15} />
             <span>Personalización & Estilo</span>
           </button>
+          {(hasRole('SUPER_USUARIO') || hasRole('ADMIN_SISTEMA')) && (
+            <button
+              onClick={() => setActiveTab('empresas')}
+              className={`whitespace-nowrap py-3.5 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-1.5 ${
+                activeTab === 'empresas'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400 font-bold'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
+            >
+              <Building2 size={15} />
+              <span>Empresas & Planes</span>
+            </button>
+          )}
         </nav>
       </div>
 
@@ -1062,6 +1079,8 @@ export function AdminPage() {
           </Card>
         </div>
       )}
+
+      {activeTab === 'empresas' && <TenantsTab />}
 
       {/* Modal: Super User Approval */}
       <Modal

@@ -4,10 +4,13 @@ import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { TenantModuleGuard } from '../tenants/guards/tenant-module.guard';
+import { RequireTenantModule } from '../tenants/decorators/tenant-modules.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AuditInterceptor } from '../../common/interceptors/audit.interceptor';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, TenantModuleGuard)
+@RequireTenantModule('BODEGA')
 @UseInterceptors(AuditInterceptor)
 @Controller('items')
 export class ItemsController {

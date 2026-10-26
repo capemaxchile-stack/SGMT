@@ -84,6 +84,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: {
+        tenant: true,
         roles: {
           include: {
             role: {
@@ -115,7 +116,12 @@ export class AuthService {
       throw new UnauthorizedException('Usuario inactivo o deshabilitado');
     }
 
-    const payload = { email: user.email, sub: user.id, roles: user.roles };
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      roles: user.roles,
+      tenantId: user.tenantId,
+    };
     const refreshSecret = this.refreshSecret;
     const refreshExpiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '7d');
     
@@ -151,6 +157,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
+        tenant: true,
         roles: {
           include: {
             role: {

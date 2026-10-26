@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -13,10 +14,14 @@ import {
   BookOpen,
   Settings,
   X,
+  Lock,
+  Sparkles,
+  Building2,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useEffect } from 'react';
 import { Logo } from '../ui/Logo';
+import { Modal } from '../ui/Modal';
+import { Button } from '../ui/Button';
 import { useAuthStore } from '../../stores/auth.store';
 
 interface SidebarProps {
@@ -28,7 +33,8 @@ export const APP_VERSION = 'v1.6.1' as const;
 export const BUILD_DATE = '2026.10.11' as const;
 
 export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
-  const { can } = useAuthStore();
+  const { can, isModuleEnabled, getPlanTier, getTenantName } = useAuthStore();
+  const [upgradeModalItem, setUpgradeModalItem] = useState<{ name: string; module: string } | null>(null);
 
   interface NavItem {
     name: string;
@@ -115,40 +121,75 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
               {section.title}
             </div>
             <ul className="space-y-0.5">
-              {section.items.map((item) => (
-                <li key={item.path}>
-                  <NavLink
-                    to={item.path}
-                    end={item.end}
-                    onClick={() => {
-                      if (onCloseMobile) onCloseMobile();
-                    }}
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-xs font-medium',
-                        isActive
-                          ? 'bg-blue-600 text-white shadow-sm font-semibold'
-                          : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-                      )
-                    }
-                  >
-                    {item.icon}
-                    <span className="truncate">{item.name}</span>
-                  </NavLink>
-                </li>
-              ))}
+              {section.items.map((item) => {
+                const isLocked = !isModuleEnabled(item.module);
+
+                if (isLocked) {
+                  return (
+                    <li key={item.path}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUpgradeModalItem({ name: item.name, module: item.module });
+                          if (onCloseMobile) onCloseMobile();
+                        }}
+                        className="w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-lg transition-colors text-xs font-medium text-slate-500 hover:text-slate-300 hover:bg-slate-800/40 text-left group"
+                        title="Disponible en Plan Superior"
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <span className="opacity-60">{item.icon}</span>
+                          <span className="truncate">{item.name}</span>
+                        </div>
+                        <span className="flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 group-hover:bg-amber-500/20">
+                          <Lock size={10} />
+                          Upgrade
+                        </span>
+                      </button>
+                    </li>
+                  );
+                }
+
+                return (
+                  <li key={item.path}>
+                    <NavLink
+                      to={item.path}
+                      end={item.end}
+                      onClick={() => {
+                        if (onCloseMobile) onCloseMobile();
+                      }}
+                      className={({ isActive }) =>
+                        cn(
+                          'flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-xs font-medium',
+                          isActive
+                            ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                        )
+                      }
+                    >
+                      {item.icon}
+                      <span className="truncate">{item.name}</span>
+                    </NavLink>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}
       </div>
 
-      {/* Corporate Footer */}
-      <div className="p-4 mx-3 mb-3 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-400 text-xs">
-        <div className="flex items-center justify-between font-semibold text-slate-300">
-          <span>KATEI Plataforma Corporativa</span>
+      {/* Corporate Footer with Multi-Tenant Info */}
+      <div className="p-3 mx-3 mb-3 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-400 text-xs">
+        <div className="flex items-center justify-between font-semibold text-slate-200">
+          <div className="flex items-center gap-1.5 truncate max-w-[130px]">
+            <Building2 size={13} className="text-blue-400 shrink-0" />
+            <span className="truncate" title={getTenantName()}>{getTenantName()}</span>
+          </div>
+          <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 uppercase tracking-wider">
+            {getPlanTier()}
+          </span>
         </div>
         <div className="text-[10px] text-slate-400 mt-1">
-          Gestión Operativa & Abastecimiento
+          KATEI &bull; Gestión Operativa
         </div>
       </div>
     </div>
@@ -195,6 +236,51 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             </nav>
           </aside>
         </div>
+      )}
+      {/* Multi-Tenant Upgrade Modal */}
+      {upgradeModalItem && (
+        <Modal
+          isOpen={!!upgradeModalItem}
+          onClose={() => setUpgradeModalItem(null)}
+          title="Herramienta en Plan Superior"
+          size="md"
+        >
+          <div className="space-y-4 py-2">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300">
+              <Sparkles className="w-6 h-6 text-amber-400 shrink-0" />
+              <div>
+                <div className="font-semibold text-sm">Módulo {upgradeModalItem.name}</div>
+                <div className="text-xs text-amber-300/80">
+                  Tu suscripción actual es <strong>{getPlanTier()}</strong>.
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-slate-300">
+              Esta herramienta forma parte de un plan superior o requiere una activación personalizada para tu empresa.
+            </p>
+            <div className="p-3 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-400">
+              Para activar <strong>{upgradeModalItem.name}</strong> en tu cuenta, consulta con el administrador de tu empresa o solicita un cambio de plan a soporte.
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setUpgradeModalItem(null)}>
+                Cerrar
+              </Button>
+              <Button
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => {
+                  window.open(
+                    `mailto:soporte@katei.cl?subject=Solicitud de Activación Módulo ${upgradeModalItem.name}&body=Hola,%0D%0A%0D%0ASolicitamos activar el módulo ${upgradeModalItem.name} para nuestra cuenta (${getTenantName()}).%0D%0AGracias.`,
+                    '_blank'
+                  );
+                  setUpgradeModalItem(null);
+                }}
+              >
+                Solicitar Activación
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </>
   );

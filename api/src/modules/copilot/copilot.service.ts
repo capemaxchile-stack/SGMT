@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CopilotToolsService } from './copilot-tools.service';
 import { ChatRequestDto } from './dto/chat-request.dto';
+import { TenantUsageService } from '../tenants/tenant-usage.service';
 
 export interface CopilotActionCard {
   type: 'CRITICAL_STOCK' | 'MAINTENANCE_RADAR' | 'PENDING_APPROVALS' | 'FLEET_STATUS' | 'FAENA_COSTS' | 'GENERAL';
@@ -32,6 +33,7 @@ export class CopilotService {
   constructor(
     private readonly toolsService: CopilotToolsService,
     private readonly configService: ConfigService,
+    @Optional() private readonly tenantUsageService?: TenantUsageService,
   ) {}
 
   /**
@@ -448,6 +450,11 @@ export class CopilotService {
         '📝 ¿Hay órdenes de compra pendientes de aprobación?',
         '💰 ¿Cuánto se ha gastado en combustible y faenas?',
       );
+    }
+
+    if (user?.tenantId && this.tenantUsageService) {
+      const estimatedTokens = Math.max(50, Math.ceil((raw.length + answer.length) / 3));
+      this.tenantUsageService.recordAiTokens(user.tenantId, estimatedTokens).catch(() => {});
     }
 
     return {

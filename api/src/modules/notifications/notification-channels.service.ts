@@ -1,5 +1,6 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, Optional } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { TenantUsageService } from '../tenants/tenant-usage.service';
 import {
   NotificationChannelsConfigDto,
   TestChannelDto,
@@ -54,7 +55,10 @@ const DEFAULT_CONFIG: NotificationChannelsConfigDto = {
 export class NotificationChannelsService {
   private readonly logger = new Logger(NotificationChannelsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly tenantUsageService?: TenantUsageService,
+  ) {}
 
   /**
    * Helper to mask sensitive keys for client display (e.g., '1234••••••••••••abcd')
@@ -357,9 +361,11 @@ export class NotificationChannelsService {
     summary: string;
     details?: Record<string, any>;
     link?: string;
+    tenantId?: string;
   }) {
     try {
       const config = await this.getConfig(true);
+      const targetTenantId = payload.tenantId || '11111111-1111-4111-a111-111111111111';
 
       // Check if immediate realtime event dispatch is active (otherwise captured in daily digest)
       const allowRealtime = config.scheduleRules?.enableRealtimeEvents ?? true;
@@ -380,9 +386,13 @@ export class NotificationChannelsService {
           `📍 *Módulo:* \`${payload.link || '/compras'}\`\n` +
           `📅 *Fecha:* ${new Date().toLocaleString('es-CL')}`;
 
-        this.executeTelegramSend(botToken, chatId, mdText).catch((err) =>
-          this.logger.warn(`Failed async telegram dispatch: ${err.message}`),
-        );
+        this.executeTelegramSend(botToken, chatId, mdText)
+          .then(() => {
+            this.tenantUsageService?.recordMessageSent(targetTenantId, 1);
+          })
+          .catch((err) =>
+            this.logger.warn(`Failed async telegram dispatch: ${err.message}`),
+          );
       }
 
       // 2. Dispatch to Brevo Email if enabled and event is subscribed
@@ -417,7 +427,11 @@ export class NotificationChannelsService {
             recipients,
             `KATEI Alerta: ${payload.title}`,
             html,
-          ).catch((err) => this.logger.warn(`Failed async brevo dispatch: ${err.message}`));
+          )
+            .then(() => {
+              this.tenantUsageService?.recordEmailSent(targetTenantId, recipients.length);
+            })
+            .catch((err) => this.logger.warn(`Failed async brevo dispatch: ${err.message}`));
         }
       }
 

@@ -13,6 +13,9 @@ interface AuthState {
   isAuthenticated: () => boolean;
   hasRole: (roleName: string) => boolean;
   can: (module: string, action?: 'read' | 'write' | 'approve' | 'admin') => boolean;
+  isModuleEnabled: (module: string) => boolean;
+  getPlanTier: () => string;
+  getTenantName: () => string;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -72,6 +75,20 @@ export const useAuthStore = create<AuthState>()(
           default:
             return false;
         }
+      },
+      isModuleEnabled: (module: string) => {
+        const user = get().user;
+        if (!user) return false;
+        const roles = user.roles || [];
+        if (roles.includes('SUPER_USUARIO')) return true;
+        if (!user.tenant || !user.tenant.enabledModules) return true;
+        return user.tenant.enabledModules.includes(module);
+      },
+      getPlanTier: () => {
+        return get().user?.tenant?.planTier || 'ENTERPRISE';
+      },
+      getTenantName: () => {
+        return get().user?.tenant?.name || 'KATEI Operaciones';
       },
     }),
     {

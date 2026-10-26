@@ -8,8 +8,84 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TenantPlanTier {
+  BASICO
+  PRO
+  ENTERPRISE
+  PERSONALIZADO
+}
+
+enum TenantStatus {
+  ACTIVO
+  SUSPENDIDO
+  PRUEBA
+  CANCELADO
+}
+
+model Tenant {
+  id                 String             @id @default(uuid())
+  name               String
+  slug               String             @unique
+  rut                String?            @unique
+  status             TenantStatus       @default(ACTIVO)
+  planTier           TenantPlanTier     @default(PRO)
+  enabledModules     String[]           @default(["DASHBOARD", "FAENAS", "FLOTA", "CERTIFICACIONES", "MANTENIMIENTO", "COMBUSTIBLE", "BODEGA", "COMPRAS", "REPORTES", "ADMINISTRACION", "TERRENO"])
+  maxUsers           Int                @default(15)
+  maxAssets          Int                @default(50)
+  maxFaenas          Int                @default(5)
+  maxMonthlyEmails   Int                @default(500)
+  maxMonthlyMessages Int                @default(1000)
+  maxMonthlyAiTokens Int                @default(100000)
+  logoUrl            String?
+  themePrimaryColor  String?
+  terminologyConfig  Json?
+  contactName        String?
+  contactEmail       String?
+  contactPhone       String?
+  billingNotes       String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  users              User[]
+  faenas             Faena[]
+  assets             Asset[]
+  warehouses         Warehouse[]
+  items              Item[]
+  suppliers          Supplier[]
+  purchaseRequests   PurchaseRequest[]
+  purchaseOrders     PurchaseOrder[]
+  quotations         Quotation[]
+  maintenancePlans   MaintenancePlan[]
+  workOrders         WorkOrder[]
+  fuelLogs           FuelLog[]
+  assetDocuments     AssetDocument[]
+  operatorCerts      OperatorCertification[]
+  budgets            Budget[]
+  usageMetrics       TenantUsageMetric[]
+}
+
+model TenantUsageMetric {
+  id                String    @id @default(uuid())
+  tenantId          String
+  billingPeriod     String
+  emailsSent        Int       @default(0)
+  messagesSent      Int       @default(0)
+  aiTokensUsed      Int       @default(0)
+  storageBytes      BigInt    @default(0)
+  activeAssetsCount Int       @default(0)
+  activeUsersCount  Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, billingPeriod])
+  @@index([tenantId])
+}
+
 model User {
   id               String            @id @default(uuid())
+  tenantId         String?
   email            String            @unique
   name             String
   passwordHash     String
@@ -17,6 +93,7 @@ model User {
   isActive         Boolean           @default(true)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+  tenant           Tenant?           @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   roles            UserRole[]
   authorizations   Authorization[]
   faenasAsChief    Faena[]           @relation("FaenaChief")
@@ -28,6 +105,8 @@ model User {
   auditLogs        AuditLog[]
   assetDocsCreated AssetDocument[]
   operatorCertsCreated OperatorCertification[]
+
+  @@index([tenantId])
 }
 
 model Role {
@@ -74,6 +153,7 @@ enum FaenaStatus {
 
 model Faena {
   id                 String              @id @default(uuid())
+  tenantId           String?
   name               String
   location           String
   status             FaenaStatus
@@ -83,6 +163,7 @@ model Faena {
   endDate            DateTime?
   chiefId            String?
   chief              User?               @relation("FaenaChief", fields: [chiefId], references: [id])
+  tenant             Tenant?             @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   contracts          Contract[]
@@ -94,6 +175,8 @@ model Faena {
   operatorCertifications OperatorCertification[]
   purchaseOrders     PurchaseOrder[]       @relation("FaenaPurchaseOrders")
   budgets            Budget[]
+
+  @@index([tenantId])
 }
 
 model Contract {
@@ -139,6 +222,7 @@ enum AssetOperationalStatus {
 
 model Asset {
   id                 String                 @id @default(uuid())
+  tenantId           String?
   type               AssetType
   brand              String
   model              String
@@ -152,6 +236,7 @@ model Asset {
   deletedAt          DateTime?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
+  tenant             Tenant?                @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   assignments        AssetAssignment[]
   warehouseMovements WarehouseMovement[]
   workOrders         WorkOrder[]
@@ -159,6 +244,8 @@ model Asset {
   documents          AssetDocument[]
   purchaseRequestLines PurchaseRequestLine[]
   directPurchaseOrders PurchaseOrder[]        @relation("DirectAssetOrders")
+
+  @@index([tenantId])
 }
 
 model AssetAssignment {
@@ -179,21 +266,26 @@ enum WarehouseType {
 
 model Warehouse {
   id                String              @id @default(uuid())
+  tenantId          String?
   name              String
   location          String
   type              WarehouseType
   isActive          Boolean             @default(true)
   deletedAt         DateTime?
   createdAt         DateTime            @default(now())
+  tenant            Tenant?             @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   stocks            Stock[]
   movements         WarehouseMovement[] @relation("OriginWarehouse")
   incomingTransfers WarehouseMovement[] @relation("DestinationWarehouse")
   workOrderItems    WorkOrderItem[]
   fuelLogs          FuelLog[]
+
+  @@index([tenantId])
 }
 
 model Item {
   id                 String                  @id @default(uuid())
+  tenantId           String?
   code               String                  @unique
   description        String
   unitOfMeasure      String
@@ -205,6 +297,7 @@ model Item {
   deletedAt          DateTime?
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
+  tenant             Tenant?                 @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   stocks             Stock[]
   movementLines      WarehouseMovementLine[]
   purchaseOrderLines PurchaseOrderLine[]
@@ -212,6 +305,8 @@ model Item {
   supplierCatalogs   SupplierCatalog[]
   requestLines       PurchaseRequestLine[]
   quotationLines     QuotationLine[]
+
+  @@index([tenantId])
 }
 
 model Stock {
@@ -274,6 +369,7 @@ model WarehouseMovementLine {
 
 model Supplier {
   id             String            @id @default(uuid())
+  tenantId       String?
   businessName   String
   rut            String            @unique
   contactName    String?
@@ -284,9 +380,12 @@ model Supplier {
   deletedAt      DateTime?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
+  tenant         Tenant?           @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   purchaseOrders PurchaseOrder[]
   catalogEntries SupplierCatalog[]
   quotations     Quotation[]
+
+  @@index([tenantId])
 }
 
 enum RequestUrgency {
@@ -306,6 +405,7 @@ enum RequestStatus {
 
 model PurchaseRequest {
   id            String                @id @default(uuid())
+  tenantId      String?
   requestNumber String                @unique
   faenaId       String
   requesterId     String
@@ -316,12 +416,15 @@ model PurchaseRequest {
   rejectionReason String?
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
+  tenant          Tenant?               @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   faena           Faena                 @relation(fields: [faenaId], references: [id])
   requester       User                  @relation("RequestsCreated", fields: [requesterId], references: [id])
   approvedBy      User?                 @relation("RequestsApproved", fields: [approvedById], references: [id])
   lines           PurchaseRequestLine[]
   quotations    Quotation[]
   purchaseOrder PurchaseOrder[]
+
+  @@index([tenantId])
 }
 
 model PurchaseRequestLine {
@@ -373,6 +476,7 @@ enum QuotationStatus {
 
 model Quotation {
   id                String          @id @default(uuid())
+  tenantId          String?
   quotationNumber   String          @unique
   purchaseRequestId String?
   supplierId        String
@@ -384,11 +488,13 @@ model Quotation {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
+  tenant            Tenant?          @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   purchaseRequest   PurchaseRequest? @relation(fields: [purchaseRequestId], references: [id])
   supplier          Supplier         @relation(fields: [supplierId], references: [id])
   lines             QuotationLine[]
   purchaseOrders    PurchaseOrder[]
 
+  @@index([tenantId])
   @@index([purchaseRequestId])
   @@index([supplierId])
   @@index([status])
@@ -431,6 +537,7 @@ enum OrderStatus {
 
 model PurchaseOrder {
   id                    String                @id @default(uuid())
+  tenantId              String?
   orderNumber           String                @unique
   purchaseRequestId     String?
   supplierId            String
@@ -447,6 +554,7 @@ model PurchaseOrder {
   estimatedDeliveryDate DateTime?
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
+  tenant                Tenant?               @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   purchaseRequest       PurchaseRequest?      @relation(fields: [purchaseRequestId], references: [id])
   supplier              Supplier              @relation(fields: [supplierId], references: [id])
   quotation             Quotation?            @relation(fields: [quotationId], references: [id])
@@ -455,6 +563,8 @@ model PurchaseOrder {
   faena                 Faena?                @relation("FaenaPurchaseOrders", fields: [faenaId], references: [id])
   lines                 PurchaseOrderLine[]
   warehouseMovements    WarehouseMovement[]
+
+  @@index([tenantId])
 }
 
 model PurchaseOrderLine {
@@ -531,6 +641,7 @@ enum WorkOrderStatus {
 
 model MaintenancePlan {
   id            String      @id @default(uuid())
+  tenantId      String?
   assetType     AssetType
   name          String
   intervalHours Int?
@@ -541,11 +652,15 @@ model MaintenancePlan {
   deletedAt     DateTime?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  tenant        Tenant?     @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   workOrders    WorkOrder[]
+
+  @@index([tenantId])
 }
 
 model WorkOrder {
   id                 String            @id @default(uuid())
+  tenantId           String?
   otNumber           String            @unique
   assetId            String
   faenaId            String?
@@ -566,6 +681,7 @@ model WorkOrder {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
+  tenant             Tenant?           @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   asset              Asset             @relation(fields: [assetId], references: [id])
   faena              Faena?            @relation(fields: [faenaId], references: [id])
   maintenancePlan    MaintenancePlan?  @relation(fields: [maintenancePlanId], references: [id])
@@ -574,6 +690,7 @@ model WorkOrder {
   directMovements      WarehouseMovement[] @relation("DirectWorkOrderMovements")
   directPurchaseOrders PurchaseOrder[]     @relation("DirectWorkOrderOrders")
 
+  @@index([tenantId])
   @@index([assetId, status])
   @@index([faenaId])
 }
@@ -599,6 +716,7 @@ model WorkOrderItem {
 
 model FuelLog {
   id                    String              @id @default(uuid())
+  tenantId              String?
   dispatchNumber        String              @unique
   assetId               String
   faenaId               String?
@@ -624,12 +742,14 @@ model FuelLog {
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
 
+  tenant                Tenant?             @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   asset                 Asset               @relation(fields: [assetId], references: [id])
   faena                 Faena?              @relation(fields: [faenaId], references: [id])
   warehouse             Warehouse?          @relation(fields: [warehouseId], references: [id])
   movement              WarehouseMovement?  @relation(fields: [movementId], references: [id])
   createdBy             User                @relation(fields: [createdById], references: [id])
 
+  @@index([tenantId])
   @@index([assetId, dispatchDate])
   @@index([faenaId])
 }
@@ -664,6 +784,7 @@ enum OperatorDocType {
 
 model AssetDocument {
   id             String       @id @default(uuid())
+  tenantId       String?
   assetId        String
   docType        AssetDocType
   documentNumber String?
@@ -677,15 +798,18 @@ model AssetDocument {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  tenant         Tenant?      @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   asset          Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
   createdBy      User         @relation(fields: [createdById], references: [id])
 
+  @@index([tenantId])
   @@index([assetId, expirationDate])
   @@index([expirationDate])
 }
 
 model OperatorCertification {
   id             String          @id @default(uuid())
+  tenantId       String?
   operatorName   String
   rut            String
   jobTitle       String?
@@ -701,9 +825,11 @@ model OperatorCertification {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
+  tenant         Tenant?         @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   faena          Faena?          @relation(fields: [faenaId], references: [id], onDelete: SetNull)
   createdBy      User            @relation(fields: [createdById], references: [id])
 
+  @@index([tenantId])
   @@index([rut, expirationDate])
   @@index([faenaId])
   @@index([expirationDate])
@@ -711,6 +837,7 @@ model OperatorCertification {
 
 model Budget {
   id           String      @id @default(uuid())
+  tenantId     String?
   faenaId      String
   costCenterId String?
   year         Int
@@ -720,9 +847,11 @@ model Budget {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
+  tenant       Tenant?     @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   faena        Faena       @relation(fields: [faenaId], references: [id], onDelete: Cascade)
   costCenter   CostCenter? @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
 
+  @@index([tenantId])
   @@unique([faenaId, costCenterId, year, month])
   @@index([faenaId])
 }

@@ -19,6 +19,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { CopilotModule } from './modules/copilot/copilot.module';
 import { CertificationsModule } from './modules/certifications/certifications.module';
+import { TenantsModule } from './modules/tenants/tenants.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CertificationsModule } from './modules/certifications/certifications.mo
       isGlobal: true,
     }),
     PrismaModule,
+    TenantsModule,
     AuthModule,
     HealthModule,
     FaenasModule,

@@ -4,12 +4,15 @@ import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { TenantModuleGuard } from '../tenants/guards/tenant-module.guard';
+import { RequireTenantModule } from '../tenants/decorators/tenant-modules.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AuditInterceptor } from '../../common/interceptors/audit.interceptor';
 import { AssetType } from '@prisma/client';
 
 @Controller('maintenance/plans')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, TenantModuleGuard)
+@RequireTenantModule('MANTENIMIENTO')
 @UseInterceptors(AuditInterceptor)
 export class PlansController {
   constructor(private readonly plansService: PlansService) {}
