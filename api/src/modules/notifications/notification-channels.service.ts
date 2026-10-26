@@ -22,8 +22,8 @@ const DEFAULT_CONFIG: NotificationChannelsConfigDto = {
   brevo: {
     enabled: Boolean(process.env.BREVO_API_KEY),
     apiKey: process.env.BREVO_API_KEY || '',
-    senderEmail: process.env.BREVO_SENDER_EMAIL || 'alertas@sgmt.local',
-    senderName: 'SGMT Alertas Operacionales',
+    senderEmail: process.env.BREVO_SENDER_EMAIL || 'alertas@katei.cl',
+    senderName: 'KATEI Alertas Operacionales',
     recipientEmails: process.env.BREVO_RECIPIENTS ? process.env.BREVO_RECIPIENTS.split(',') : [],
     events: {
       radarAlerts: true,
@@ -196,10 +196,9 @@ export class NotificationChannelsService {
       return this.executeTelegramSend(
         botToken,
         chatId,
-        `🚜 *SGMT PRO - Notificación de Prueba* 🔔\n\n` +
+        `🚨 *KATEI - Notificación de Prueba* 🔔\n\n` +
           `✅ *¡Conexión Exitosa!*\n` +
-          `El canal de alertas vía Telegram Bot está correctamente enlazado con SGMT PRO.\n\n` +
-          `📍 *Servidor:* LXC Node 106\n` +
+          `El canal de alertas vía Telegram Bot está correctamente enlazado con KATEI.\n\n` +
           `📅 *Fecha:* ${new Date().toLocaleString('es-CL')}\n` +
           `🛡️ *Eventos activos:* Radar de Mantención, Stock Crítico, OCs y Combustible.`,
       );
@@ -210,8 +209,8 @@ export class NotificationChannelsService {
         ? config.brevo.apiKey
         : dto.brevoConfig?.apiKey || config.brevo.apiKey;
 
-      const senderEmail = dto.brevoConfig?.senderEmail || config.brevo.senderEmail || 'alertas@sgmt.local';
-      const senderName = dto.brevoConfig?.senderName || config.brevo.senderName || 'SGMT Alertas';
+      const senderEmail = dto.brevoConfig?.senderEmail || config.brevo.senderEmail || 'alertas@katei.cl';
+      const senderName = dto.brevoConfig?.senderName || config.brevo.senderName || 'KATEI Alertas';
       const recipients = dto.brevoConfig?.recipientEmails || config.brevo.recipientEmails || [];
 
       if (!apiKey) {
@@ -226,23 +225,19 @@ export class NotificationChannelsService {
         senderEmail,
         senderName,
         recipients,
-        'SGMT PRO — Alerta de Prueba Brevo Email',
+        'KATEI — Alerta de Prueba Brevo Email',
         `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
           <div style="background: linear-gradient(135deg, #1e40af, #3b82f6); padding: 24px; text-align: center; color: white;">
-            <h1 style="margin: 0; font-size: 20px; font-weight: 800;">SGMT PRO — Centro de Alertas</h1>
+            <h1 style="margin: 0; font-size: 20px; font-weight: 800;">KATEI — Centro de Alertas</h1>
             <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Notificación de Prueba de Correo Brevo</p>
           </div>
           <div style="padding: 24px; color: #1e293b; font-size: 14px; line-height: 1.6;">
             <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: #166534; font-weight: 600;">
               ✅ ¡Conexión con Brevo SMTP/API establecida exitosamente!
             </div>
-            <p>Este es un correo de validación enviado desde tu servidor de <strong>SGMT PRO</strong> para confirmar que los avisos automáticos de maquinaria, compras y bodega llegarán correctamente a la casilla configurada.</p>
+            <p>Este es un correo de validación enviado desde tu plataforma <strong>KATEI</strong> para confirmar que los avisos automáticos de maquinaria, compras y bodega llegarán correctamente a la casilla configurada.</p>
             <table style="width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px;">
-              <tr>
-                <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #64748b;">Servidor:</td>
-                <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">LXC Node 106 (PostgreSQL 16)</td>
-              </tr>
               <tr>
                 <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #64748b;">Fecha y Hora:</td>
                 <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${new Date().toLocaleString('es-CL')}</td>
@@ -254,7 +249,7 @@ export class NotificationChannelsService {
             </table>
           </div>
           <div style="background: #f8fafc; padding: 12px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
-            Sistema de Gestión Movimiento de Tierra (SGMT PRO) &bull; Notificación Automática
+            KATEI &bull; Notificación Automática de Operaciones
           </div>
         </div>
         `,
@@ -379,12 +374,11 @@ export class NotificationChannelsService {
 
       if (isTelegramActive && botToken && !botToken.includes('••••') && chatId) {
         const mdText =
-          `🚨 *SGMT PRO - Alerta Operacional* 🔔\n\n` +
+          `🚨 *KATEI - Alerta Operacional* 🔔\n\n` +
           `📋 *${payload.title}*\n` +
           `${payload.summary}\n\n` +
           `📍 *Módulo:* \`${payload.link || '/compras'}\`\n` +
-          `📅 *Fecha:* ${new Date().toLocaleString('es-CL')}\n` +
-          `⚙️ *Servidor:* LXC Node 106`;
+          `📅 *Fecha:* ${new Date().toLocaleString('es-CL')}`;
 
         this.executeTelegramSend(botToken, chatId, mdText).catch((err) =>
           this.logger.warn(`Failed async telegram dispatch: ${err.message}`),
@@ -394,15 +388,15 @@ export class NotificationChannelsService {
       // 2. Dispatch to Brevo Email if enabled and event is subscribed
       if (config.brevo?.enabled && config.brevo.events?.[payload.event]) {
         const apiKey = config.brevo.apiKey;
-        const senderEmail = config.brevo.senderEmail || 'alertas@sgmt.local';
-        const senderName = config.brevo.senderName || 'SGMT Alertas';
+        const senderEmail = config.brevo.senderEmail || 'alertas@katei.cl';
+        const senderName = config.brevo.senderName || 'KATEI Alertas';
         const recipients = config.brevo.recipientEmails || [];
 
         if (apiKey && recipients.length > 0) {
           const html = `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
               <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 20px; text-align: center; color: white;">
-                <h2 style="margin: 0; font-size: 18px; font-weight: 800;">SGMT PRO &bull; Alerta Operacional</h2>
+                <h2 style="margin: 0; font-size: 18px; font-weight: 800;">KATEI &bull; Alerta Operacional</h2>
                 <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">${payload.title}</p>
               </div>
               <div style="padding: 24px; color: #1e293b; font-size: 14px; line-height: 1.6;">
@@ -410,7 +404,7 @@ export class NotificationChannelsService {
                   ${payload.summary.replace(/\n/g, '<br/>')}
                 </div>
                 <p style="font-size: 12px; color: #64748b; margin-top: 20px;">
-                  Fecha del evento: <strong>${new Date().toLocaleString('es-CL')}</strong> &bull; Servidor: <strong>LXC Node 106</strong>
+                  Fecha del evento: <strong>${new Date().toLocaleString('es-CL')}</strong>
                 </p>
               </div>
             </div>
@@ -421,7 +415,7 @@ export class NotificationChannelsService {
             senderEmail,
             senderName,
             recipients,
-            `SGMT Alerta: ${payload.title}`,
+            `KATEI Alerta: ${payload.title}`,
             html,
           ).catch((err) => this.logger.warn(`Failed async brevo dispatch: ${err.message}`));
         }

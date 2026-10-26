@@ -104,12 +104,11 @@ export class NotificationSchedulerService implements OnModuleInit, OnModuleDestr
       const config = await this.channelsService.getConfig(true);
 
       const mdText =
-        `📋 *SGMT PRO — Resumen Operacional Diario* 🚜🔔\n\n` +
+        `📋 *KATEI — Resumen Operacional Diario* 🚜🔔\n\n` +
         `Buenos días. Este es el consolidado matutino de alertas activas en faena:\n\n` +
         `${summaryParts.map((s) => `• ${s}`).join('\n')}\n\n` +
         `📍 *Panel:* \`/dashboard\`\n` +
-        `📅 *Fecha:* ${new Date().toLocaleString('es-CL')}\n` +
-        `⚙️ *Servidor:* LXC Node 106`;
+        `📅 *Fecha:* ${new Date().toLocaleString('es-CL')}`;
 
       // 1. Send to Telegram
       if (config.telegram?.enabled && config.telegram.botToken && config.telegram.chatId) {
@@ -125,7 +124,7 @@ export class NotificationSchedulerService implements OnModuleInit, OnModuleDestr
         const html = `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
             <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 24px; text-align: center; color: white;">
-              <h2 style="margin: 0; font-size: 20px; font-weight: 800;">SGMT PRO &bull; Resumen Operacional Diario</h2>
+              <h2 style="margin: 0; font-size: 20px; font-weight: 800;">KATEI &bull; Resumen Operacional Diario</h2>
               <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Consolidado Matutino de Alertas en Faena</p>
             </div>
             <div style="padding: 24px; color: #1e293b; font-size: 14px; line-height: 1.6;">
@@ -134,7 +133,7 @@ export class NotificationSchedulerService implements OnModuleInit, OnModuleDestr
                 ${summaryParts.map((s) => `<li style="margin-bottom: 8px;">${s.replace(/\*/g, '')}</li>`).join('')}
               </ul>
               <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-top: 20px; font-size: 12px; color: #64748b;">
-                Servidor: <strong>LXC Node 106</strong> &bull; Fecha: <strong>${new Date().toLocaleString('es-CL')}</strong>
+                Fecha: <strong>${new Date().toLocaleString('es-CL')}</strong>
               </div>
             </div>
           </div>
@@ -142,10 +141,10 @@ export class NotificationSchedulerService implements OnModuleInit, OnModuleDestr
 
         (this.channelsService as any).executeBrevoSend(
           config.brevo.apiKey,
-          config.brevo.senderEmail || 'alertas@sgmt.local',
-          config.brevo.senderName || 'SGMT Alertas',
+          config.brevo.senderEmail || 'alertas@katei.cl',
+          config.brevo.senderName || 'KATEI Alertas',
           config.brevo.recipientEmails || [],
-          `SGMT PRO — Resumen Matutino de Alertas (${alerts.totalCount} activas)`,
+          `KATEI — Resumen Matutino de Alertas (${alerts.totalCount} activas)`,
           html,
         ).catch((err: any) => this.logger.warn(`Failed brevo sweep: ${err.message}`));
       }
