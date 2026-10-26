@@ -1,0 +1,42 @@
+# SGMT / KATEI - Development Environment (develop branch)
+# Usage: docker compose -f docker-compose.dev.yml up -d --build
+
+services:
+  api:
+    container_name: sgmt-dev-api
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN}
+      NODE_ENV: development
+    ports:
+      - "3001:3000"
+    networks:
+      - default
+      - prod-db-net
+
+  web:
+    container_name: sgmt-dev-web
+    build:
+      context: .
+      dockerfile: web/Dockerfile.prod
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    networks:
+      - default
+
+networks:
+  default:
+  prod-db-net:
+    name: sgmt_default
+    external: true
