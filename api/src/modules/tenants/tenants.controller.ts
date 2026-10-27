@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Patch,
   Param,
   Body,
@@ -59,6 +60,18 @@ export class TenantsController {
     return this.tenantsService.findOne(tenantId);
   }
 
+  @Get('plans/catalog')
+  @Roles('SUPER_USUARIO', 'ADMIN_SISTEMA')
+  getCommercialPlans() {
+    return this.tenantsService.getCommercialPlans();
+  }
+
+  @Put('plans/catalog')
+  @Roles('SUPER_USUARIO')
+  saveCommercialPlans(@Body() plans: any[]) {
+    return this.tenantsService.saveCommercialPlans(plans);
+  }
+
   @Get('backend-admins')
   @Roles('SUPER_USUARIO')
   getBackendAdmins() {
@@ -71,10 +84,25 @@ export class TenantsController {
     return this.tenantsService.createBackendAdmin(dto);
   }
 
+  @Post('backend-admins/:id/reset-password')
+  @Roles('SUPER_USUARIO')
+  resetBackendAdminPassword(
+    @Param('id') id: string,
+    @Body('newPassword') newPass: string,
+  ) {
+    return this.tenantsService.resetBackendAdminPassword(id, newPass);
+  }
+
   @Post(':id/impersonate')
   @Roles('SUPER_USUARIO')
   impersonate(@Param('id') id: string, @Request() req: any) {
     return this.tenantsService.impersonate(id, req.user);
+  }
+
+  @Get(':id/business-profile')
+  @Roles('SUPER_USUARIO')
+  getBusinessProfile(@Param('id') id: string) {
+    return this.tenantsService.getTenantBusinessProfile(id);
   }
 
   @Get(':id')

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   useTenants,
@@ -8,15 +8,22 @@ import {
   useImpersonateTenant,
   useBackendAdmins,
   useCreateBackendAdmin,
+  useCommercialPlans,
+  useSaveCommercialPlans,
+  useResetBackendAdminPassword,
+  useTenantBusinessProfile,
   downloadTenantBackup,
   Tenant,
+  CommercialPlanConfig,
 } from '../../api/tenants';
+import { useAuditLogs, AuditLog } from '../../api/audit';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { useToast } from '../../components/ui/Toast';
 import { useAuthStore } from '../../stores/auth.store';
 import { useThemeStore } from '../../stores/theme.store';
+import { exportToCSV } from '../../lib/export';
 import {
   Building2,
   Plus,
@@ -43,6 +50,11 @@ import {
   Square,
   BookOpen,
   Layers,
+  FileText,
+  Clock,
+  DollarSign,
+  TrendingUp,
+  Search,
 } from 'lucide-react';
 
 const ALL_SYSTEM_MODULES = [
@@ -92,86 +104,48 @@ const PRESET_MODULES: Record<string, string[]> = {
   PERSONALIZADO: [],
 };
 
-const COMMERCIAL_PLANS_INFO = [
-  {
-    tier: 'BASICO',
-    name: 'Plan Básico Operativo',
-    price: '12 UF / mes',
-    target: 'Contratistas pequeños, talleres o faenas unitarias',
-    description: 'Gestión esencial de flota, control de certificaciones de operadores y reportes consolidados.',
-    maxUsers: 5,
-    maxAssets: 10,
-    maxEmails: 200,
-    maxMessages: 500,
-    modules: ['Dashboard General', 'Faenas & Contratos', 'Flota & Maquinaria', 'Certificaciones', 'Reportes'],
-    color: 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900',
-    badgeColor: 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-300',
-  },
-  {
-    tier: 'PRO',
-    name: 'Plan Profesional Constructor',
-    price: '28 UF / mes',
-    popular: true,
-    target: 'Empresas constructoras medianas y flotas activas',
-    description: 'Suite operativa completa: mantenimiento correctivo/preventivo, cargas de combustible, bodegas y pedidos terreno.',
-    maxUsers: 20,
-    maxAssets: 50,
-    maxEmails: 500,
-    maxMessages: 1000,
-    modules: [
-      'Todo lo Básico',
-      'Mantenimiento & OTs',
-      'Combustible & Cargas',
-      'Bodega & Inventario',
-      'Pedidos Terreno (Móvil)',
-    ],
-    color: 'border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/20',
-    badgeColor: 'bg-blue-600 text-white',
-  },
-  {
-    tier: 'ENTERPRISE',
-    name: 'Plan Enterprise Corporativo',
-    price: '48 UF / mes',
-    target: 'Grandes constructoras, minería y flotas pesadas',
-    description: 'Acceso total sin restricciones: compras y abastecimiento, KATEI Copilot con IA, administración y usuarios ilimitados.',
-    maxUsers: 999,
-    maxAssets: 999,
-    maxEmails: 10000,
-    maxMessages: 20000,
-    modules: [
-      'Todo lo Profesional',
-      'Compras & Abastecimiento',
-      'KATEI Copilot (IA)',
-      'Auditoría y Administración',
-      'Soporte Prioritario 24/7',
-    ],
-    color: 'border-purple-500/50 bg-purple-50/50 dark:bg-purple-950/20',
-    badgeColor: 'bg-purple-600 text-white',
-  },
-];
-
 export function MasterPortalPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const { user, impersonateTenant } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
 
-  const [activeTab, setActiveTab] = useState<'empresas' | 'planes' | 'guia_alta' | 'admins'>('empresas');
+  const [activeTab, setActiveTab] = useState<'empresas' | 'planes' | 'auditoria' | 'guia_alta' | 'admins'>('empresas');
 
   // Queries
   const { data: tenants, isLoading: loadingTenants } = useTenants();
   const { data: backendAdmins, isLoading: loadingAdmins } = useBackendAdmins();
+  const { data: commercialPlans, isLoading: loadingPlans } = useCommercialPlans();
+  const { data: auditLogs, isLoading: loadingAudit } = useAuditLogs();
+
   const createTenantMutation = useCreateTenant();
   const updateTenantMutation = useUpdateTenant();
   const impersonateMutation = useImpersonateTenant();
   const createAdminMutation = useCreateBackendAdmin();
+  const savePlansMutation = useSaveCommercialPlans();
+  const resetAdminPassMutation = useResetBackendAdminPassword();
 
   // Modals & State
   const [selectedTenantForUsage, setSelectedTenantForUsage] = useState<string | null>(null);
+  const [selectedTenantForProfile, setSelectedTenantForProfile] = useState<string | null>(null);
   const [isCreateTenantModalOpen, setIsCreateTenantModalOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [isCreateAdminModalOpen, setIsCreateAdminModalOpen] = useState(false);
   const [exportingTenantId, setExportingTenantId] = useState<string | null>(null);
+
+  // Admin Password Reset Modal State
+  const [resetAdminUser, setResetAdminUser] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+
+  // Plans Edit Modal State
+  const [isEditPlansModalOpen, setIsEditPlansModalOpen] = useState(false);
+  const [editingPlansList, setEditingPlansList] = useState<CommercialPlanConfig[]>([]);
+
+  // Audit Detail Modal State
+  const [selectedLogDetail, setSelectedLogDetail] = useState<AuditLog | null>(null);
+  const [auditSearchTerm, setAuditSearchTerm] = useState('');
+  const [auditTenantFilter, setAuditTenantFilter] = useState('');
+  const [auditEntityFilter, setAuditEntityFilter] = useState('');
 
   // Tenant Form
   const [formName, setFormName] = useState('');
@@ -214,6 +188,10 @@ export function MasterPortalPage() {
     selectedTenantForUsage || undefined,
   );
 
+  const { data: businessProfile, isLoading: loadingProfile } = useTenantBusinessProfile(
+    selectedTenantForProfile,
+  );
+
   const openCreateTenantModal = (preselectedPlan?: 'BASICO' | 'PRO' | 'ENTERPRISE') => {
     const targetPlan = preselectedPlan || 'PRO';
     setEditingTenant(null);
@@ -222,7 +200,7 @@ export function MasterPortalPage() {
     setFormRut('');
     setFormStatus('ACTIVO');
     setFormPlan(targetPlan);
-    setFormSelectedModules(PRESET_MODULES[targetPlan]);
+    setFormSelectedModules(PRESET_MODULES[targetPlan] || PRESET_MODULES.PRO);
     setFormMaxUsers(targetPlan === 'BASICO' ? 5 : targetPlan === 'ENTERPRISE' ? 999 : 20);
     setFormMaxAssets(targetPlan === 'BASICO' ? 10 : targetPlan === 'ENTERPRISE' ? 999 : 50);
     setFormMaxEmails(targetPlan === 'BASICO' ? 200 : targetPlan === 'ENTERPRISE' ? 10000 : 500);
@@ -260,16 +238,25 @@ export function MasterPortalPage() {
   const handlePlanChange = (plan: 'BASICO' | 'PRO' | 'ENTERPRISE' | 'PERSONALIZADO') => {
     setFormPlan(plan);
     if (plan !== 'PERSONALIZADO') {
-      setFormSelectedModules(PRESET_MODULES[plan]);
-      if (plan === 'BASICO') {
-        setFormMaxUsers(5);
-        setFormMaxAssets(10);
-      } else if (plan === 'PRO') {
-        setFormMaxUsers(20);
-        setFormMaxAssets(50);
-      } else if (plan === 'ENTERPRISE') {
-        setFormMaxUsers(999);
-        setFormMaxAssets(999);
+      const matchConfig = commercialPlans?.find((p) => p.tier === plan);
+      if (matchConfig) {
+        setFormSelectedModules(matchConfig.enabledModules);
+        setFormMaxUsers(matchConfig.maxUsers);
+        setFormMaxAssets(matchConfig.maxAssets);
+        setFormMaxEmails(matchConfig.maxMonthlyEmails);
+        setFormMaxMessages(matchConfig.maxMonthlyMessages);
+      } else {
+        setFormSelectedModules(PRESET_MODULES[plan] || []);
+        if (plan === 'BASICO') {
+          setFormMaxUsers(5);
+          setFormMaxAssets(10);
+        } else if (plan === 'PRO') {
+          setFormMaxUsers(20);
+          setFormMaxAssets(50);
+        } else if (plan === 'ENTERPRISE') {
+          setFormMaxUsers(999);
+          setFormMaxAssets(999);
+        }
       }
     }
   };
@@ -409,6 +396,106 @@ export function MasterPortalPage() {
     }
   };
 
+  const handleResetAdminPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetAdminUser || !newAdminPassword || newAdminPassword.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    try {
+      const res = await resetAdminPassMutation.mutateAsync({
+        id: resetAdminUser.id,
+        newPassword: newAdminPassword,
+      });
+      toast.success(res.message);
+      setResetAdminUser(null);
+      setNewAdminPassword('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al reestablecer contraseña');
+    }
+  };
+
+  const handleOpenEditPlans = () => {
+    if (commercialPlans) {
+      setEditingPlansList(JSON.parse(JSON.stringify(commercialPlans)));
+    }
+    setIsEditPlansModalOpen(true);
+  };
+
+  const handleSavePlansSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await savePlansMutation.mutateAsync(editingPlansList);
+      toast.success('Catálogo de planes comerciales actualizado correctamente');
+      setIsEditPlansModalOpen(false);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al guardar catálogo de planes');
+    }
+  };
+
+  // Filtered Audit Logs
+  const uniqueEntities = useMemo(() => {
+    if (!auditLogs) return [];
+    const set = new Set<string>();
+    auditLogs.forEach((l) => {
+      if (l.entity) set.add(l.entity);
+    });
+    return Array.from(set).sort();
+  }, [auditLogs]);
+
+  const filteredAuditLogs = useMemo(() => {
+    if (!auditLogs) return [];
+    return auditLogs.filter((log) => {
+      if (auditTenantFilter) {
+        const tId = log.user?.tenantId || (log.user?.tenant as any)?.id;
+        if (tId !== auditTenantFilter) return false;
+      }
+      if (auditEntityFilter && log.entity !== auditEntityFilter) {
+        return false;
+      }
+      if (auditSearchTerm.trim()) {
+        const term = auditSearchTerm.toLowerCase();
+        const userStr = (log.user?.name || log.userId || '').toLowerCase();
+        const tenantStr = (log.user?.tenant?.name || '').toLowerCase();
+        const entityStr = (log.entity || '').toLowerCase();
+        const actionStr = (log.action || '').toLowerCase();
+        const ipStr = (log.ipAddress || '').toLowerCase();
+        const detailStr = JSON.stringify(log.detail ?? log.details ?? '').toLowerCase();
+        return (
+          userStr.includes(term) ||
+          tenantStr.includes(term) ||
+          entityStr.includes(term) ||
+          actionStr.includes(term) ||
+          ipStr.includes(term) ||
+          detailStr.includes(term)
+        );
+      }
+      return true;
+    });
+  }, [auditLogs, auditTenantFilter, auditEntityFilter, auditSearchTerm]);
+
+  const handleExportAuditLogs = () => {
+    if (!filteredAuditLogs || filteredAuditLogs.length === 0) {
+      toast.info('No hay registros para exportar');
+      return;
+    }
+    exportToCSV(
+      filteredAuditLogs,
+      [
+        { header: 'ID', key: 'id' },
+        { header: 'Fecha', key: (l) => l.timestamp || l.createdAt || '-' },
+        { header: 'Empresa', key: (l) => l.user?.tenant?.name || 'Sistema / Staff' },
+        { header: 'Usuario', key: (l) => l.user?.name || l.userId || 'Sistema' },
+        { header: 'Acción', key: 'action' },
+        { header: 'Entidad', key: 'entity' },
+        { header: 'IP', key: (l) => l.ipAddress || '' },
+        { header: 'Detalle', key: (l) => JSON.stringify(l.detail ?? l.details ?? '') },
+      ],
+      'KATEI_Auditoria_Global_SaaS',
+    );
+    toast.success('Bitácora global de SaaS exportada');
+  };
+
   // Metrics summary
   const totalTenants = tenants?.length || 0;
   const activeTenants = tenants?.filter((t) => t.status === 'ACTIVO').length || 0;
@@ -527,7 +614,18 @@ export function MasterPortalPage() {
             }`}
           >
             <Layers size={16} />
-            <span>Planes Comerciales</span>
+            <span>Planes Comerciales ({commercialPlans?.length || 3})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('auditoria')}
+            className={`py-3 px-1 border-b-2 font-semibold transition-colors flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'auditoria'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Activity size={16} />
+            <span>Auditoría & Actividad Global</span>
           </button>
           <button
             onClick={() => setActiveTab('guia_alta')}
@@ -563,7 +661,7 @@ export function MasterPortalPage() {
                 Directorio Central de Constructoras & Empresas
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Administrá suscripciones, monitoreá workspaces o exportá copias de seguridad de datos.
+                Administrá suscripciones, visualizá fichas de negocio, monitoreá workspaces o exportá copias de seguridad.
               </p>
             </div>
             <Button
@@ -678,9 +776,20 @@ export function MasterPortalPage() {
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => setSelectedTenantForProfile(t.id)}
+                              className="text-xs h-7 px-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1"
+                              title="Ver ficha comercial y antigüedad del cliente"
+                            >
+                              <FileText size={12} className="text-purple-500" />
+                              Ficha
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => setSelectedTenantForUsage(t.id)}
                               className="text-xs h-7 px-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1"
-                              title="Ver métricas de consumo"
+                              title="Ver métricas de consumo de correos, mensajes e IA"
                             >
                               <Activity size={12} className="text-blue-500" />
                               Consumo
@@ -739,91 +848,286 @@ export function MasterPortalPage() {
         </div>
       )}
 
-      {/* Tab 2: Planes Comerciales */}
+      {/* Tab 2: Planes Comerciales Dinámicos */}
       {activeTab === 'planes' && (
         <div className="space-y-6">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
-              Estructura de Planes Comerciales KATEI SaaS
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Matriz de empaquetamiento comercial, límites operacionales y módulos habilitados por suscripción.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                Catálogo de Planes Comerciales KATEI SaaS
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Configurá precios, cuotas operativas y módulos habilitados por suscripción. Los cambios aplican de inmediato.
+              </p>
+            </div>
+            <Button
+              onClick={handleOpenEditPlans}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 shrink-0"
+            >
+              <Edit2 size={15} />
+              Editar Catálogo & Precios
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {COMMERCIAL_PLANS_INFO.map((plan) => (
-              <div
-                key={plan.tier}
-                className={`rounded-2xl border p-6 flex flex-col justify-between shadow-sm relative transition-all ${plan.color}`}
-              >
-                {plan.popular && (
-                  <span className="absolute -top-3 right-6 px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-600 text-white shadow">
-                    Más Vendido
-                  </span>
-                )}
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold ${plan.badgeColor}`}>
-                      {plan.tier}
+            {loadingPlans ? (
+              <div className="col-span-3 p-8 text-center text-slate-500">Cargando catálogo comercial...</div>
+            ) : (
+              commercialPlans?.map((plan) => (
+                <div
+                  key={plan.id || plan.tier}
+                  className={`rounded-2xl border p-6 flex flex-col justify-between shadow-sm relative transition-all bg-white dark:bg-slate-900 ${
+                    plan.popular
+                      ? 'border-blue-500/60 dark:border-blue-500/40 shadow-blue-500/5'
+                      : 'border-slate-200 dark:border-slate-800'
+                  }`}
+                >
+                  {plan.popular && (
+                    <span className="absolute -top-3 right-6 px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-600 text-white shadow">
+                      Más Vendido
                     </span>
-                    <span className="text-base font-black text-slate-900 dark:text-white">{plan.price}</span>
-                  </div>
+                  )}
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-md text-xs font-bold ${
+                          plan.tier === 'ENTERPRISE'
+                            ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
+                            : plan.tier === 'PRO'
+                            ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        {plan.tier}
+                      </span>
+                      <span className="text-base font-black text-slate-900 dark:text-white">
+                        {plan.priceMonthly}
+                      </span>
+                    </div>
 
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white mt-3">{plan.name}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{plan.description}</p>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white mt-3">{plan.name}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{plan.description}</p>
 
-                  <div className="my-4 py-3 border-y border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">Máx Usuarios:</span>
-                      <strong className="text-slate-800 dark:text-slate-200">
-                        {plan.maxUsers === 999 ? 'Ilimitados' : plan.maxUsers}
-                      </strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">Máx Flota:</span>
-                      <strong className="text-slate-800 dark:text-slate-200">
-                        {plan.maxAssets === 999 ? 'Ilimitada' : `${plan.maxAssets} equipos`}
-                      </strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">Emails Brevo:</span>
-                      <strong className="text-slate-800 dark:text-slate-200">{plan.maxEmails} / mes</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">Telegram:</span>
-                      <strong className="text-slate-800 dark:text-slate-200">{plan.maxMessages} / mes</strong>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                      Módulos Incluidos:
-                    </div>
-                    {plan.modules.map((m, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                        <CheckCircle size={13} className="text-emerald-500 shrink-0" />
-                        <span>{m}</span>
+                    <div className="my-4 py-3 border-y border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Máx Usuarios:</span>
+                        <strong className="text-slate-800 dark:text-slate-200">
+                          {plan.maxUsers === 999 ? 'Ilimitados' : plan.maxUsers}
+                        </strong>
                       </div>
-                    ))}
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Máx Flota:</span>
+                        <strong className="text-slate-800 dark:text-slate-200">
+                          {plan.maxAssets === 999 ? 'Ilimitada' : `${plan.maxAssets} equipos`}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Emails Brevo:</span>
+                        <strong className="text-slate-800 dark:text-slate-200">{plan.maxMonthlyEmails} / mes</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[10px]">Telegram:</span>
+                        <strong className="text-slate-800 dark:text-slate-200">{plan.maxMonthlyMessages} / mes</strong>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        Módulos Habilitados ({plan.enabledModules.length}):
+                      </div>
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {plan.enabledModules.map((m) => (
+                          <span
+                            key={m}
+                            className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                          >
+                            {m}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-6">
+                    <Button
+                      onClick={() => openCreateTenantModal(plan.tier as any)}
+                      className="w-full text-xs font-bold py-2 bg-slate-900 hover:bg-slate-800 text-white dark:bg-blue-600 dark:hover:bg-blue-700"
+                    >
+                      Aprovisionar con {plan.tier}
+                    </Button>
                   </div>
                 </div>
-
-                <div className="pt-6">
-                  <Button
-                    onClick={() => openCreateTenantModal(plan.tier as any)}
-                    className="w-full text-xs font-bold py-2 bg-slate-900 hover:bg-slate-800 text-white dark:bg-blue-600 dark:hover:bg-blue-700"
-                  >
-                    Aprovisionar con {plan.tier}
-                  </Button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}
 
-      {/* Tab 3: Instructivo & Checklist de Alta */}
+      {/* Tab 3: Auditoría & Actividad Global SaaS */}
+      {activeTab === 'auditoria' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                <Activity size={18} className="text-blue-600 dark:text-blue-400" />
+                Bitácora de Auditoría & Trazabilidad Multicliente (Control Plane)
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Monitoreo en tiempo real de eventos, transacciones de compras, altas de flota y sesiones en todos los clientes.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportAuditLogs}
+              className="flex items-center gap-1.5 text-xs shrink-0"
+            >
+              <Download size={14} />
+              Exportar CSV
+            </Button>
+          </div>
+
+          {/* Filters Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm text-xs">
+            <div className="flex flex-1 flex-col sm:flex-row gap-2.5">
+              <div className="relative flex-1">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar por usuario, acción, empresa, entidad, IP o payload..."
+                  value={auditSearchTerm}
+                  onChange={(e) => setAuditSearchTerm(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                />
+              </div>
+
+              {/* Tenant Filter */}
+              <select
+                value={auditTenantFilter}
+                onChange={(e) => setAuditTenantFilter(e.target.value)}
+                className="px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+              >
+                <option value="">Todas las empresas clientes ({tenants?.length || 0})</option>
+                {tenants?.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Entity Filter */}
+              <select
+                value={auditEntityFilter}
+                onChange={(e) => setAuditEntityFilter(e.target.value)}
+                className="px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+              >
+                <option value="">Todos los módulos ({uniqueEntities.length})</option>
+                {uniqueEntities.map((ent) => (
+                  <option key={ent} value={ent}>
+                    {ent}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Audit Logs Table */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+            {loadingAudit ? (
+              <div className="p-8 text-center text-xs text-slate-500">Cargando bitácora de actividad global...</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider">
+                      <th className="py-3 px-4">Fecha y Hora</th>
+                      <th className="py-3 px-4">Empresa Cliente</th>
+                      <th className="py-3 px-4">Usuario</th>
+                      <th className="py-3 px-4">Entidad</th>
+                      <th className="py-3 px-4">Operación</th>
+                      <th className="py-3 px-4">IP</th>
+                      <th className="py-3 px-4 text-right">Detalle</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
+                    {filteredAuditLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-slate-400">
+                          No se encontraron registros de auditoría coincidentes con los filtros
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredAuditLogs.map((log) => {
+                        const actionUpper = (log.action || '').toUpperCase();
+                        let badgeColor =
+                          'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+                        if (actionUpper.includes('DELETE') || actionUpper.includes('RECHAZ')) {
+                          badgeColor =
+                            'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800';
+                        } else if (actionUpper.includes('CREATE') || actionUpper.includes('POST')) {
+                          badgeColor =
+                            'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
+                        } else if (actionUpper.includes('UPDATE') || actionUpper.includes('PATCH')) {
+                          badgeColor =
+                            'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800';
+                        }
+                        return (
+                          <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                            <td className="py-3 px-4 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                              {new Date(log.timestamp || log.createdAt || '').toLocaleString('es-CL')}
+                            </td>
+                            <td className="py-3 px-4 font-semibold text-slate-900 dark:text-white">
+                              {log.user?.tenant?.name ? (
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 text-[11px]">
+                                  <Building2 size={12} />
+                                  {log.user.tenant.name}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">Staff Maestro KATEI</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="font-semibold text-slate-800 dark:text-slate-200">
+                                {log.user?.name || log.userId || 'Sistema'}
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-mono">{log.user?.email}</div>
+                            </td>
+                            <td className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">
+                              {log.entity}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span
+                                className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded border ${badgeColor}`}
+                              >
+                                {log.action}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 font-mono text-[10px] text-slate-500">{log.ipAddress || '-'}</td>
+                            <td className="py-3 px-4 text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedLogDetail(log)}
+                                className="text-xs h-6 px-2 text-blue-600 dark:text-blue-400"
+                              >
+                                <Eye size={12} className="mr-1" />
+                                Detalle
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 4: Instructivo & Checklist de Alta */}
       {activeTab === 'guia_alta' && (
         <div className="space-y-6">
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -974,7 +1278,7 @@ export function MasterPortalPage() {
                     <strong>Backups periódicos:</strong> Podés descargar el archivo JSON completo de cualquier cliente haciendo clic en el botón "Backup".
                   </li>
                   <li>
-                    <strong>Auditoría de Tokens y Correos:</strong> Revisá periódicamente la pestaña de "Consumo" para asegurar que los clientes no superen los límites contratados en Brevo o IA.
+                    <strong>Auditoría Global:</strong> Revisá periódicamente la pestaña "Auditoría & Actividad Global" para fiscalizar operaciones sensibles o logins.
                   </li>
                 </ul>
               </div>
@@ -993,7 +1297,7 @@ export function MasterPortalPage() {
         </div>
       )}
 
-      {/* Tab 4: Usuarios Backend de Administración */}
+      {/* Tab 5: Usuarios Backend de Administración */}
       {activeTab === 'admins' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1027,6 +1331,7 @@ export function MasterPortalPage() {
                     <th className="py-3 px-4">Rol Maestro</th>
                     <th className="py-3 px-4">Fecha Alta</th>
                     <th className="py-3 px-4 text-center">Estado</th>
+                    <th className="py-3 px-4 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
@@ -1052,6 +1357,21 @@ export function MasterPortalPage() {
                           Activo
                         </span>
                       </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setResetAdminUser(adm);
+                            setNewAdminPassword('');
+                          }}
+                          className="text-xs h-7 px-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                          title="Restablecer contraseña de administrador maestro"
+                        >
+                          <KeyRound size={13} className="mr-1" />
+                          Reset Clave
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1061,13 +1381,13 @@ export function MasterPortalPage() {
         </div>
       )}
 
-      {/* Modal: Create / Edit Tenant with Admin Provisioning */}
+      {/* Modal: Create / Edit Tenant with Admin Provisioning (SIZE 4XL) */}
       {isCreateTenantModalOpen && (
         <Modal
           isOpen={isCreateTenantModalOpen}
           onClose={() => setIsCreateTenantModalOpen(false)}
           title={editingTenant ? `Editar Empresa: ${editingTenant.name}` : 'Aprovisionar Nueva Empresa Cliente'}
-          size="xl"
+          size="4xl"
         >
           <form onSubmit={handleSaveTenant} className="space-y-4 py-2 text-xs">
             {/* General Info */}
@@ -1309,6 +1629,379 @@ export function MasterPortalPage() {
         </Modal>
       )}
 
+      {/* Modal: Ficha Comercial & Operativa del Cliente (Business Profile) */}
+      {selectedTenantForProfile && (
+        <Modal
+          isOpen={!!selectedTenantForProfile}
+          onClose={() => setSelectedTenantForProfile(null)}
+          title="Ficha Comercial & Operativa del Cliente"
+          size="4xl"
+        >
+          {loadingProfile ? (
+            <div className="p-8 text-center text-xs text-slate-500">Cargando ficha de negocio...</div>
+          ) : businessProfile ? (
+            <div className="space-y-5 py-2 text-xs">
+              {/* Header Card */}
+              <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-blue-500/10 text-blue-600 rounded-xl">
+                    <Building2 size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      {businessProfile.tenant.name}
+                    </h3>
+                    <div className="flex items-center gap-2 text-slate-500 text-xs mt-0.5">
+                      <span>Slug: <strong className="font-mono text-blue-600">{businessProfile.tenant.slug}</strong></span>
+                      {businessProfile.tenant.rut && <span>&bull; RUT: {businessProfile.tenant.rut}</span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                      businessProfile.tenant.planTier === 'ENTERPRISE'
+                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'
+                        : businessProfile.tenant.planTier === 'PRO'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                        : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                    }`}
+                  >
+                    Plan {businessProfile.tenant.planTier}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleExportBackup(businessProfile.tenant)}
+                    className="text-xs flex items-center gap-1"
+                  >
+                    <Download size={12} className="text-emerald-500" />
+                    Backup JSON
+                  </Button>
+                </div>
+              </div>
+
+              {/* Business Stats Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                    <Clock size={13} className="text-blue-500" />
+                    Inicio de Operaciones
+                  </div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                    {new Date(businessProfile.businessMetrics.createdAt).toLocaleDateString('es-CL')}
+                  </div>
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">
+                    {businessProfile.businessMetrics.monthsActive} meses de servicio activo
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                    <TrendingUp size={13} className="text-purple-500" />
+                    Volumen Compras (CLP)
+                  </div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                    ${businessProfile.businessMetrics.totalPurchasesAmount.toLocaleString('es-CL')}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    {businessProfile.businessMetrics.counts.purchaseOrders} órdenes aprobadas
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                    <ShieldCheck size={13} className="text-emerald-500" />
+                    Flota & Maquinaria
+                  </div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                    {businessProfile.businessMetrics.counts.assets} equipos
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    Límite plan: {businessProfile.tenant.maxAssets}
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                    <DollarSign size={13} className="text-amber-500" />
+                    Faenas Activas
+                  </div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                    {businessProfile.businessMetrics.counts.faenas} faenas
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    {businessProfile.businessMetrics.counts.warehouses} bodegas registradas
+                  </div>
+                </div>
+              </div>
+
+              {/* Detailed Operational Breakdown */}
+              <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
+                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                  Métricas de Actividad & Tracción en Plataforma
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-500 block text-[10px]">Usuarios en Sistema:</span>
+                    <strong className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      {businessProfile.businessMetrics.counts.users} / {businessProfile.tenant.maxUsers}
+                    </strong>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-500 block text-[10px]">Órdenes de Trabajo (OTs):</span>
+                    <strong className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      {businessProfile.businessMetrics.counts.workOrders}
+                    </strong>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-500 block text-[10px]">Cargas de Combustible:</span>
+                    <strong className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      {businessProfile.businessMetrics.counts.fuelLogs}
+                    </strong>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-500 block text-[10px]">Estado Operativo:</span>
+                    <strong className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                      {businessProfile.tenant.status}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2 border-t border-slate-200 dark:border-slate-800">
+                <Button size="sm" onClick={() => setSelectedTenantForProfile(null)}>
+                  Cerrar Ficha
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </Modal>
+      )}
+
+      {/* Modal: Edit Commercial Plans Catalog */}
+      {isEditPlansModalOpen && (
+        <Modal
+          isOpen={isEditPlansModalOpen}
+          onClose={() => setIsEditPlansModalOpen(false)}
+          title="Editar Catálogo de Planes Comerciales & Precios"
+          size="4xl"
+        >
+          <form onSubmit={handleSavePlansSubmit} className="space-y-4 py-2 text-xs">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Modificá los precios en UF/CLP, descripciones, límites operacionales y módulos de cada plan. Los cambios impactarán el catálogo de suscripción.
+            </p>
+
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+              {editingPlansList.map((plan, idx) => (
+                <div
+                  key={plan.tier}
+                  className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 space-y-3"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                      Plan: {plan.tier}
+                    </span>
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={plan.popular || false}
+                        onChange={(e) => {
+                          const updated = [...editingPlansList];
+                          updated[idx].popular = e.target.checked;
+                          setEditingPlansList(updated);
+                        }}
+                        className="rounded border-slate-300 dark:border-slate-700 text-blue-600"
+                      />
+                      <span className="text-[11px] font-semibold">Destacado (Más Vendido)</span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                        Nombre Comercial *
+                      </label>
+                      <Input
+                        value={plan.name}
+                        onChange={(e) => {
+                          const updated = [...editingPlansList];
+                          updated[idx].name = e.target.value;
+                          setEditingPlansList(updated);
+                        }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                        Precio Mensual (UF o Texto) *
+                      </label>
+                      <Input
+                        value={plan.priceMonthly}
+                        onChange={(e) => {
+                          const updated = [...editingPlansList];
+                          updated[idx].priceMonthly = e.target.value;
+                          setEditingPlansList(updated);
+                        }}
+                        placeholder="Ej: 28 UF / mes"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                        Perfil de Cliente Objetivo
+                      </label>
+                      <Input
+                        value={plan.target}
+                        onChange={(e) => {
+                          const updated = [...editingPlansList];
+                          updated[idx].target = e.target.value;
+                          setEditingPlansList(updated);
+                        }}
+                        placeholder="Ej: Constructoras medianas"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                      Descripción del Plan
+                    </label>
+                    <Input
+                      value={plan.description}
+                      onChange={(e) => {
+                        const updated = [...editingPlansList];
+                        updated[idx].description = e.target.value;
+                        setEditingPlansList(updated);
+                      }}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div>
+                      <label className="text-[10px] text-slate-500 block mb-0.5">Máx Usuarios</label>
+                      <Input
+                        type="number"
+                        value={plan.maxUsers}
+                        onChange={(e) => {
+                          const updated = [...editingPlansList];
+                          updated[idx].maxUsers = Number(e.target.value);
+                          setEditingPlansList(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-500 block mb-0.5">Máx Flota / Equipos</label>
+                      <Input
+                        type="number"
+                        value={plan.maxAssets}
+                        onChange={(e) => {
+                          const updated = [...editingPlansList];
+                          updated[idx].maxAssets = Number(e.target.value);
+                          setEditingPlansList(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-500 block mb-0.5">Emails Brevo / mes</label>
+                      <Input
+                        type="number"
+                        value={plan.maxMonthlyEmails}
+                        onChange={(e) => {
+                          const updated = [...editingPlansList];
+                          updated[idx].maxMonthlyEmails = Number(e.target.value);
+                          setEditingPlansList(updated);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-500 block mb-0.5">Telegram / mes</label>
+                      <Input
+                        type="number"
+                        value={plan.maxMonthlyMessages}
+                        onChange={(e) => {
+                          const updated = [...editingPlansList];
+                          updated[idx].maxMonthlyMessages = Number(e.target.value);
+                          setEditingPlansList(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditPlansModalOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={savePlansMutation.isPending}
+              >
+                Guardar Cambios de Catálogo
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal: Reset Backend Admin Password */}
+      {resetAdminUser && (
+        <Modal
+          isOpen={!!resetAdminUser}
+          onClose={() => setResetAdminUser(null)}
+          title={`Restablecer Contraseña: ${resetAdminUser.name}`}
+          size="md"
+        >
+          <form onSubmit={handleResetAdminPasswordSubmit} className="space-y-4 py-2 text-xs">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              Ingresá una nueva contraseña para el administrador maestro <strong>{resetAdminUser.email}</strong>.
+            </p>
+
+            <div>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                Nueva Contraseña Maestra *
+              </label>
+              <Input
+                type="password"
+                value={newAdminPassword}
+                onChange={(e) => setNewAdminPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                required
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setResetAdminUser(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+                disabled={resetAdminPassMutation.isPending}
+              >
+                Actualizar Contraseña
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
       {/* Modal: Create Backend Admin */}
       {isCreateAdminModalOpen && (
         <Modal
@@ -1373,6 +2066,67 @@ export function MasterPortalPage() {
               </Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Modal: Audit Log Detail Inspection */}
+      {selectedLogDetail && (
+        <Modal
+          isOpen={!!selectedLogDetail}
+          onClose={() => setSelectedLogDetail(null)}
+          title="Inspección de Registro de Auditoría"
+          size="lg"
+        >
+          <div className="space-y-4 py-2 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-100 dark:bg-slate-900 p-3 rounded-lg">
+              <div>
+                <span className="text-slate-500 block text-[10px]">Fecha:</span>
+                <strong className="text-slate-800 dark:text-slate-200">
+                  {new Date(selectedLogDetail.timestamp || selectedLogDetail.createdAt || '').toLocaleString('es-CL')}
+                </strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">Empresa:</span>
+                <strong className="text-slate-800 dark:text-slate-200">
+                  {selectedLogDetail.user?.tenant?.name || 'Staff KATEI'}
+                </strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">Usuario:</span>
+                <strong className="text-slate-800 dark:text-slate-200">
+                  {selectedLogDetail.user?.name || selectedLogDetail.userId || 'Sistema'}
+                </strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">Operación:</span>
+                <strong className="text-slate-800 dark:text-slate-200">
+                  {selectedLogDetail.entity} ({selectedLogDetail.action})
+                </strong>
+              </div>
+            </div>
+
+            {selectedLogDetail.ipAddress && (
+              <div className="text-xs text-slate-500">
+                <span>Dirección IP: </span>
+                <code className="font-mono text-slate-700 dark:text-slate-300">{selectedLogDetail.ipAddress}</code>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">
+                Payload / Detalle de la Operación (JSON):
+              </label>
+              <pre className="p-3 rounded-lg bg-slate-900 text-slate-100 font-mono text-[11px] overflow-auto max-h-72 border border-slate-800">
+                {JSON.stringify(selectedLogDetail.detail ?? selectedLogDetail.details ?? {}, null, 2)}
+              </pre>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-200 dark:border-slate-800">
+              <Button size="sm" onClick={() => setSelectedLogDetail(null)}>
+                Cerrar
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
 

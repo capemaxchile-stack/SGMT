@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
   Inject,
   forwardRef,
   Logger,
@@ -517,6 +518,207 @@ export class TenantsService {
         operatorCertifications: tenant.operatorCerts,
         budgets: tenant.budgets,
         usageMetrics: tenant.usageMetrics,
+      },
+    };
+  }
+
+  async getCommercialPlans() {
+    const setting = await this.prisma.systemSetting.findUnique({
+      where: { key: 'COMMERCIAL_PLANS' },
+    });
+
+    if (setting?.value) {
+      try {
+        return JSON.parse(setting.value);
+      } catch (e) {
+        this.logger.warn('Failed to parse COMMERCIAL_PLANS JSON, using defaults');
+      }
+    }
+
+    const defaultPlans = [
+      {
+        id: 'BASICO',
+        tier: 'BASICO',
+        name: 'Plan Básico Operativo',
+        priceMonthly: '12 UF / mes',
+        priceClp: 450000,
+        target: 'Contratistas pequeños, talleres o faenas unitarias',
+        description: 'Gestión esencial de flota, control de certificaciones y reportes.',
+        maxUsers: 5,
+        maxAssets: 10,
+        maxFaenas: 2,
+        maxMonthlyEmails: 200,
+        maxMonthlyMessages: 500,
+        maxMonthlyAiTokens: 50000,
+        enabledModules: ['DASHBOARD', 'FAENAS', 'FLOTA', 'CERTIFICACIONES', 'REPORTES'],
+      },
+      {
+        id: 'PRO',
+        tier: 'PRO',
+        name: 'Plan Profesional Constructor',
+        priceMonthly: '28 UF / mes',
+        priceClp: 1050000,
+        popular: true,
+        target: 'Empresas constructoras medianas y flotas activas',
+        description: 'Suite operativa completa: mantenimiento correctivo/preventivo, cargas de combustible, bodegas y pedidos terreno.',
+        maxUsers: 20,
+        maxAssets: 50,
+        maxFaenas: 5,
+        maxMonthlyEmails: 500,
+        maxMonthlyMessages: 1000,
+        maxMonthlyAiTokens: 100000,
+        enabledModules: [
+          'DASHBOARD',
+          'FAENAS',
+          'FLOTA',
+          'CERTIFICACIONES',
+          'MANTENIMIENTO',
+          'COMBUSTIBLE',
+          'BODEGA',
+          'REPORTES',
+          'TERRENO',
+        ],
+      },
+      {
+        id: 'ENTERPRISE',
+        tier: 'ENTERPRISE',
+        name: 'Plan Enterprise Corporativo',
+        priceMonthly: '48 UF / mes',
+        priceClp: 1800000,
+        target: 'Grandes constructoras, minería y flotas pesadas',
+        description: 'Acceso total sin restricciones: compras y abastecimiento, KATEI Copilot con IA, administración y soporte prioritario.',
+        maxUsers: 999,
+        maxAssets: 999,
+        maxFaenas: 999,
+        maxMonthlyEmails: 10000,
+        maxMonthlyMessages: 20000,
+        maxMonthlyAiTokens: 1000000,
+        enabledModules: [
+          'DASHBOARD',
+          'FAENAS',
+          'FLOTA',
+          'CERTIFICACIONES',
+          'MANTENIMIENTO',
+          'COMBUSTIBLE',
+          'BODEGA',
+          'COMPRAS',
+          'REPORTES',
+          'TERRENO',
+          'COPILOT',
+          'DOCUMENTACION',
+          'ADMINISTRACION',
+        ],
+      },
+    ];
+
+    await this.prisma.systemSetting.upsert({
+      where: { key: 'COMMERCIAL_PLANS' },
+      update: { value: JSON.stringify(defaultPlans) },
+      create: {
+        key: 'COMMERCIAL_PLANS',
+        value: JSON.stringify(defaultPlans),
+        description: 'Catálogo de planes comerciales SaaS y límites de servicio',
+      },
+    });
+
+    return defaultPlans;
+  }
+
+  async saveCommercialPlans(plans: any[]) {
+    await this.prisma.systemSetting.upsert({
+      where: { key: 'COMMERCIAL_PLANS' },
+      update: { value: JSON.stringify(plans) },
+      create: {
+        key: 'COMMERCIAL_PLANS',
+        value: JSON.stringify(plans),
+        description: 'Catálogo de planes comerciales SaaS y límites de servicio',
+      },
+    });
+    return plans;
+  }
+
+  async resetBackendAdminPassword(id: string, newPass: string) {
+    if (!newPass || newPass.trim().length < 6) {
+      throw new BadRequestException('La contraseña debe tener al menos 6 caracteres');
+    }
+
+    const admin = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        roles: {
+          include: { role: true },
+        },
+      },
+    });
+
+    if (!admin) {
+      throw new NotFoundException(`Usuario con ID '${id}' no encontrado`);
+    }
+
+    const isSuper = admin.roles.some((r) => r.role?.name === 'SUPER_USUARIO');
+    if (!isSuper) {
+      throw new ForbiddenException('Solo se pueden resetear claves de usuarios maestros mediante este endpoint');
+    }
+
+    const passwordHash = await bcrypt.hash(newPass.trim(), 12);
+
+    await this.prisma.user.update({
+      where: { id },
+      data: { passwordHash },
+    });
+
+    return {
+      success: true,
+      message: `Contraseña reestablecida correctamente para ${admin.name} (${admin.email})`,
+    };
+  }
+
+  async getTenantBusinessProfile(id: string) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            users: true,
+            faenas: true,
+            assets: true,
+            purchaseOrders: true,
+            workOrders: true,
+            warehouses: true,
+            fuelLogs: true,
+          },
+        },
+      },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Empresa con ID '${id}' no encontrada`);
+    }
+
+    const poAgg = await this.prisma.purchaseOrder.aggregate({
+      where: {
+        tenantId: id,
+        status: { in: ['APROBADA', 'APROBADA_EXCEPCION', 'EMITIDA', 'RECEPCION_TOTAL'] },
+      },
+      _sum: {
+        totalAmount: true,
+      },
+    });
+
+    const now = new Date();
+    const created = new Date(tenant.createdAt);
+    const diffMonths = Math.max(
+      1,
+      (now.getFullYear() - created.getFullYear()) * 12 + (now.getMonth() - created.getMonth()) + 1,
+    );
+
+    return {
+      tenant,
+      businessMetrics: {
+        createdAt: tenant.createdAt,
+        monthsActive: diffMonths,
+        totalPurchasesAmount: Number(poAgg._sum?.totalAmount || 0),
+        counts: tenant._count,
       },
     };
   }

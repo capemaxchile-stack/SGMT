@@ -8,7 +8,7 @@ export class AuditService {
   async findAll(
     skip: number = 0,
     take: number = 50,
-    filters?: { entity?: string; action?: string },
+    filters?: { entity?: string; action?: string; tenantId?: string },
   ) {
     const where: any = {};
     if (filters?.entity) {
@@ -16,6 +16,9 @@ export class AuditService {
     }
     if (filters?.action) {
       where.action = filters.action;
+    }
+    if (filters?.tenantId) {
+      where.user = { tenantId: filters.tenantId };
     }
 
     const logs = await this.prisma.auditLog.findMany({
@@ -29,6 +32,14 @@ export class AuditService {
             id: true,
             name: true,
             email: true,
+            tenantId: true,
+            tenant: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
           },
         },
       },

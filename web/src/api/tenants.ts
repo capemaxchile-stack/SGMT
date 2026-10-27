@@ -173,3 +173,86 @@ export async function downloadTenantBackup(id: string, slug: string) {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+export interface CommercialPlanConfig {
+  id: string;
+  tier: string;
+  name: string;
+  priceMonthly: string;
+  priceClp?: number;
+  popular?: boolean;
+  target: string;
+  description: string;
+  maxUsers: number;
+  maxAssets: number;
+  maxFaenas: number;
+  maxMonthlyEmails: number;
+  maxMonthlyMessages: number;
+  maxMonthlyAiTokens: number;
+  enabledModules: string[];
+}
+
+export interface TenantBusinessProfile {
+  tenant: Tenant;
+  businessMetrics: {
+    createdAt: string;
+    monthsActive: number;
+    totalPurchasesAmount: number;
+    counts: {
+      users: number;
+      faenas: number;
+      assets: number;
+      purchaseOrders: number;
+      workOrders: number;
+      warehouses: number;
+      fuelLogs: number;
+    };
+  };
+}
+
+export function useCommercialPlans() {
+  return useQuery<CommercialPlanConfig[]>({
+    queryKey: ['commercial-plans'],
+    queryFn: async () => {
+      const { data } = await api.get<CommercialPlanConfig[]>('/tenants/plans/catalog');
+      return data;
+    },
+  });
+}
+
+export function useSaveCommercialPlans() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (plans: CommercialPlanConfig[]) => {
+      const { data } = await api.put<CommercialPlanConfig[]>('/tenants/plans/catalog', plans);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['commercial-plans'] });
+    },
+  });
+}
+
+export function useResetBackendAdminPassword() {
+  return useMutation({
+    mutationFn: async ({ id, newPassword }: { id: string; newPassword: string }) => {
+      const { data } = await api.post<{ success: boolean; message: string }>(
+        `/tenants/backend-admins/${id}/reset-password`,
+        { newPassword },
+      );
+      return data;
+    },
+  });
+}
+
+export function useTenantBusinessProfile(tenantId?: string | null) {
+  return useQuery<TenantBusinessProfile>({
+    queryKey: ['tenant-business-profile', tenantId],
+    queryFn: async () => {
+      if (!tenantId) throw new Error('Tenant ID required');
+      const { data } = await api.get<TenantBusinessProfile>(`/tenants/${tenantId}/business-profile`);
+      return data;
+    },
+    enabled: Boolean(tenantId),
+  });
+}
