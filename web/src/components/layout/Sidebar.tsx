@@ -14,7 +14,6 @@ import {
   BookOpen,
   Settings,
   X,
-  Lock,
   Sparkles,
   Building2,
 } from 'lucide-react';
@@ -107,9 +106,11 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
   const visibleSections = navSections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) =>
-        item.module === 'PUBLIC' ? true : can(item.module, 'read')
-      ),
+      items: section.items.filter((item) => {
+        if (item.module === 'PUBLIC') return true;
+        // Solo mostrar si el módulo está habilitado en el plan y el usuario tiene permiso
+        return isModuleEnabled(item.module) && can(item.module, 'read');
+      }),
     }))
     .filter((section) => section.items.length > 0);
 
@@ -136,64 +137,35 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
               {section.title}
             </div>
             <ul className="space-y-0.5">
-              {section.items.map((item) => {
-                const isLocked = !isModuleEnabled(item.module);
-
-                if (isLocked) {
-                  return (
-                    <li key={item.path}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUpgradeModalItem({ name: item.name, module: item.module });
-                          if (onCloseMobile) onCloseMobile();
-                        }}
-                        className="w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-lg transition-colors text-xs font-medium text-slate-500 hover:text-slate-300 hover:bg-slate-800/40 text-left group"
-                        title="Disponible en Plan Superior"
-                      >
-                        <div className="flex items-center gap-2.5 truncate">
-                          <span className="opacity-60">{item.icon}</span>
-                          <span className="truncate">{item.name}</span>
-                        </div>
-                        <span className="flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 group-hover:bg-amber-500/20">
-                          <Lock size={10} />
-                          Upgrade
-                        </span>
-                      </button>
-                    </li>
-                  );
-                }
-
-                return (
-                  <li key={item.path}>
-                    <NavLink
-                      to={item.path}
-                      end={item.end}
-                      onClick={() => {
-                        if (onCloseMobile) onCloseMobile();
-                      }}
-                      className={({ isActive }) =>
-                        cn(
-                          'flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-xs font-medium',
-                          isActive
-                            ? 'bg-blue-600 text-white shadow-sm font-semibold'
-                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-                        )
-                      }
-                    >
-                      {item.icon}
-                      <span className="truncate">{item.name}</span>
-                    </NavLink>
-                  </li>
-                );
-              })}
+              {section.items.map((item) => (
+                <li key={item.path}>
+                  <NavLink
+                    to={item.path}
+                    end={item.end}
+                    onClick={() => {
+                      if (onCloseMobile) onCloseMobile();
+                    }}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-xs font-medium',
+                        isActive
+                          ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                          : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                      )
+                    }
+                  >
+                    {item.icon}
+                    <span className="truncate">{item.name}</span>
+                  </NavLink>
+                </li>
+              ))}
             </ul>
           </div>
         ))}
       </div>
 
-      {/* Corporate Footer with Multi-Tenant Info */}
-      <div className="p-3 mx-3 mb-3 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-400 text-xs">
+      {/* Corporate Footer with Multi-Tenant Info & Upgrade Action */}
+      <div className="p-3 mx-3 mb-3 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-400 text-xs space-y-2">
         <div className="flex items-center justify-between font-semibold text-slate-200">
           <div className="flex items-center gap-1.5 truncate max-w-[130px]">
             <Building2 size={13} className="text-blue-400 shrink-0" />
@@ -203,7 +175,23 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             {getPlanTier()}
           </span>
         </div>
-        <div className="text-[10px] text-slate-400 mt-1">
+
+        {/* Upgrade Plan Button (if not Enterprise) */}
+        {getPlanTier() !== 'ENTERPRISE' && (
+          <button
+            type="button"
+            onClick={() => {
+              setUpgradeModalItem({ name: 'Plataforma KATEI', module: 'UPGRADE' });
+              if (onCloseMobile) onCloseMobile();
+            }}
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/30 text-amber-300 text-[11px] font-bold transition shadow-xs"
+          >
+            <Sparkles size={12} className="text-amber-400" />
+            <span>Mejorar Plan (Upgrade)</span>
+          </button>
+        )}
+
+        <div className="text-[10px] text-slate-400 text-center">
           KATEI &bull; Gestión Operativa
         </div>
       </div>

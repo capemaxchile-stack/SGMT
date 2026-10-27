@@ -13,7 +13,7 @@ interface HeaderProps {
 }
 
 export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
-  const { user, logout, can, hasRole, isImpersonating } = useAuthStore();
+  const { user, logout, can, isModuleEnabled, hasRole, isImpersonating } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -51,8 +51,8 @@ export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
             </Link>
           )}
 
-          {/* KATEI Copilot AI Shortcut (governed by COPILOT permission) */}
-          {can('COPILOT', 'read') && (
+          {/* KATEI Copilot AI Shortcut (governed by Tenant Plan + COPILOT permission) */}
+          {isModuleEnabled('COPILOT') && can('COPILOT', 'read') && (
             <button
               type="button"
               onClick={onOpenCopilot}

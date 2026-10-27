@@ -77,6 +77,14 @@ const ALL_SYSTEM_MODULES = [
   'ADMINISTRACION',
 ];
 
+// Reglas de dependencias entre módulos para consistencia operativa
+const MODULE_DEPENDENCIES: Record<string, string[]> = {
+  COMPRAS: ['BODEGA'],
+  MANTENIMIENTO: ['FLOTA'],
+  COMBUSTIBLE: ['FLOTA'],
+  TERRENO: ['FLOTA'],
+};
+
 const PRESET_MODULES: Record<string, string[]> = {
   BASICO: ['DASHBOARD', 'FAENAS', 'FLOTA', 'CERTIFICACIONES', 'REPORTES'],
   PRO: [
@@ -279,9 +287,34 @@ export function MasterPortalPage() {
   const toggleModule = (mod: string) => {
     setFormPlan('PERSONALIZADO');
     if (formSelectedModules.includes(mod)) {
-      setFormSelectedModules(formSelectedModules.filter((m) => m !== mod));
+      // Si se desactiva un módulo, verificar si otros dependen de él
+      const dependents = Object.entries(MODULE_DEPENDENCIES)
+        .filter(([key, deps]) => formSelectedModules.includes(key) && deps.includes(mod))
+        .map(([key]) => key);
+
+      if (dependents.length > 0) {
+        toast.info(
+          `Al desmarcar ${mod}, se desmarcaron también módulos dependientes: ${dependents.join(', ')}`
+        );
+        setFormSelectedModules(
+          formSelectedModules.filter((m) => m !== mod && !dependents.includes(m))
+        );
+      } else {
+        setFormSelectedModules(formSelectedModules.filter((m) => m !== mod));
+      }
     } else {
-      setFormSelectedModules([...formSelectedModules, mod]);
+      // Si se activa, agregar también sus dependencias requeridas
+      const required = MODULE_DEPENDENCIES[mod] || [];
+      const missing = required.filter((r) => !formSelectedModules.includes(r));
+
+      if (missing.length > 0) {
+        toast.info(
+          `El módulo ${mod} requiere activar también: ${missing.join(', ')}`
+        );
+        setFormSelectedModules([...formSelectedModules, mod, ...missing]);
+      } else {
+        setFormSelectedModules([...formSelectedModules, mod]);
+      }
     }
   };
 

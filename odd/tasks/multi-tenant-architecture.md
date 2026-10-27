@@ -24,6 +24,11 @@ Branch: develop | Delivery: Reviewable Slices | Test Runner: Jest (API) & Vitest
 - S20: "La configuracion de Telegram y Brevo debe quedar abierta a configurar en cada nuevo cliente, no debemos usar la cuenta general para cada uno, esto por que creo que cada empres va tener que configurar su propio servicio y canales de mensajeria."
 - S21: "El cron de reporte diario hay que revisar que funcione por cada empresa que lo active, para tener eso en mente y funcionando."
 - S22: "El boton de olvidaste tu contraseña no funciona aun, debemos revisar eso, tal vez eso si podemos usar el sistema Brevo actual, que seria el propio interno de Katei para esos casos."
+- S23: "Cree una nueva empresa, le llego el correo, bien por eso. El problema es que lo cree basico y figura igualmente copilot activo, siendo que no esta marcado, debes revisar eso."
+- S24: "Otro detalle, en usuarios de empresa samtech que cree, al editar el usuario administrador, me permite cambiar su correo, eso deberia ser valido o no?"
+- S25: "Creo que en panel de ayuda o documentacion debiera ser estandar para todos, considerando es la documentacion de funcionamiento del sistema. Lo que si, es que debiera mostrar los paneles y herramientas que tiene disponible, por lo que hayy que revisar bien wque cuadre con cada herramienta."
+- S26: "En los planes debieramos chequear y validar si hay modulos que dependan de otros o que sean necesarios su activacion, para que al elegirlos, el sistema indique que el modulo es requerido para funcionar."
+- S27: "No me gusta que los modulos no habilitados figuren como upgrade, por que ensucian los menus. Creo que mejor que exista un boton que diga Upgrade Plan y ahi muestre las herramientas disponibles o planes que desee escalar, tal como lo hacen otros sistemas."
 
 ## Tasks
 - [x] T1 (S5): Crear y publicar rama `develop` aislada de producción. (Route: inline, Commit: 2eb9798 / develop)
@@ -56,6 +61,11 @@ Branch: develop | Delivery: Reviewable Slices | Test Runner: Jest (API) & Vitest
 - [x] T28 (S22): Recuperación de contraseña segura con Brevo central KATEI (`POST /api/auth/forgot-password` y `POST /api/auth/reset-password`) y vista/modal en el login. (Route: inline)
 - [x] T29 (S20): Configuración de canales de mensajería (Telegram y Brevo) por cliente (almacenamiento por tenant o fallback) con gestión en Configuración del cliente. (Route: inline)
 - [x] T30 (S21): Cron de reporte diario multitenant iterativo por empresa activa en `notification-scheduler.service.ts` enviando alertas aisladas con sus propios canales. (Route: inline)
+- [x] T31 (S23): Restringir visibilidad de Copilot IA evaluando de forma estricta `isModuleEnabled('COPILOT') && can('COPILOT', 'read')` para planes básicos o sin Copilot. (Route: inline)
+- [x] T32 (S24): Bloquear edición arbitraria de correo del usuario administrador cliente en `AdminPage.tsx` con advertencia de seguridad. (Route: inline)
+- [x] T33 (S25): Adaptar centro de documentación interactivo (`DocumentacionPage.tsx`) mostrando solo flujos y módulos contratados por el plan de la empresa. (Route: inline)
+- [x] T34 (S26): Implementar matriz de dependencias de módulos en `MasterPortalPage.tsx` (Compras -> Bodega; Mantenimiento/Combustible -> Flota, etc.). (Route: inline)
+- [x] T35 (S27): Limpiar menú lateral (`Sidebar.tsx`) eliminando botones bloqueados con badge 'Upgrade' y agregando botón unificado 'Mejorar Plan' al pie. (Route: inline)
 
 ## Log
 - L1 (2026-10-26): "Creo que los modelos o planes, debieran configurarse, es decir podria armar un plan particular con ciertas herramientas a cada cliente. Eso debe ser felxible y configurable. Cada plan no debe tener o ver herramientas que no haya contratado, pero si es bueno sepa existen disponibles o bajo planes diferentes. Por lo pronto, los 3 que me sugieres me parecen bien. COmienza, andame indicando dudas o revisiones. Un punto importante que te iba a mencionar, es que me gustaria tener una rama de desarrollo, para que cualquier cambio no afecte a futuro al sistema en produccion.}"

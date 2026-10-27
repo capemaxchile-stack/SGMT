@@ -1198,13 +1198,30 @@ export function AdminPage() {
               onChange={(e) => setEditUserName(e.target.value)}
               required
             />
-            <Input
-              label="Correo Electrónico *"
-              type="email"
-              value={editUserEmail}
-              onChange={(e) => setEditUserEmail(e.target.value)}
-              required
-            />
+            <div>
+              <Input
+                label="Correo Electrónico (Identidad de Acceso)"
+                type="email"
+                value={editUserEmail}
+                onChange={(e) => setEditUserEmail(e.target.value)}
+                disabled={Boolean(
+                  selectedUser?.roles?.some((r: any) => {
+                    const roleName = typeof r === 'string' ? r : r.role?.name || r.name;
+                    return roleName === 'ADMIN_SISTEMA' || roleName === 'SUPER_USUARIO';
+                  })
+                )}
+                required
+              />
+              {selectedUser?.roles?.some((r: any) => {
+                const roleName = typeof r === 'string' ? r : r.role?.name || r.name;
+                return roleName === 'ADMIN_SISTEMA' || roleName === 'SUPER_USUARIO';
+              }) && (
+                <p className="text-[11px] text-amber-500 dark:text-amber-400 mt-1 flex items-center gap-1">
+                  <Shield size={12} className="shrink-0" />
+                  El correo del administrador principal no puede modificarse directamente para proteger el acceso a la empresa.
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">

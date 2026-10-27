@@ -12,9 +12,9 @@ export function AppLayout() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const navigate = useNavigate();
-  const { can, isImpersonating, stopImpersonating, getTenantName } = useAuthStore();
+  const { can, isModuleEnabled, isImpersonating, stopImpersonating, getTenantName } = useAuthStore();
   const { copilotEnabled } = useThemeStore();
-  const hasCopilotAccess = copilotEnabled && can('COPILOT', 'read');
+  const hasCopilotAccess = copilotEnabled && isModuleEnabled('COPILOT') && can('COPILOT', 'read');
 
   // Global Keyboard Shortcut: Ctrl+K or Cmd+K to toggle Copilot
   useEffect(() => {
