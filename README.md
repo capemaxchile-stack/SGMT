@@ -1,4 +1,4 @@
-# SGMT — Sistema de Gestión Movimiento de Tierra
+# KATEI — Sistema de Gestión Movimiento de Tierra
 
 Management system for earthmoving companies operating multiple job sites. Handles purchases, warehouse/inventory, fleet management, budget control, and hierarchical authorization workflows.
 
