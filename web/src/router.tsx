@@ -18,6 +18,7 @@ const ReportesPage = lazy(() => import('./pages/reportes/ReportesPage').then(m =
 const DocumentacionPage = lazy(() => import('./pages/docs/DocumentacionPage').then(m => ({ default: m.DocumentacionPage })));
 const CertificacionesPage = lazy(() => import('./pages/certificaciones/CertificacionesPage').then(m => ({ default: m.CertificacionesPage })));
 const AdminPage = lazy(() => import('./pages/admin/AdminPage').then(m => ({ default: m.AdminPage })));
+const MasterPortalPage = lazy(() => import('./pages/master/MasterPortalPage').then(m => ({ default: m.MasterPortalPage })));
 
 const routeFallback = (
   <div className="flex h-64 w-full items-center justify-center">
@@ -38,6 +39,14 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: withSuspense(LoginPage),
+  },
+  {
+    path: '/super-admin',
+    element: (
+      <ProtectedRoute requiredRole="SUPER_USUARIO">
+        {withSuspense(MasterPortalPage)}
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/terreno',

@@ -60,6 +60,8 @@ describe('JwtStrategy Empirical Verification', () => {
       id: 'active-user',
       email: 'active@sgmt.cl',
       isActive: true,
+      tenantId: 'tenant-123',
+      tenant: { id: 'tenant-123', name: 'Empresa Test', slug: 'test', planTier: 'PRO', status: 'ACTIVO', enabledModules: [] },
     });
     const result = await strategy.validate({ sub: 'active-user', roles: ['BODEGUERO'] });
     expect(result).toEqual({
@@ -67,6 +69,9 @@ describe('JwtStrategy Empirical Verification', () => {
       email: 'active@sgmt.cl',
       roles: ['BODEGUERO'],
       isActive: true,
+      tenantId: 'tenant-123',
+      tenant: { id: 'tenant-123', name: 'Empresa Test', slug: 'test', planTier: 'PRO', status: 'ACTIVO', enabledModules: [] },
+      isImpersonating: false,
     });
   });
 

@@ -14,6 +14,7 @@ import {
 import { TenantsService } from './tenants.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { CreateBackendAdminDto } from './dto/create-backend-admin.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -56,6 +57,24 @@ export class TenantsController {
       };
     }
     return this.tenantsService.findOne(tenantId);
+  }
+
+  @Get('backend-admins')
+  @Roles('SUPER_USUARIO')
+  getBackendAdmins() {
+    return this.tenantsService.getBackendAdmins();
+  }
+
+  @Post('backend-admins')
+  @Roles('SUPER_USUARIO')
+  createBackendAdmin(@Body() dto: CreateBackendAdminDto) {
+    return this.tenantsService.createBackendAdmin(dto);
+  }
+
+  @Post(':id/impersonate')
+  @Roles('SUPER_USUARIO')
+  impersonate(@Param('id') id: string, @Request() req: any) {
+    return this.tenantsService.impersonate(id, req.user);
   }
 
   @Get(':id')

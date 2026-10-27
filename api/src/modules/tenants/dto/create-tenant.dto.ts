@@ -72,4 +72,19 @@ export class CreateTenantDto {
   @IsOptional()
   @IsString()
   billingNotes?: string;
+
+  @IsOptional()
+  @IsEmail({}, { message: 'El correo del administrador inicial no es válido' })
+  adminEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  adminName?: string;
+
+  @IsOptional()
+  @IsString()
+  adminInitialPassword?: string;
+
+  @IsOptional()
+  sendWelcomeEmail?: boolean;
 }

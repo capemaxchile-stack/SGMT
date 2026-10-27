@@ -46,13 +46,29 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Usuario no válido o inactivo');
     }
 
+    let effectiveTenant = user.tenant;
+    if (payload.isImpersonating && payload.tenantId) {
+      effectiveTenant = await this.prisma.tenant.findUnique({
+        where: { id: payload.tenantId },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          planTier: true,
+          status: true,
+          enabledModules: true,
+        },
+      });
+    }
+
     return {
       id: user.id,
       email: user.email,
       roles: payload.roles,
       isActive: user.isActive,
-      tenantId: user.tenantId,
-      tenant: user.tenant,
+      tenantId: payload.tenantId || user.tenantId,
+      tenant: effectiveTenant,
+      isImpersonating: Boolean(payload.isImpersonating),
     };
   }
 }

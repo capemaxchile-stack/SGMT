@@ -33,7 +33,7 @@ export const APP_VERSION = 'v1.6.1' as const;
 export const BUILD_DATE = '2026.10.11' as const;
 
 export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
-  const { can, isModuleEnabled, getPlanTier, getTenantName } = useAuthStore();
+  const { can, isModuleEnabled, getPlanTier, getTenantName, hasRole, isImpersonating } = useAuthStore();
   const [upgradeModalItem, setUpgradeModalItem] = useState<{ name: string; module: string } | null>(null);
 
   interface NavItem {
@@ -87,6 +87,21 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
         { name: 'Configuración & Permisos', path: '/admin', icon: <Settings size={18} />, module: 'ADMINISTRACION' },
       ],
     },
+    ...(hasRole('SUPER_USUARIO') && !isImpersonating()
+      ? [
+          {
+            title: 'Control Maestro',
+            items: [
+              {
+                name: 'Portal Maestro SaaS',
+                path: '/super-admin',
+                icon: <Building2 size={18} />,
+                module: 'PUBLIC',
+              },
+            ],
+          },
+        ]
+      : []),
   ];
 
   const visibleSections = navSections

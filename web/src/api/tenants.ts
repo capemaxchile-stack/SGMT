@@ -27,6 +27,22 @@ export interface Tenant {
   };
 }
 
+export interface CreateTenantPayload extends Partial<Tenant> {
+  adminEmail?: string;
+  adminName?: string;
+  adminInitialPassword?: string;
+  sendWelcomeEmail?: boolean;
+}
+
+export interface BackendAdmin {
+  id: string;
+  email: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  tenantId?: string | null;
+}
+
 export interface TenantUsageSummary {
   tenantId: string;
   tenantName: string;
@@ -84,8 +100,8 @@ export function useTenantUsage(tenantId?: string, period?: string) {
 export function useCreateTenant() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: Partial<Tenant>) => {
-      const { data } = await api.post<Tenant>('/tenants', payload);
+    mutationFn: async (payload: CreateTenantPayload) => {
+      const { data } = await api.post<any>('/tenants', payload);
       return data;
     },
     onSuccess: () => {
@@ -103,6 +119,42 @@ export function useUpdateTenant() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
+    },
+  });
+}
+
+export function useImpersonateTenant() {
+  return useMutation({
+    mutationFn: async (tenantId: string) => {
+      const { data } = await api.post<{
+        accessToken: string;
+        refreshToken: string;
+        user: any;
+      }>(`/tenants/${tenantId}/impersonate`);
+      return data;
+    },
+  });
+}
+
+export function useBackendAdmins() {
+  return useQuery<BackendAdmin[]>({
+    queryKey: ['backend-admins'],
+    queryFn: async () => {
+      const { data } = await api.get<BackendAdmin[]>('/tenants/backend-admins');
+      return data;
+    },
+  });
+}
+
+export function useCreateBackendAdmin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { email: string; name: string; password: string }) => {
+      const { data } = await api.post<BackendAdmin>('/tenants/backend-admins', payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['backend-admins'] });
     },
   });
 }

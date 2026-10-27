@@ -7,6 +7,7 @@ interface AuthState {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
+  originalSession: { user: User; accessToken: string; refreshToken: string } | null;
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => void;
   refreshAccessToken: () => Promise<void>;
@@ -16,6 +17,9 @@ interface AuthState {
   isModuleEnabled: (module: string) => boolean;
   getPlanTier: () => string;
   getTenantName: () => string;
+  isImpersonating: () => boolean;
+  impersonateTenant: (tokenData: { accessToken: string; refreshToken: string; user: any }) => void;
+  stopImpersonating: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -24,12 +28,13 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       refreshToken: null,
+      originalSession: null,
       login: async (credentials) => {
         const { data } = await api.post<AuthResponse>('/auth/login', credentials);
-        set({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
+        set({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken, originalSession: null });
       },
       logout: () => {
-        set({ user: null, accessToken: null, refreshToken: null });
+        set({ user: null, accessToken: null, refreshToken: null, originalSession: null });
         window.location.href = '/login';
       },
       refreshAccessToken: async () => {
@@ -80,7 +85,7 @@ export const useAuthStore = create<AuthState>()(
         const user = get().user;
         if (!user) return false;
         const roles = user.roles || [];
-        if (roles.includes('SUPER_USUARIO')) return true;
+        if (roles.includes('SUPER_USUARIO') && !get().isImpersonating()) return true;
         if (!user.tenant || !user.tenant.enabledModules) return true;
         return user.tenant.enabledModules.includes(module);
       },
@@ -89,6 +94,38 @@ export const useAuthStore = create<AuthState>()(
       },
       getTenantName: () => {
         return get().user?.tenant?.name || 'KATEI Operaciones';
+      },
+      isImpersonating: () => {
+        return Boolean(get().originalSession || (get().user as any)?.isImpersonating);
+      },
+      impersonateTenant: (tokenData) => {
+        const current = get();
+        if (!current.originalSession && current.user && current.accessToken && current.refreshToken) {
+          set({
+            originalSession: {
+              user: current.user,
+              accessToken: current.accessToken,
+              refreshToken: current.refreshToken,
+            },
+          });
+        }
+        set({
+          user: tokenData.user,
+          accessToken: tokenData.accessToken,
+          refreshToken: tokenData.refreshToken,
+        });
+      },
+      stopImpersonating: () => {
+        const orig = get().originalSession;
+        if (orig) {
+          set({
+            user: orig.user,
+            accessToken: orig.accessToken,
+            refreshToken: orig.refreshToken,
+            originalSession: null,
+          });
+        }
+        window.location.href = '/super-admin';
       },
     }),
     {

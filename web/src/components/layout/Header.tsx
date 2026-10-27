@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { useThemeStore } from '../../stores/theme.store';
-import { LogOut, Menu, Sun, Moon, Settings, Sparkles } from 'lucide-react';
+import { LogOut, Menu, Sun, Moon, Settings, Sparkles, ShieldCheck } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { UserProfileModal } from './UserProfileModal';
 import { NotificationsPopover } from './NotificationsPopover';
@@ -12,7 +13,7 @@ interface HeaderProps {
 }
 
 export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
-  const { user, logout, can } = useAuthStore();
+  const { user, logout, can, hasRole, isImpersonating } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -38,6 +39,18 @@ export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* SaaS Super Admin Master Portal Shortcut */}
+          {hasRole('SUPER_USUARIO') && !isImpersonating() && (
+            <Link
+              to="/super-admin"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500 transition-all shadow-sm text-xs font-bold"
+              title="Portal Maestro SaaS (Control KATEI)"
+            >
+              <ShieldCheck size={15} className="text-indigo-200" />
+              <span className="hidden sm:inline">Portal Maestro</span>
+            </Link>
+          )}
+
           {/* KATEI Copilot AI Shortcut (governed by COPILOT permission) */}
           {can('COPILOT', 'read') && (
             <button

@@ -135,6 +135,33 @@ export class AuthService {
     };
   }
 
+  async createImpersonationToken(superUser: any, targetTenant: any): Promise<AuthResponseDto> {
+    const payload = {
+      email: superUser.email,
+      sub: superUser.id,
+      roles: superUser.roles,
+      tenantId: targetTenant.id,
+      isImpersonating: true,
+      originalTenantId: superUser.tenantId || null,
+    };
+    const refreshSecret = this.refreshSecret;
+    const refreshExpiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '7d');
+
+    return {
+      accessToken: this.jwtService.sign(payload),
+      refreshToken: this.jwtService.sign(payload, {
+        secret: refreshSecret,
+        expiresIn: refreshExpiresIn,
+      }),
+      user: {
+        ...superUser,
+        tenantId: targetTenant.id,
+        tenant: targetTenant,
+        isImpersonating: true,
+      },
+    };
+  }
+
   async refreshToken(token: string): Promise<AuthResponseDto> {
     try {
       const decoded = this.jwtService.verify(token, {

@@ -3,11 +3,18 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Inject,
+  forwardRef,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { CreateBackendAdminDto } from './dto/create-backend-admin.dto';
 import { TenantPlanTier, TenantStatus } from '@prisma/client';
+import { AuthService } from '../auth/auth.service';
+import { NotificationChannelsService } from '../notifications/notification-channels.service';
+import * as bcrypt from 'bcrypt';
 
 export const PLAN_PRESET_MODULES: Record<TenantPlanTier, string[]> = {
   [TenantPlanTier.BASICO]: [
@@ -47,7 +54,15 @@ export const PLAN_PRESET_MODULES: Record<TenantPlanTier, string[]> = {
 
 @Injectable()
 export class TenantsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(TenantsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
+    @Inject(forwardRef(() => NotificationChannelsService))
+    private readonly notificationChannelsService: NotificationChannelsService,
+  ) {}
 
   async findAll() {
     return this.prisma.tenant.findMany({
@@ -122,7 +137,7 @@ export class TenantsService {
       enabledModules = PLAN_PRESET_MODULES[planTier] || PLAN_PRESET_MODULES[TenantPlanTier.PRO];
     }
 
-    return this.prisma.tenant.create({
+    const tenant = await this.prisma.tenant.create({
       data: {
         name: dto.name.trim(),
         slug: dto.slug.toLowerCase().trim(),
@@ -142,6 +157,123 @@ export class TenantsService {
         billingNotes: dto.billingNotes,
       },
     });
+
+    let initialUser: any = null;
+
+    // Provision initial administrator if adminEmail is provided
+    if (dto.adminEmail) {
+      const email = dto.adminEmail.toLowerCase().trim();
+      const rawPassword = dto.adminInitialPassword?.trim() || `Katei${Math.floor(1000 + Math.random() * 9000)}!`;
+      const passwordHash = await bcrypt.hash(rawPassword, 12);
+
+      // Find or create ADMIN_SISTEMA role
+      let adminRole = await this.prisma.role.findFirst({
+        where: { name: 'ADMIN_SISTEMA' },
+      });
+
+      if (!adminRole) {
+        adminRole = await this.prisma.role.create({
+          data: {
+            name: 'ADMIN_SISTEMA',
+            displayName: 'Administrador del Sistema',
+            level: 100,
+          },
+        });
+      }
+
+      // Check if user exists
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingUser) {
+        initialUser = await this.prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            tenantId: tenant.id,
+            name: dto.adminName?.trim() || existingUser.name,
+            passwordHash,
+          },
+          select: { id: true, email: true, name: true },
+        });
+      } else {
+        initialUser = await this.prisma.user.create({
+          data: {
+            email,
+            name: dto.adminName?.trim() || 'Administrador',
+            passwordHash,
+            tenantId: tenant.id,
+            isActive: true,
+            roles: {
+              create: [{ roleId: adminRole.id }],
+            },
+          },
+          select: { id: true, email: true, name: true },
+        });
+      }
+
+      initialUser.tempPassword = rawPassword;
+
+      // Send Welcome Email if requested
+      if (dto.sendWelcomeEmail) {
+        this.sendWelcomeEmail(tenant, initialUser, rawPassword).catch((err) =>
+          this.logger.warn(`Could not dispatch welcome email to ${email}: ${err.message}`),
+        );
+      }
+    }
+
+    return {
+      ...tenant,
+      initialUser,
+    };
+  }
+
+  private async sendWelcomeEmail(tenant: any, user: any, tempPass: string) {
+    const config = await this.notificationChannelsService.getConfig(true);
+    const apiKey = config.brevo?.apiKey;
+    const senderEmail = config.brevo?.senderEmail || 'alertas@katei.cl';
+    const senderName = 'KATEI Plataforma Operativa';
+
+    if (!apiKey) {
+      this.logger.log(`Brevo API key not configured, welcome email to ${user.email} logged only.`);
+      return;
+    }
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 24px; text-align: center; color: white;">
+          <h1 style="margin: 0; font-size: 22px; font-weight: 800;">¡Bienvenido a KATEI!</h1>
+          <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Plataforma de Gestión de Maquinaria y Operaciones</p>
+        </div>
+        <div style="padding: 24px; color: #1e293b; font-size: 14px; line-height: 1.6;">
+          <p>Hola <strong>${user.name}</strong>,</p>
+          <p>Se ha configurado exitosamente el espacio de trabajo para <strong>${tenant.name}</strong> en KATEI con el plan <strong>${tenant.planTier}</strong>.</p>
+          
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <div style="font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">Credenciales de Acceso:</div>
+            <div style="margin-bottom: 6px;"><strong>URL:</strong> <a href="https://sgmt.capemaxchile.com" style="color: #2563eb;">https://sgmt.capemaxchile.com</a></div>
+            <div style="margin-bottom: 6px;"><strong>Usuario / Email:</strong> ${user.email}</div>
+            <div><strong>Contraseña Temporal:</strong> <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${tempPass}</code></div>
+          </div>
+
+          <p style="font-size: 13px; color: #64748b;">
+            Te recomendamos cambiar tu contraseña una vez que ingreses por primera vez a la plataforma.
+          </p>
+        </div>
+        <div style="background: #f1f5f9; padding: 14px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
+          KATEI &bull; Soporte Operacional &bull; contacto@katei.cl
+        </div>
+      </div>
+    `;
+
+    await (this.notificationChannelsService as any).executeBrevoSend(
+      apiKey,
+      senderEmail,
+      senderName,
+      [user.email],
+      `Bienvenido a KATEI - Credenciales de Acceso (${tenant.name})`,
+      html,
+    );
   }
 
   async update(id: string, dto: UpdateTenantDto) {
@@ -204,5 +336,94 @@ export class TenantsService {
         aiTokensPercent: tenant.maxMonthlyAiTokens > 0 ? (((metric?.aiTokensUsed || 0) / tenant.maxMonthlyAiTokens) * 100).toFixed(1) : '0',
       },
     };
+  }
+
+  async impersonate(id: string, superUser: any) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        planTier: true,
+        status: true,
+        enabledModules: true,
+      },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Tenant con ID '${id}' no encontrado`);
+    }
+
+    return this.authService.createImpersonationToken(superUser, tenant);
+  }
+
+  async getBackendAdmins() {
+    return this.prisma.user.findMany({
+      where: {
+        roles: {
+          some: {
+            role: {
+              name: 'SUPER_USUARIO',
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isActive: true,
+        createdAt: true,
+        tenantId: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createBackendAdmin(dto: CreateBackendAdminDto) {
+    const email = dto.email.toLowerCase().trim();
+    const existing = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (existing) {
+      throw new ConflictException(`El correo '${email}' ya está registrado en el sistema`);
+    }
+
+    let superRole = await this.prisma.role.findFirst({
+      where: { name: 'SUPER_USUARIO' },
+    });
+
+    if (!superRole) {
+      superRole = await this.prisma.role.create({
+        data: {
+          name: 'SUPER_USUARIO',
+          displayName: 'Super Usuario KATEI',
+          level: 1000,
+        },
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+
+    return this.prisma.user.create({
+      data: {
+        email,
+        name: dto.name.trim(),
+        passwordHash,
+        tenantId: null,
+        isActive: true,
+        roles: {
+          create: [{ roleId: superRole.id }],
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
   }
 }
