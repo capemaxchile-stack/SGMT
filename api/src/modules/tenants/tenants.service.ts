@@ -267,14 +267,105 @@ export class TenantsService {
       </div>
     `;
 
+    const recipients = Array.from(
+      new Set(
+        [user.email, tenant.contactEmail]
+          .filter((e): e is string => Boolean(e && typeof e === 'string' && e.includes('@')))
+          .map((e) => e.trim().toLowerCase()),
+      ),
+    );
+
     await (this.notificationChannelsService as any).executeBrevoSend(
       apiKey,
       senderEmail,
       senderName,
-      [user.email],
+      recipients,
       `Bienvenido a KATEI - Credenciales de Acceso (${tenant.name})`,
       html,
     );
+  }
+
+  async resendWelcomeEmail(id: string, targetEmail?: string, customPassword?: string) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id },
+      include: {
+        users: {
+          take: 1,
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Empresa con ID '${id}' no encontrada`);
+    }
+
+    const adminUser = tenant.users[0];
+    if (!adminUser) {
+      throw new BadRequestException('La empresa no tiene usuarios administradores registrados.');
+    }
+
+    const tempPassword = customPassword || `Katei${Math.floor(100000 + Math.random() * 900000)}!`;
+    const passwordHash = await bcrypt.hash(tempPassword, 12);
+
+    await this.prisma.user.update({
+      where: { id: adminUser.id },
+      data: { passwordHash, isActive: true },
+    });
+
+    const destination = targetEmail?.trim() || tenant.contactEmail || adminUser.email;
+    const config = await this.notificationChannelsService.getConfig(true);
+    const apiKey = config.brevo?.apiKey;
+    const senderEmail = config.brevo?.senderEmail || 'alertas@katei.cl';
+    const senderName = 'KATEI Plataforma Operativa';
+
+    if (!apiKey) {
+      throw new BadRequestException('Servicio Brevo no configurado.');
+    }
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 24px; text-align: center; color: white;">
+          <h1 style="margin: 0; font-size: 22px; font-weight: 800;">¡Bienvenido a KATEI!</h1>
+          <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Plataforma de Gestión de Maquinaria y Operaciones</p>
+        </div>
+        <div style="padding: 24px; color: #1e293b; font-size: 14px; line-height: 1.6;">
+          <p>Hola <strong>${adminUser.name}</strong>,</p>
+          <p>Te enviamos las credenciales de acceso para tu espacio de trabajo en <strong>${tenant.name}</strong> (Plan <strong>${tenant.planTier}</strong>):</p>
+          
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <div style="font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">Credenciales de Acceso:</div>
+            <div style="margin-bottom: 6px;"><strong>URL de Acceso:</strong> <a href="http://192.168.4.63:8080/login" style="color: #2563eb; font-weight: 600;">http://192.168.4.63:8080/login</a></div>
+            <div style="margin-bottom: 6px;"><strong>Usuario / Email:</strong> ${adminUser.email}</div>
+            <div><strong>Contraseña:</strong> <code style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-family: monospace; font-size: 14px; color: #0f172a;">${tempPassword}</code></div>
+          </div>
+
+          <p style="font-size: 13px; color: #64748b;">
+            Puedes iniciar sesión inmediatamente en la URL indicada. Te recomendamos cambiar tu clave en el menú de perfil una vez que ingreses.
+          </p>
+        </div>
+        <div style="background: #f1f5f9; padding: 14px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
+          KATEI &bull; Plataforma SaaS &bull; contacto@katei.cl
+        </div>
+      </div>
+    `;
+
+    const sendRes = await (this.notificationChannelsService as any).executeBrevoSend(
+      apiKey,
+      senderEmail,
+      senderName,
+      [destination],
+      `Credenciales de Acceso KATEI - ${tenant.name}`,
+      html,
+    );
+
+    return {
+      success: true,
+      sentTo: destination,
+      userEmail: adminUser.email,
+      tempPassword,
+      brevoMessageId: sendRes.details?.messageId,
+    };
   }
 
   async update(id: string, dto: UpdateTenantDto) {

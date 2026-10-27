@@ -269,3 +269,17 @@ export function useDeleteTenant() {
     },
   });
 }
+
+export function useResendWelcomeEmail() {
+  return useMutation({
+    mutationFn: async ({ id, targetEmail, customPassword }: { id: string; targetEmail?: string; customPassword?: string }) => {
+      const { data } = await api.post<{
+        success: boolean;
+        sentTo: string;
+        userEmail: string;
+        tempPassword?: string;
+      }>(`/tenants/${id}/resend-welcome`, { targetEmail, customPassword });
+      return data;
+    },
+  });
+}

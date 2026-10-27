@@ -148,6 +148,16 @@ export class TenantsController {
     return this.tenantsService.exportTenantData(id);
   }
 
+  @Post(':id/resend-welcome')
+  @Roles('SUPER_USUARIO')
+  resendWelcome(
+    @Param('id') id: string,
+    @Body('targetEmail') targetEmail?: string,
+    @Body('customPassword') customPassword?: string,
+  ) {
+    return this.tenantsService.resendWelcomeEmail(id, targetEmail, customPassword);
+  }
+
   @Delete(':id')
   @Roles('SUPER_USUARIO')
   remove(@Param('id') id: string) {

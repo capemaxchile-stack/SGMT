@@ -13,6 +13,7 @@ import {
   useResetBackendAdminPassword,
   useTenantBusinessProfile,
   useDeleteTenant,
+  useResendWelcomeEmail,
   downloadTenantBackup,
   Tenant,
   CommercialPlanConfig,
@@ -127,6 +128,7 @@ export function MasterPortalPage() {
   const savePlansMutation = useSaveCommercialPlans();
   const resetAdminPassMutation = useResetBackendAdminPassword();
   const deleteTenantMutation = useDeleteTenant();
+  const resendWelcomeMutation = useResendWelcomeEmail();
 
   // Modals & State
   const [selectedTenantForUsage, setSelectedTenantForUsage] = useState<string | null>(null);
@@ -387,6 +389,21 @@ export function MasterPortalPage() {
       toast.error(err.response?.data?.message || 'Error al exportar datos de la empresa');
     } finally {
       setExportingTenantId(null);
+    }
+  };
+
+  const handleResendWelcome = async (tenant: Tenant) => {
+    try {
+      const target = window.prompt(`¿A qué correo deseas enviar las credenciales de acceso para ${tenant.name}?`, tenant.contactEmail || '');
+      if (target === null) return;
+      toast.info(`Despachando correo de bienvenida a ${target}...`);
+      const res = await resendWelcomeMutation.mutateAsync({
+        id: tenant.id,
+        targetEmail: target.trim() || undefined,
+      });
+      toast.success(`Credenciales enviadas a ${res.sentTo} (Clave: ${res.tempPassword})`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Error al reenviar correo de bienvenida');
     }
   };
 
@@ -823,6 +840,20 @@ export function MasterPortalPage() {
                               <Download size={12} className="text-emerald-500" />
                               Backup
                             </Button>
+
+                            {t.slug !== 'principal' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleResendWelcome(t)}
+                                disabled={resendWelcomeMutation.isPending}
+                                className="text-xs h-7 px-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1"
+                                title="Reenviar correo de bienvenida y credenciales de acceso vía Brevo"
+                              >
+                                <Mail size={12} className="text-blue-500" />
+                                Reenviar
+                              </Button>
+                            )}
 
                             <Button
                               variant="outline"
