@@ -158,6 +158,17 @@ export class TenantsController {
     return this.tenantsService.resendWelcomeEmail(id, targetEmail, customPassword);
   }
 
+  @Post(':id/reset-client-admin')
+  @Roles('SUPER_USUARIO')
+  resetClientAdminPassword(
+    @Param('id') id: string,
+    @Body('newPassword') newPassword?: string,
+    @Body('sendEmail') sendEmail?: boolean,
+    @Body('targetEmail') targetEmail?: string,
+  ) {
+    return this.tenantsService.resetClientAdminPassword(id, newPassword, sendEmail, targetEmail);
+  }
+
   @Delete(':id')
   @Roles('SUPER_USUARIO')
   remove(@Param('id') id: string) {

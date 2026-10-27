@@ -18,7 +18,10 @@ export class AuditService {
       where.action = filters.action;
     }
     if (filters?.tenantId) {
-      where.user = { tenantId: filters.tenantId };
+      where.OR = [
+        { user: { tenantId: filters.tenantId } },
+        { entity: 'tenants', entityId: filters.tenantId },
+      ];
     }
 
     const logs = await this.prisma.auditLog.findMany({

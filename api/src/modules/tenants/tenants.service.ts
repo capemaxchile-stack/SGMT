@@ -368,6 +368,100 @@ export class TenantsService {
     };
   }
 
+  async resetClientAdminPassword(
+    id: string,
+    newPassword?: string,
+    sendEmail?: boolean,
+    targetEmail?: string,
+  ) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id },
+      include: {
+        users: {
+          take: 1,
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Empresa con ID '${id}' no encontrada`);
+    }
+
+    const adminUser = tenant.users[0];
+    if (!adminUser) {
+      throw new BadRequestException('Esta empresa no tiene un usuario administrador registrado.');
+    }
+
+    const finalPass = newPassword?.trim() || `Katei${Math.floor(100000 + Math.random() * 900000)}!`;
+    const passwordHash = await bcrypt.hash(finalPass, 12);
+
+    await this.prisma.user.update({
+      where: { id: adminUser.id },
+      data: { passwordHash, isActive: true },
+    });
+
+    let brevoMessageId: string | undefined;
+
+    if (sendEmail) {
+      const destination = targetEmail?.trim() || tenant.contactEmail || adminUser.email;
+      const config = await this.notificationChannelsService.getConfig(true);
+      const apiKey = config.brevo?.apiKey;
+      const senderEmail = config.brevo?.senderEmail || 'alertas@katei.cl';
+      const senderName = 'KATEI Plataforma Operativa';
+
+      if (apiKey) {
+        const html = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 24px; text-align: center; color: white;">
+              <h1 style="margin: 0; font-size: 22px; font-weight: 800;">Actualización de Credenciales</h1>
+              <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Espacio de Trabajo: ${tenant.name}</p>
+            </div>
+            <div style="padding: 24px; color: #1e293b; font-size: 14px; line-height: 1.6;">
+              <p>Hola <strong>${adminUser.name}</strong>,</p>
+              <p>La administración central de KATEI ha actualizado tu contraseña de acceso para el espacio <strong>${tenant.name}</strong>:</p>
+              
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <div style="font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">Nuevas Credenciales:</div>
+                <div style="margin-bottom: 6px;"><strong>URL:</strong> <a href="http://192.168.4.63:8080/login" style="color: #2563eb; font-weight: 600;">http://192.168.4.63:8080/login</a></div>
+                <div style="margin-bottom: 6px;"><strong>Usuario / Email:</strong> ${adminUser.email}</div>
+                <div><strong>Nueva Contraseña:</strong> <code style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-family: monospace; font-size: 14px; color: #0f172a;">${finalPass}</code></div>
+              </div>
+
+              <p style="font-size: 13px; color: #64748b;">
+                Ya puedes iniciar sesión en la URL indicada.
+              </p>
+            </div>
+          </div>
+        `;
+
+        try {
+          const sendRes = await (this.notificationChannelsService as any).executeBrevoSend(
+            apiKey,
+            senderEmail,
+            senderName,
+            [destination],
+            `Nuevas Credenciales de Acceso KATEI - ${tenant.name}`,
+            html,
+          );
+          brevoMessageId = sendRes.details?.messageId;
+        } catch (err: any) {
+          this.logger.warn(`Could not dispatch reset email: ${err.message}`);
+        }
+      }
+    }
+
+    return {
+      success: true,
+      tenantName: tenant.name,
+      adminEmail: adminUser.email,
+      adminName: adminUser.name,
+      newPassword: finalPass,
+      emailDispatched: Boolean(brevoMessageId),
+      brevoMessageId,
+    };
+  }
+
   async update(id: string, dto: UpdateTenantDto) {
     await this.findOne(id);
 

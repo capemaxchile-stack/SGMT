@@ -14,6 +14,7 @@ import {
   useTenantBusinessProfile,
   useDeleteTenant,
   useResendWelcomeEmail,
+  useResetClientAdminPassword,
   downloadTenantBackup,
   Tenant,
   CommercialPlanConfig,
@@ -129,6 +130,7 @@ export function MasterPortalPage() {
   const resetAdminPassMutation = useResetBackendAdminPassword();
   const deleteTenantMutation = useDeleteTenant();
   const resendWelcomeMutation = useResendWelcomeEmail();
+  const resetClientAdminMutation = useResetClientAdminPassword();
 
   // Modals & State
   const [selectedTenantForUsage, setSelectedTenantForUsage] = useState<string | null>(null);
@@ -139,6 +141,12 @@ export function MasterPortalPage() {
   const [confirmDeleteInput, setConfirmDeleteInput] = useState('');
   const [isCreateAdminModalOpen, setIsCreateAdminModalOpen] = useState(false);
   const [exportingTenantId, setExportingTenantId] = useState<string | null>(null);
+
+  // Client Admin Password Reset Modal State
+  const [resetClientTenant, setResetClientTenant] = useState<Tenant | null>(null);
+  const [resetClientPasswordInput, setResetClientPasswordInput] = useState('');
+  const [resetClientSendEmail, setResetClientSendEmail] = useState(true);
+  const [resetClientTargetEmail, setResetClientTargetEmail] = useState('');
 
   // Admin Password Reset Modal State
   const [resetAdminUser, setResetAdminUser] = useState<{ id: string; name: string; email: string } | null>(null);
@@ -404,6 +412,37 @@ export function MasterPortalPage() {
       toast.success(`Credenciales enviadas a ${res.sentTo} (Clave: ${res.tempPassword})`);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Error al reenviar correo de bienvenida');
+    }
+  };
+
+  const handleOpenResetClientAdmin = (tenant: Tenant) => {
+    setResetClientTenant(tenant);
+    setResetClientPasswordInput('');
+    setResetClientSendEmail(true);
+    setResetClientTargetEmail(tenant.contactEmail || '');
+  };
+
+  const handleExecuteResetClientAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetClientTenant) return;
+
+    try {
+      toast.info('Actualizando credenciales del administrador...');
+      const res = await resetClientAdminMutation.mutateAsync({
+        id: resetClientTenant.id,
+        newPassword: resetClientPasswordInput.trim() || undefined,
+        sendEmail: resetClientSendEmail,
+        targetEmail: resetClientTargetEmail.trim() || undefined,
+      });
+
+      toast.success(
+        `Clave actualizada para ${res.adminEmail} (Nueva clave: ${res.newPassword})${
+          res.emailDispatched ? ' y enviada por correo' : ''
+        }`
+      );
+      setResetClientTenant(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Error al resetear clave del administrador');
     }
   };
 
@@ -852,6 +891,19 @@ export function MasterPortalPage() {
                               >
                                 <Mail size={12} className="text-blue-500" />
                                 Reenviar
+                              </Button>
+                            )}
+
+                            {t.slug !== 'principal' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleOpenResetClientAdmin(t)}
+                                className="text-xs h-7 px-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1"
+                                title="Resetear contraseña de la cuenta maestra/administradora de este cliente"
+                              >
+                                <KeyRound size={12} className="text-amber-500" />
+                                Clave
                               </Button>
                             )}
 
@@ -2319,6 +2371,86 @@ export function MasterPortalPage() {
               </Button>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* Modal Reset Clave Administrador Cliente */}
+      {resetClientTenant && (
+        <Modal
+          isOpen={true}
+          onClose={() => setResetClientTenant(null)}
+          title={`Resetear Clave Administrador: ${resetClientTenant.name}`}
+          size="md"
+        >
+          <form onSubmit={handleExecuteResetClientAdmin} className="space-y-4">
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg text-xs text-blue-800 dark:text-blue-300">
+              Esta acción actualizará la contraseña de acceso del usuario administrador principal de <strong>{resetClientTenant.name}</strong>.
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Nueva Contraseña
+              </label>
+              <Input
+                type="text"
+                value={resetClientPasswordInput}
+                onChange={(e) => setResetClientPasswordInput(e.target.value)}
+                placeholder="Dejar en blanco para generar aleatoria segura"
+                className="text-sm font-mono"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">
+                Si no especificas una contraseña, el sistema generará una temporal automáticamente.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Correo Destinatario para Notificación
+              </label>
+              <Input
+                type="email"
+                value={resetClientTargetEmail}
+                onChange={(e) => setResetClientTargetEmail(e.target.value)}
+                placeholder="ejemplo@constructora.cl"
+                className="text-sm"
+              />
+            </div>
+
+            <div className="pt-1">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={resetClientSendEmail}
+                  onChange={(e) => setResetClientSendEmail(e.target.checked)}
+                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Mail size={13} className="text-blue-500" />
+                  Enviar credenciales actualizadas por correo vía Brevo
+                </span>
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setResetClientTenant(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={resetClientAdminMutation.isPending}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-semibold flex items-center gap-1.5"
+              >
+                <KeyRound size={14} />
+                {resetClientAdminMutation.isPending ? 'Actualizando...' : 'Actualizar Contraseña'}
+              </Button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>

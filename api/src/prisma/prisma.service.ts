@@ -1,10 +1,69 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { getCurrentTenantId } from '../common/tenant-context/tenant-context';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     await this.$connect();
+
+    const TENANT_SCOPED_MODELS = new Set([
+      'Asset',
+      'Faena',
+      'Warehouse',
+      'Item',
+      'Supplier',
+      'PurchaseRequest',
+      'PurchaseOrder',
+      'Quotation',
+      'MaintenancePlan',
+      'WorkOrder',
+      'FuelLog',
+      'AssetDocument',
+      'OperatorCertification',
+      'Budget',
+    ]);
+
+    this.$use(async (params, next) => {
+      const tenantId = getCurrentTenantId();
+      if (tenantId && params.model) {
+        if (TENANT_SCOPED_MODELS.has(params.model)) {
+          if (['findMany', 'count', 'aggregate', 'groupBy'].includes(params.action)) {
+            params.args = params.args || {};
+            params.args.where = { ...params.args.where, tenantId };
+          } else if (params.action === 'findFirst') {
+            params.args = params.args || {};
+            params.args.where = { ...params.args.where, tenantId };
+          } else if (params.action === 'findUnique') {
+            params.action = 'findFirst';
+            params.args.where = { ...params.args.where, tenantId };
+          } else if (params.action === 'create') {
+            params.args = params.args || {};
+            params.args.data = params.args.data || {};
+            if (!params.args.data.tenantId) {
+              params.args.data.tenantId = tenantId;
+            }
+          } else if (params.action === 'createMany') {
+            params.args = params.args || {};
+            if (Array.isArray(params.args.data)) {
+              params.args.data.forEach((d: any) => {
+                if (!d.tenantId) d.tenantId = tenantId;
+              });
+            }
+          } else if (['update', 'updateMany', 'delete', 'deleteMany'].includes(params.action)) {
+            params.args = params.args || {};
+            params.args.where = { ...params.args.where, tenantId };
+          }
+        } else if (params.model === 'User' && ['findMany', 'count'].includes(params.action)) {
+          if (!params.args?.where?.roles?.some?.role?.name?.includes('SUPER_USUARIO')) {
+            params.args = params.args || {};
+            params.args.where = { ...params.args.where, tenantId };
+          }
+        }
+      }
+      return next(params);
+    });
+
     try {
       await this.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS "SystemSetting" (

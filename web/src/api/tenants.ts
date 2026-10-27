@@ -283,3 +283,30 @@ export function useResendWelcomeEmail() {
     },
   });
 }
+
+export function useResetClientAdminPassword() {
+  return useMutation({
+    mutationFn: async ({
+      id,
+      newPassword,
+      sendEmail,
+      targetEmail,
+    }: {
+      id: string;
+      newPassword?: string;
+      sendEmail?: boolean;
+      targetEmail?: string;
+    }) => {
+      const { data } = await api.post<{
+        success: boolean;
+        tenantName: string;
+        adminEmail: string;
+        adminName: string;
+        newPassword: string;
+        emailDispatched: boolean;
+        brevoMessageId?: string;
+      }>(`/tenants/${id}/reset-client-admin`, { newPassword, sendEmail, targetEmail });
+      return data;
+    },
+  });
+}
