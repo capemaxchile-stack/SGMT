@@ -59,6 +59,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             params.args = params.args || {};
             params.args.where = { ...params.args.where, tenantId };
           }
+        } else if (params.model === 'WarehouseMovement' && ['findMany', 'count', 'findFirst'].includes(params.action)) {
+          params.args = params.args || {};
+          params.args.where = { ...params.args.where, warehouse: { tenantId } };
+        } else if (params.model === 'Stock' && ['findMany', 'count', 'findFirst'].includes(params.action)) {
+          params.args = params.args || {};
+          params.args.where = { ...params.args.where, warehouse: { tenantId } };
         }
       }
       return next(params);
