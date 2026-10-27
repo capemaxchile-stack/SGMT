@@ -61,6 +61,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       });
     }
 
+    if (!payload.isImpersonating && !payload.roles?.includes('SUPER_USUARIO') && effectiveTenant) {
+      if (effectiveTenant.status === 'SUSPENDIDO') {
+        throw new UnauthorizedException(
+          'Tu cuenta de empresa se encuentra suspendida temporalmente por regularización comercial. Por favor contacta a administración.',
+        );
+      }
+      if (effectiveTenant.status === 'CANCELADO') {
+        throw new UnauthorizedException(
+          'La cuenta de empresa ha sido cancelada o terminada. Contacta al soporte de KATEI.',
+        );
+      }
+    }
+
     return {
       id: user.id,
       email: user.email,

@@ -103,6 +103,20 @@ export class AuthService {
       throw new UnauthorizedException('Usuario inactivo o deshabilitado');
     }
 
+    const isSuperUser = user.roles?.some((ur: any) => ur.role?.name === 'SUPER_USUARIO');
+    if (!isSuperUser && user.tenant) {
+      if (user.tenant.status === 'SUSPENDIDO') {
+        throw new UnauthorizedException(
+          'Tu cuenta de empresa se encuentra suspendida temporalmente por regularización comercial. Por favor contacta a administración.',
+        );
+      }
+      if (user.tenant.status === 'CANCELADO') {
+        throw new UnauthorizedException(
+          'La cuenta de empresa ha sido cancelada o terminada. Contacta al soporte de KATEI.',
+        );
+      }
+    }
+
     const isMatch = await bcrypt.compare(pass, user.passwordHash);
     if (!isMatch) {
       throw new UnauthorizedException('Invalid credentials');

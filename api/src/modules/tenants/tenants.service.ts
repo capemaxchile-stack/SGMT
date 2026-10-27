@@ -426,4 +426,98 @@ export class TenantsService {
       },
     });
   }
+
+  async exportTenantData(id: string) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id },
+      include: {
+        users: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            isActive: true,
+            createdAt: true,
+            roles: {
+              select: {
+                role: {
+                  select: { name: true, displayName: true },
+                },
+              },
+            },
+          },
+        },
+        faenas: true,
+        assets: true,
+        warehouses: true,
+        items: true,
+        suppliers: true,
+        purchaseOrders: {
+          include: { lines: true },
+        },
+        workOrders: {
+          include: { items: true },
+        },
+        fuelLogs: true,
+        maintenancePlans: true,
+        operatorCerts: true,
+        budgets: true,
+        usageMetrics: true,
+      },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Tenant con ID '${id}' no encontrado`);
+    }
+
+    return {
+      exportedAt: new Date().toISOString(),
+      exportVersion: '1.0',
+      system: 'KATEI Multi-Tenant SaaS',
+      tenantInfo: {
+        id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+        rut: tenant.rut,
+        status: tenant.status,
+        planTier: tenant.planTier,
+        enabledModules: tenant.enabledModules,
+        limits: {
+          maxUsers: tenant.maxUsers,
+          maxAssets: tenant.maxAssets,
+          maxFaenas: tenant.maxFaenas,
+          maxMonthlyEmails: tenant.maxMonthlyEmails,
+          maxMonthlyMessages: tenant.maxMonthlyMessages,
+          maxMonthlyAiTokens: tenant.maxMonthlyAiTokens,
+        },
+        createdAt: tenant.createdAt,
+      },
+      summary: {
+        totalUsers: tenant.users.length,
+        totalFaenas: tenant.faenas.length,
+        totalAssets: tenant.assets.length,
+        totalWarehouses: tenant.warehouses.length,
+        totalItems: tenant.items.length,
+        totalSuppliers: tenant.suppliers.length,
+        totalPurchaseOrders: tenant.purchaseOrders.length,
+        totalWorkOrders: tenant.workOrders.length,
+        totalFuelLogs: tenant.fuelLogs.length,
+      },
+      records: {
+        users: tenant.users,
+        faenas: tenant.faenas,
+        assets: tenant.assets,
+        warehouses: tenant.warehouses,
+        items: tenant.items,
+        suppliers: tenant.suppliers,
+        purchaseOrders: tenant.purchaseOrders,
+        workOrders: tenant.workOrders,
+        fuelLogs: tenant.fuelLogs,
+        maintenancePlans: tenant.maintenancePlans,
+        operatorCertifications: tenant.operatorCerts,
+        budgets: tenant.budgets,
+        usageMetrics: tenant.usageMetrics,
+      },
+    };
+  }
 }

@@ -112,4 +112,10 @@ export class TenantsController {
   update(@Param('id') id: string, @Body() dto: UpdateTenantDto) {
     return this.tenantsService.update(id, dto);
   }
+
+  @Get(':id/export')
+  @Roles('SUPER_USUARIO')
+  exportTenant(@Param('id') id: string) {
+    return this.tenantsService.exportTenantData(id);
+  }
 }
