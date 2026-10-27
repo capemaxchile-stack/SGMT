@@ -12,6 +12,7 @@ import {
   useSaveCommercialPlans,
   useResetBackendAdminPassword,
   useTenantBusinessProfile,
+  useDeleteTenant,
   downloadTenantBackup,
   Tenant,
   CommercialPlanConfig,
@@ -55,6 +56,7 @@ import {
   DollarSign,
   TrendingUp,
   Search,
+  Trash2,
 } from 'lucide-react';
 
 const ALL_SYSTEM_MODULES = [
@@ -124,12 +126,15 @@ export function MasterPortalPage() {
   const createAdminMutation = useCreateBackendAdmin();
   const savePlansMutation = useSaveCommercialPlans();
   const resetAdminPassMutation = useResetBackendAdminPassword();
+  const deleteTenantMutation = useDeleteTenant();
 
   // Modals & State
   const [selectedTenantForUsage, setSelectedTenantForUsage] = useState<string | null>(null);
   const [selectedTenantForProfile, setSelectedTenantForProfile] = useState<string | null>(null);
   const [isCreateTenantModalOpen, setIsCreateTenantModalOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
+  const [confirmDeleteInput, setConfirmDeleteInput] = useState('');
   const [isCreateAdminModalOpen, setIsCreateAdminModalOpen] = useState(false);
   const [exportingTenantId, setExportingTenantId] = useState<string | null>(null);
 
@@ -357,6 +362,18 @@ export function MasterPortalPage() {
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error al cambiar estado de la empresa');
+    }
+  };
+
+  const handleDeleteTenant = async () => {
+    if (!tenantToDelete) return;
+    try {
+      await deleteTenantMutation.mutateAsync(tenantToDelete.id);
+      toast.success(`Empresa "${tenantToDelete.name}" eliminada exitosamente`);
+      setTenantToDelete(null);
+      setConfirmDeleteInput('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Error al eliminar la empresa');
     }
   };
 
@@ -834,6 +851,19 @@ export function MasterPortalPage() {
                                 title="Reactivar acceso al workspace"
                               >
                                 <PlayCircle size={15} />
+                              </button>
+                            )}
+
+                            {t.slug !== 'principal' && (
+                              <button
+                                onClick={() => {
+                                  setTenantToDelete(t);
+                                  setConfirmDeleteInput('');
+                                }}
+                                className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors"
+                                title="Eliminar empresa definitivamente"
+                              >
+                                <Trash2 size={15} />
                               </button>
                             )}
                           </div>
@@ -2202,6 +2232,62 @@ export function MasterPortalPage() {
               </div>
             </div>
           ) : null}
+        </Modal>
+      )}
+
+      {/* Modal Confirmación de Eliminación Definitiva */}
+      {tenantToDelete && (
+        <Modal
+          isOpen={true}
+          onClose={() => {
+            setTenantToDelete(null);
+            setConfirmDeleteInput('');
+          }}
+          title={`Eliminar Empresa: ${tenantToDelete.name}`}
+          size="md"
+        >
+          <div className="space-y-4">
+            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
+              <AlertTriangle className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" size={20} />
+              <div className="text-xs text-red-800 dark:text-red-300 leading-relaxed">
+                <p className="font-bold text-sm mb-1 text-red-900 dark:text-red-200">¡Acción destructiva irreversible!</p>
+                Esta acción eliminará el tenant <strong>{tenantToDelete.name}</strong> (slug: <code className="bg-red-100 dark:bg-red-900/60 px-1 py-0.5 rounded font-mono font-semibold">{tenantToDelete.slug}</code>), sus usuarios vinculados y sus métricas de consumo de forma definitiva.
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              Para confirmar, escribe exactamente el slug <strong className="text-slate-800 dark:text-slate-200 font-mono">{tenantToDelete.slug}</strong> en el siguiente campo:
+            </p>
+
+            <Input
+              value={confirmDeleteInput}
+              onChange={(e) => setConfirmDeleteInput(e.target.value)}
+              placeholder={tenantToDelete.slug}
+              className="text-sm font-mono"
+            />
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setTenantToDelete(null);
+                  setConfirmDeleteInput('');
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleDeleteTenant}
+                disabled={confirmDeleteInput !== tenantToDelete.slug || deleteTenantMutation.isPending}
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold flex items-center gap-1.5"
+              >
+                <Trash2 size={14} />
+                {deleteTenantMutation.isPending ? 'Eliminando...' : 'Eliminar Definitivamente'}
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

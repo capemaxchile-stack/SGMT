@@ -4,6 +4,7 @@ import {
   Post,
   Put,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -145,5 +146,11 @@ export class TenantsController {
   @Roles('SUPER_USUARIO')
   exportTenant(@Param('id') id: string) {
     return this.tenantsService.exportTenantData(id);
+  }
+
+  @Delete(':id')
+  @Roles('SUPER_USUARIO')
+  remove(@Param('id') id: string) {
+    return this.tenantsService.remove(id);
   }
 }

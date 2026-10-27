@@ -722,4 +722,60 @@ export class TenantsService {
       },
     };
   }
+
+  async remove(id: string) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Empresa con ID '${id}' no encontrada`);
+    }
+
+    if (tenant.slug === 'principal' && tenant.id === '11111111-1111-4111-a111-111111111111') {
+      throw new BadRequestException('No se permite eliminar la empresa principal raíz del sistema.');
+    }
+
+    // 1. Limpiar métricas de consumo
+    await this.prisma.tenantUsageMetric.deleteMany({
+      where: { tenantId: id },
+    });
+
+    // 2. Gestionar usuarios vinculados a este tenant que no sean SUPER_USUARIO
+    const tenantUsers = await this.prisma.user.findMany({
+      where: {
+        tenantId: id,
+        roles: {
+          none: {
+            role: {
+              name: 'SUPER_USUARIO',
+            },
+          },
+        },
+      },
+    });
+
+    for (const u of tenantUsers) {
+      try {
+        await this.prisma.user.delete({ where: { id: u.id } });
+      } catch {
+        // En caso de que el usuario tenga registros inmutables como AuditLog
+        await this.prisma.user.update({
+          where: { id: u.id },
+          data: { tenantId: null, isActive: false },
+        });
+      }
+    }
+
+    // 3. Eliminar la empresa
+    await this.prisma.tenant.delete({
+      where: { id },
+    });
+
+    return {
+      message: `Empresa '${tenant.name}' eliminada correctamente.`,
+      deletedId: id,
+      deletedSlug: tenant.slug,
+    };
+  }
 }

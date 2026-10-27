@@ -256,3 +256,16 @@ export function useTenantBusinessProfile(tenantId?: string | null) {
     enabled: Boolean(tenantId),
   });
 }
+
+export function useDeleteTenant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.delete<{ message: string; deletedId: string }>(`/tenants/${id}`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+    },
+  });
+}
