@@ -4,7 +4,9 @@ import { useAuthStore } from '../stores/auth.store';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../components/ui/Card';
+import { Modal } from '../components/ui/Modal';
 import { Logo } from '../components/ui/Logo';
+import { api } from '../lib/axios';
 import { Mail, Lock, ShieldCheck, Video, VideoOff, Eye, EyeOff, Smartphone } from 'lucide-react';
 
 export function LoginPage() {
@@ -13,13 +15,18 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isTerrainMode, setIsTerrainMode] = useState(false);
   const [isVideoActive, setIsVideoActive] = useState(true);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+  const [forgotError, setForgotError] = useState('');
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
   const [hasVideoError, setHasVideoError] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const login = useAuthStore((state) => state.login);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const navigate = useNavigate();
 
   // Animated Terrain & Ambient Particles Canvas
@@ -109,7 +116,11 @@ export function LoginPage() {
     setError('');
     try {
       await login({ email, password });
-      navigate('/');
+      if (isTerrainMode) {
+        navigate('/terreno');
+      } else {
+        navigate('/');
+      }
     } catch {
       setError('Credenciales inválidas o error de conexión con el servidor');
     } finally {
@@ -117,19 +128,18 @@ export function LoginPage() {
     }
   };
 
-  const handleTerrainAccess = async () => {
-    setIsLoading(true);
-    setError('');
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsForgotLoading(true);
+    setForgotError('');
+    setForgotSuccess('');
     try {
-      if (!isAuthenticated()) {
-        await login({ email: 'terreno@sgmt.local', password: 'password123' });
-      }
-      navigate('/terreno');
+      await api.post('/auth/forgot-password', { email: forgotEmail });
+      setForgotSuccess('Si el correo existe en el sistema, recibirás un enlace seguro para restablecer tu contraseña.');
     } catch {
-      // In case server is unreachable (pure offline mode), proceed to /terreno with local cache
-      navigate('/terreno');
+      setForgotError('No se pudo procesar la solicitud. Verifica el correo e intenta nuevamente.');
     } finally {
-      setIsLoading(false);
+      setIsForgotLoading(false);
     }
   };
 
@@ -252,7 +262,15 @@ export function LoginPage() {
                 />
                 <span>Recordar sesión</span>
               </label>
-              <span className="text-blue-400 hover:underline cursor-pointer">
+              <span
+                onClick={() => {
+                  setForgotEmail(email);
+                  setForgotError('');
+                  setForgotSuccess('');
+                  setShowForgotModal(true);
+                }}
+                className="text-blue-400 hover:underline cursor-pointer"
+              >
                 ¿Olvidaste tu contraseña?
               </span>
             </div>
@@ -261,20 +279,31 @@ export function LoginPage() {
           <CardFooter className="flex flex-col gap-3 pb-6">
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-blue-600/30 text-sm transition-all active:scale-[0.99]"
+              className={`w-full font-bold py-2.5 rounded-xl shadow-lg text-sm transition-all active:scale-[0.99] ${
+                isTerrainMode
+                  ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/30'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30'
+              }`}
               isLoading={isLoading}
             >
-              Ingresar al Sistema
+              {isTerrainMode ? 'Ingresar a Modo Terreno' : 'Ingresar al Sistema'}
             </Button>
 
             <button
               type="button"
-              onClick={handleTerrainAccess}
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-amber-300 hover:text-amber-200 text-xs font-semibold transition shadow-sm disabled:opacity-50"
+              onClick={() => setIsTerrainMode(!isTerrainMode)}
+              className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-semibold transition shadow-sm ${
+                isTerrainMode
+                  ? 'bg-blue-950/60 border-blue-700/60 text-blue-300 hover:bg-blue-900/60'
+                  : 'bg-slate-800/90 hover:bg-slate-700/90 border-slate-700 text-amber-300 hover:text-amber-200'
+              }`}
             >
-              <Smartphone size={15} className="text-amber-400" />
-              <span>Acceso Móvil / Pedidos Terreno (Offline)</span>
+              <Smartphone size={15} className={isTerrainMode ? 'text-blue-400' : 'text-amber-400'} />
+              <span>
+                {isTerrainMode
+                  ? 'Cambiar a Modo Plataforma / ERP'
+                  : 'Modo Operador de Terreno (Móvil)'}
+              </span>
             </button>
 
             {/* Footer Security Badge */}
@@ -309,6 +338,59 @@ export function LoginPage() {
           )}
         </button>
       </div>
+
+      {/* Modal de Recuperación de Contraseña */}
+      <Modal
+        isOpen={showForgotModal}
+        onClose={() => setShowForgotModal(false)}
+        title="Recuperar Contraseña"
+      >
+        <form onSubmit={handleForgotSubmit} className="space-y-4">
+          <p className="text-xs text-slate-400">
+            Ingresá el correo electrónico asociado a tu cuenta. Te enviaremos un enlace transaccional
+            seguro vía KATEI para que puedas restablecer tu contraseña.
+          </p>
+
+          {forgotSuccess && (
+            <div className="p-3 bg-emerald-950/60 border border-emerald-800 text-emerald-300 rounded-xl text-xs">
+              {forgotSuccess}
+            </div>
+          )}
+
+          {forgotError && (
+            <div className="p-3 bg-rose-950/60 border border-rose-800 text-rose-300 rounded-xl text-xs">
+              {forgotError}
+            </div>
+          )}
+
+          {!forgotSuccess && (
+            <Input
+              label="Correo Registrado"
+              type="email"
+              placeholder="tu.correo@empresa.cl"
+              icon={<Mail size={16} />}
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              required
+            />
+          )}
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowForgotModal(false)}
+            >
+              {forgotSuccess ? 'Cerrar' : 'Cancelar'}
+            </Button>
+            {!forgotSuccess && (
+              <Button type="submit" isLoading={isForgotLoading}>
+                Enviar Instrucciones
+              </Button>
+            )}
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

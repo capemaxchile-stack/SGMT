@@ -19,7 +19,7 @@ export interface SystemNotification {
 export class NotificationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getNotifications(): Promise<{
+  async getNotifications(customTenantId?: string): Promise<{
     notifications: SystemNotification[];
     totalCount: number;
     criticalCount: number;
@@ -28,9 +28,14 @@ export class NotificationsService {
     const notifications: SystemNotification[] = [];
     const now = Date.now();
 
+    const tenantFilter = customTenantId ? { tenantId: customTenantId } : {};
+
     // 1. Pending Purchase Requests (Visado Faena) with SLA
     const pendingRequests = await this.prisma.purchaseRequest.findMany({
-      where: { status: 'PENDIENTE' },
+      where: {
+        status: 'PENDIENTE',
+        ...tenantFilter,
+      },
       include: {
         faena: true,
         requester: { select: { name: true, email: true } },
@@ -85,6 +90,7 @@ export class NotificationsService {
       where: {
         status: 'APROBADA',
         quotations: { none: {} },
+        ...tenantFilter,
       },
       include: {
         faena: true,
@@ -135,6 +141,7 @@ export class NotificationsService {
     const pendingOrders = await this.prisma.purchaseOrder.findMany({
       where: {
         status: 'PENDIENTE_APROBACION',
+        ...tenantFilter,
       },
       include: {
         supplier: true,
@@ -181,6 +188,7 @@ export class NotificationsService {
 
     // 2. Critical & Low Stock Items
     const stocks = await this.prisma.stock.findMany({
+      where: customTenantId ? { warehouse: { tenantId: customTenantId } } : {},
       include: {
         item: true,
         warehouse: true,
@@ -212,6 +220,7 @@ export class NotificationsService {
       where: {
         operationalStatus: { in: ['OPERATIVO', 'EN_MANTENCION'] },
         deletedAt: null,
+        ...tenantFilter,
       },
       include: {
         workOrders: {
@@ -223,7 +232,10 @@ export class NotificationsService {
     });
 
     const plans = await this.prisma.maintenancePlan.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        ...tenantFilter,
+      },
     });
 
     for (const asset of assets) {
@@ -269,6 +281,7 @@ export class NotificationsService {
       where: {
         priority: 'CRITICA',
         status: { in: ['ABIERTA', 'EN_PROGRESO'] },
+        ...tenantFilter,
       },
       include: {
         asset: true,

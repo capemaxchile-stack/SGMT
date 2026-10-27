@@ -20,6 +20,10 @@ Branch: develop | Delivery: Reviewable Slices | Test Runner: Jest (API) & Vitest
 - S16: "Opcion de resetear clave de usuario maestro es necesario, que opinas?"
 - S17: "Ficha de gestion de las empresas que me permita ver cuando comenzaron a operar, para llevar control de costos mensuales y auditoria de evolucion del negocio."
 - S18: "Podemos incluir un auditor de uso general en la consola SaaS para ver detalles de funcionamiento de las empresas y como control de uso tambien... el auditor es tambien similar al de plataforma, donde pueda ver si hay uso de la plataforma, o registros de movimientos, algo que me permita auditar uso como administrador general."
+- S19: "El acceso movil en el panel de ingreso, hay que corregirlo o eliminarlo, por que si accedo entro a la empresa original que hicimos, eso no esta aislado aun, a menos que suceda cuando tengamos los subdominios, pero aun asi, lo encuentro poco seguro el acceso sin registrarse. Tal vez deberia estar la opcion pero siempre con el usuaris y clave antes, para validar y acceder directo."
+- S20: "La configuracion de Telegram y Brevo debe quedar abierta a configurar en cada nuevo cliente, no debemos usar la cuenta general para cada uno, esto por que creo que cada empres va tener que configurar su propio servicio y canales de mensajeria."
+- S21: "El cron de reporte diario hay que revisar que funcione por cada empresa que lo active, para tener eso en mente y funcionando."
+- S22: "El boton de olvidaste tu contraseña no funciona aun, debemos revisar eso, tal vez eso si podemos usar el sistema Brevo actual, que seria el propio interno de Katei para esos casos."
 
 ## Tasks
 - [x] T1 (S5): Crear y publicar rama `develop` aislada de producción. (Route: inline, Commit: 2eb9798 / develop)
@@ -48,6 +52,10 @@ Branch: develop | Delivery: Reviewable Slices | Test Runner: Jest (API) & Vitest
 - [x] T24 (S4): Inclusión de acciones de gestión de empresas en la vista de auditoría al filtrar por tenant (`where.OR: [{ user: { tenantId } }, { entity: 'tenants', entityId }]`). (Route: inline, Commit: 43906bb)
 - [x] T25 (S16): Endpoint y modal de reseteo de contraseña de cuenta maestra de clientes (`POST /tenants/:id/reset-client-admin`) con opción de generación automática y despacho por Brevo. (Route: inline, Commit: 43906bb)
 - [x] T26 (S8): Inclusión del correo de contacto de la empresa en los despachos de bienvenida y botón "Reenviar" credenciales en la tabla de empresas. (Route: inline, Commit: 874caad)
+- [x] T27 (S19): Asegurar acceso móvil requiriendo autenticación previa en `LoginPage.tsx` (eliminar credenciales quemadas `terreno@sgmt.local` y resolver tenant de forma estricta). (Route: inline)
+- [x] T28 (S22): Recuperación de contraseña segura con Brevo central KATEI (`POST /api/auth/forgot-password` y `POST /api/auth/reset-password`) y vista/modal en el login. (Route: inline)
+- [x] T29 (S20): Configuración de canales de mensajería (Telegram y Brevo) por cliente (almacenamiento por tenant o fallback) con gestión en Configuración del cliente. (Route: inline)
+- [x] T30 (S21): Cron de reporte diario multitenant iterativo por empresa activa en `notification-scheduler.service.ts` enviando alertas aisladas con sus propios canales. (Route: inline)
 
 ## Log
 - L1 (2026-10-26): "Creo que los modelos o planes, debieran configurarse, es decir podria armar un plan particular con ciertas herramientas a cada cliente. Eso debe ser felxible y configurable. Cada plan no debe tener o ver herramientas que no haya contratado, pero si es bueno sepa existen disponibles o bajo planes diferentes. Por lo pronto, los 3 que me sugieres me parecen bien. COmienza, andame indicando dudas o revisiones. Un punto importante que te iba a mencionar, es que me gustaria tener una rama de desarrollo, para que cualquier cambio no afecte a futuro al sistema en produccion.}"
