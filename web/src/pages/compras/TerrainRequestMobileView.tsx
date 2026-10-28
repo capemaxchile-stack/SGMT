@@ -42,7 +42,7 @@ import { ShieldAlert } from 'lucide-react';
 
 export function TerrainRequestMobileView() {
   const navigate = useNavigate();
-  const { user, can } = useAuthStore();
+  const { user, can, getTenantName } = useAuthStore();
   const [mobileMode, setMobileMode] = useState<'repuestos' | 'combustible'>('combustible');
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [offlineQueue, setOfflineQueue] = useState<OfflineRequestItem[]>(getOfflineQueue());
@@ -346,11 +346,11 @@ export function TerrainRequestMobileView() {
           )}
           <div>
             <h1 className="text-sm font-bold flex items-center gap-1.5">
-              <Smartphone size={16} />
-              KATEI Terreno
+              <Smartphone size={16} className="shrink-0" />
+              <span className="truncate max-w-[200px] sm:max-w-xs">{getTenantName()}</span>
             </h1>
             <p className="text-[11px] opacity-80">
-              {isOnline ? '🟢 En línea - Red minera conectada' : '🟠 Modo Offline - Sin señal celular / WiFi'}
+              {isOnline ? '🟢 En línea - Sincronización activa' : '🟠 Modo Offline - Sin señal celular / WiFi'}
             </p>
           </div>
         </div>
