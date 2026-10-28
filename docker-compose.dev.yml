@@ -2,7 +2,7 @@
 # Usage: docker compose -f docker-compose.dev.yml up -d --build
 
 services:
-  api:
+  dev-api:
     container_name: sgmt-dev-api
     build:
       context: ./api
@@ -19,8 +19,10 @@ services:
     ports:
       - "3001:3000"
     networks:
-      - default
-      - prod-db-net
+      default:
+        aliases:
+          - api
+      prod-db-net:
 
   web:
     container_name: sgmt-dev-web
@@ -31,7 +33,7 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - api
+      - dev-api
     networks:
       - default
 
