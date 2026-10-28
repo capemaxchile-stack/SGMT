@@ -43,7 +43,7 @@ ${linesList}
 CONDICIONES DE LA SOLICITUD:
 ${quotation.notes || '- Indicar precios netos unitarios y plazo de entrega en días hábiles.'}
 
-Favor enviar su cotización formal en respuesta a este correo (comprador@sgmt.local).
+Favor enviar su cotización formal en respuesta a este correo (comprador@katei.cl).
 
 Atentamente,
 Departamento de Adquisiciones & Abastecimiento
@@ -134,7 +134,7 @@ KATEI — Gestión de Operaciones y Abastecimiento`;
           </table>
 
           <div style="margin-top: 40px; border-top: 1px dashed #cbd5e1; padding-top: 12px; font-size: 11px; color: #64748b;">
-            Documento emitido por KATEI para gestión de compras. Enviar propuesta a comprador@sgmt.local.
+            Documento emitido por KATEI para gestión de compras. Enviar propuesta a comprador@katei.cl.
           </div>
         </body>
       </html>

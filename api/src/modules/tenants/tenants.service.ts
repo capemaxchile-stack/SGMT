@@ -241,6 +241,8 @@ export class TenantsService {
       return;
     }
 
+    const tenantUrl = tenant.slug ? `https://${tenant.slug}.katei.cl` : 'https://app.katei.cl';
+
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
         <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 24px; text-align: center; color: white;">
@@ -253,7 +255,7 @@ export class TenantsService {
           
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
             <div style="font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">Credenciales de Acceso:</div>
-            <div style="margin-bottom: 6px;"><strong>URL:</strong> <a href="https://sgmt.capemaxchile.com" style="color: #2563eb;">https://sgmt.capemaxchile.com</a></div>
+            <div style="margin-bottom: 6px;"><strong>URL de Acceso:</strong> <a href="${tenantUrl}" style="color: #2563eb; font-weight: bold;">${tenantUrl}</a></div>
             <div style="margin-bottom: 6px;"><strong>Usuario / Email:</strong> ${user.email}</div>
             <div><strong>Contraseña Temporal:</strong> <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${tempPass}</code></div>
           </div>

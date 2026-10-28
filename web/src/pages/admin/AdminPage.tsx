@@ -1115,7 +1115,7 @@ export function AdminPage() {
             <Input
               label="Correo Electrónico *"
               type="email"
-              placeholder="usuario@sgmt.local"
+              placeholder="usuario@katei.cl"
               value={newUserEmail}
               onChange={(e) => setNewUserEmail(e.target.value)}
               required

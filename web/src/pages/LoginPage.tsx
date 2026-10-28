@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../compone
 import { Modal } from '../components/ui/Modal';
 import { Logo } from '../components/ui/Logo';
 import { api } from '../lib/axios';
-import { Mail, Lock, ShieldCheck, Video, VideoOff, Eye, EyeOff, Smartphone } from 'lucide-react';
+import { Mail, Lock, ShieldCheck, Video, VideoOff, Eye, EyeOff, Smartphone, Building2 } from 'lucide-react';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -28,6 +28,11 @@ export function LoginPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
+
+  // Detect subdomain (e.g. demo.katei.cl)
+  const hostname = window.location.hostname;
+  const isSubdomain = hostname.includes('.katei.cl') && !['app', 'www'].includes(hostname.split('.')[0]);
+  const tenantSlug = isSubdomain ? hostname.split('.')[0] : null;
 
   // Animated Terrain & Ambient Particles Canvas
   useEffect(() => {
@@ -209,6 +214,12 @@ export function LoginPage() {
           <p className="text-slate-400 text-xs mt-1">
             Gestión Integral de Maquinarias, Mantenimiento y Faenas
           </p>
+          {tenantSlug && (
+            <div className="mt-2.5 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs">
+              <Building2 size={13} className="text-blue-400" />
+              <span>Espacio: <strong className="uppercase">{tenantSlug}</strong>.katei.cl</span>
+            </div>
+          )}
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
@@ -222,7 +233,7 @@ export function LoginPage() {
             <Input
               label="Correo Electrónico"
               type="email"
-              placeholder="usuario@sgmt.local"
+              placeholder="usuario@katei.cl"
               autoComplete="username"
               icon={<Mail size={18} />}
               value={email}
