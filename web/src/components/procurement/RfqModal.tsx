@@ -161,7 +161,7 @@ CONDICIONES REQUERIDAS:
 Atentamente,
 Departamento de Adquisiciones & Abastecimiento
 KATEI - Gestión de Operaciones
-comprador@sgmt.local`;
+comprador@katei.cl`;
   };
 
   const handleCopyEmailText = () => {
@@ -249,7 +249,7 @@ comprador@sgmt.local`;
           </table>
 
           <div style="margin-top: 40px; border-top: 1px dashed #cbd5e1; padding-top: 12px; font-size: 11px; color: #64748b;">
-            Documento emitido para cotización formal de adquisiciones. Favor remitir su propuesta comercial detallada a comprador@sgmt.local.
+            Documento emitido para cotización formal de adquisiciones. Favor remitir su propuesta comercial detallada a comprador@katei.cl.
           </div>
         </body>
       </html>

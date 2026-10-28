@@ -328,42 +328,36 @@ export function CertificacionesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Executive Clean Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/30 border border-indigo-400/40 text-indigo-300 text-xs font-bold tracking-wider uppercase">
-              Control Legal y Operacional
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold">
-              Semáforo Preventivo 30/15/5 Días
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
-            <FileBadge className="text-indigo-400" size={30} />
-            Gestión Documental y Certificaciones
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+            <FileBadge className="text-indigo-600 dark:text-indigo-400" size={24} />
+            Certificaciones & Control Documental
           </h1>
-          <p className="text-sm text-slate-300 mt-1 max-w-3xl leading-relaxed">
-            Control integral de vigencias legales para flota pesada (revisiones técnicas, seguros, permisos) y acreditaciones de operadores (licencias D, exámenes de altura, inducciones DAS).
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Vigencias legales de maquinaria (revisiones, seguros, permisos) y acreditaciones de operadores en faena.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {activeTab === 'assets' && (
             <Button
               onClick={handleOpenCreateAssetDoc}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 px-4 py-2.5 rounded-xl flex items-center gap-2"
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 shadow-xs"
             >
-              <Plus size={16} />
+              <Plus size={14} />
               <span>Nuevo Doc. Maquinaria</span>
             </Button>
           )}
           {activeTab === 'operators' && (
             <Button
               onClick={handleOpenCreateOpCert}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 px-4 py-2.5 rounded-xl flex items-center gap-2"
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 shadow-xs"
             >
-              <Plus size={16} />
+              <Plus size={14} />
               <span>Nueva Acreditación Operador</span>
             </Button>
           )}

@@ -37,7 +37,7 @@ export function NotificationChannelsTab() {
     brevo: {
       enabled: false,
       apiKey: '',
-      senderEmail: 'alertas@sgmt.local',
+      senderEmail: 'alertas@katei.cl',
       senderName: 'KATEI Alertas Operacionales',
       recipientEmails: [],
       events: { radarAlerts: true, lowStock: true, pendingApprovals: true, abnormalFuel: true },

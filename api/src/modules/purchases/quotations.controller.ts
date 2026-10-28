@@ -5,11 +5,14 @@ import { UpdateQuotationDto } from './dto/update-quotation.dto';
 import { QuotationStatus } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { TenantModuleGuard } from '../tenants/guards/tenant-module.guard';
+import { RequireTenantModule } from '../tenants/decorators/tenant-modules.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AuditInterceptor } from '../../common/interceptors/audit.interceptor';
 
 @Controller('purchases/quotations')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, TenantModuleGuard)
+@RequireTenantModule('COMPRAS')
 @UseInterceptors(AuditInterceptor)
 export class QuotationsController {
   constructor(private readonly quotationsService: QuotationsService) {}

@@ -5,14 +5,20 @@ import { ShieldAlert } from 'lucide-react';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   module?: string;
+  requiredRole?: string;
 }
 
-export function ProtectedRoute({ children, module }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, module, requiredRole }: ProtectedRouteProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
   const can = useAuthStore((state) => state.can);
+  const hasRole = useAuthStore((state) => state.hasRole);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (requiredRole && !hasRole(requiredRole)) {
+    return <Navigate to="/" replace />;
   }
 
   if (module && !can(module, 'read')) {

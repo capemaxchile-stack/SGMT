@@ -13,12 +13,15 @@ import { CreateFuelLogDto } from './dto/create-fuel-log.dto';
 import { FilterFuelLogsDto } from './dto/filter-fuel-logs.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { TenantModuleGuard } from '../tenants/guards/tenant-module.guard';
+import { RequireTenantModule } from '../tenants/decorators/tenant-modules.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuditInterceptor } from '../../common/interceptors/audit.interceptor';
 
 @Controller('fuel')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, TenantModuleGuard)
+@RequireTenantModule('COMBUSTIBLE')
 @UseInterceptors(AuditInterceptor)
 export class FuelController {
   constructor(private readonly fuelService: FuelService) {}

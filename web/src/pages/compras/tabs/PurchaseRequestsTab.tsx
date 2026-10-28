@@ -168,7 +168,7 @@ export function PurchaseRequestsTab() {
       if (confirmDialog.type === 'APPROVE') {
         await updateStatusMutation.mutateAsync({ id, status: 'APROBADA' });
         toast.success(
-          `Solicitud ${requestNumber} APROBADA exitosamente. Paso siguiente: El departamento de Compras (comprador@sgmt.local) debe cotizar con proveedores.`
+          `Solicitud ${requestNumber} APROBADA exitosamente. Paso siguiente: El departamento de Compras (comprador@katei.cl) debe cotizar con proveedores.`
         );
       } else {
         await updateStatusMutation.mutateAsync({
@@ -614,7 +614,7 @@ export function PurchaseRequestsTab() {
                 </div>
 
                 <div className="mt-3 p-2 bg-white/70 dark:bg-slate-900/70 rounded-lg border border-emerald-100 dark:border-emerald-900 text-[11px] text-slate-600 dark:text-slate-400">
-                  ⚡ <strong>Siguiente paso en el flujo:</strong> Al aprobar, la solicitud pasará al estado <strong>APROBADA</strong> y quedará disponible para que el <strong>Departamento de Compras (comprador@sgmt.local)</strong> comience la licitación y cotización con proveedores.
+                  ⚡ <strong>Siguiente paso en el flujo:</strong> Al aprobar, la solicitud pasará al estado <strong>APROBADA</strong> y quedará disponible para que el <strong>Departamento de Compras (comprador@katei.cl)</strong> comience la licitación y cotización con proveedores.
                 </div>
               </div>
             </div>

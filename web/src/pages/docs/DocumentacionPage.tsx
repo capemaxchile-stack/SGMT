@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BookOpen,
   Layers,
@@ -19,12 +19,25 @@ import {
   Bell,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { useAuthStore } from '../../stores/auth.store';
 
 export function DocumentacionPage() {
+  const { isModuleEnabled } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'flujos' | 'guias' | 'modulos' | 'faq' | 'roles'>('flujos');
   const [selectedFlow, setSelectedFlow] = useState<
     'compras' | 'terreno' | 'mantenimiento' | 'combustible' | 'bodega' | 'antifraude'
   >('compras');
+
+  // Ajustar flujo seleccionado por defecto si compras no está en el plan
+  useEffect(() => {
+    if (!isModuleEnabled('COMPRAS')) {
+      if (isModuleEnabled('MANTENIMIENTO')) setSelectedFlow('mantenimiento');
+      else if (isModuleEnabled('COMBUSTIBLE')) setSelectedFlow('combustible');
+      else if (isModuleEnabled('BODEGA')) setSelectedFlow('bodega');
+      else if (isModuleEnabled('TERRENO')) setSelectedFlow('terreno');
+      else setSelectedFlow('antifraude');
+    }
+  }, [isModuleEnabled]);
 
   return (
     <div className="space-y-6">
@@ -117,65 +130,75 @@ export function DocumentacionPage() {
         <div className="space-y-6">
           {/* Flow selector buttons */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <button
-              onClick={() => setSelectedFlow('compras')}
-              className={`p-3.5 rounded-xl border text-left font-bold text-xs transition-all flex items-center gap-2.5 ${
-                selectedFlow === 'compras'
-                  ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-500 text-blue-700 dark:text-blue-300 shadow-sm'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-              }`}
-            >
-              <ShoppingCart size={18} className="text-blue-500 shrink-0" />
-              <span>1. Compras & Cotizaciones</span>
-            </button>
+            {isModuleEnabled('COMPRAS') && (
+              <button
+                onClick={() => setSelectedFlow('compras')}
+                className={`p-3.5 rounded-xl border text-left font-bold text-xs transition-all flex items-center gap-2.5 ${
+                  selectedFlow === 'compras'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-500 text-blue-700 dark:text-blue-300 shadow-sm'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                }`}
+              >
+                <ShoppingCart size={18} className="text-blue-500 shrink-0" />
+                <span>1. Compras & Cotizaciones</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => setSelectedFlow('terreno')}
-              className={`p-3.5 rounded-xl border text-left font-bold text-xs transition-all flex items-center gap-2.5 ${
-                selectedFlow === 'terreno'
-                  ? 'bg-cyan-50 dark:bg-cyan-950/60 border-cyan-500 text-cyan-700 dark:text-cyan-300 shadow-sm'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-              }`}
-            >
-              <Smartphone size={18} className="text-cyan-500 shrink-0" />
-              <span>2. App Terreno (Offline)</span>
-            </button>
+            {isModuleEnabled('TERRENO') && (
+              <button
+                onClick={() => setSelectedFlow('terreno')}
+                className={`p-3.5 rounded-xl border text-left font-bold text-xs transition-all flex items-center gap-2.5 ${
+                  selectedFlow === 'terreno'
+                    ? 'bg-cyan-50 dark:bg-cyan-950/60 border-cyan-500 text-cyan-700 dark:text-cyan-300 shadow-sm'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                }`}
+              >
+                <Smartphone size={18} className="text-cyan-500 shrink-0" />
+                <span>2. App Terreno (Offline)</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => setSelectedFlow('mantenimiento')}
-              className={`p-3.5 rounded-xl border text-left font-bold text-xs transition-all flex items-center gap-2.5 ${
-                selectedFlow === 'mantenimiento'
-                  ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-500 text-indigo-700 dark:text-indigo-300 shadow-sm'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-              }`}
-            >
-              <Wrench size={18} className="text-indigo-500 shrink-0" />
-              <span>3. Mantenimiento & OTs</span>
-            </button>
+            {isModuleEnabled('MANTENIMIENTO') && (
+              <button
+                onClick={() => setSelectedFlow('mantenimiento')}
+                className={`p-3.5 rounded-xl border text-left font-bold text-xs transition-all flex items-center gap-2.5 ${
+                  selectedFlow === 'mantenimiento'
+                    ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-500 text-indigo-700 dark:text-indigo-300 shadow-sm'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                }`}
+              >
+                <Wrench size={18} className="text-indigo-500 shrink-0" />
+                <span>3. Mantenimiento & OTs</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => setSelectedFlow('combustible')}
-              className={`p-3.5 rounded-xl border text-left font-bold text-xs transition-all flex items-center gap-2.5 ${
-                selectedFlow === 'combustible'
-                  ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-500 text-amber-700 dark:text-amber-300 shadow-sm'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-              }`}
-            >
-              <Fuel size={18} className="text-amber-500 shrink-0" />
-              <span>4. Control de Diésel</span>
-            </button>
+            {isModuleEnabled('COMBUSTIBLE') && (
+              <button
+                onClick={() => setSelectedFlow('combustible')}
+                className={`p-3.5 rounded-xl border text-left font-bold text-xs transition-all flex items-center gap-2.5 ${
+                  selectedFlow === 'combustible'
+                    ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-500 text-amber-700 dark:text-amber-300 shadow-sm'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                }`}
+              >
+                <Fuel size={18} className="text-amber-500 shrink-0" />
+                <span>4. Control de Diésel</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => setSelectedFlow('bodega')}
-              className={`p-3.5 rounded-xl border text-left font-bold text-xs transition-all flex items-center gap-2.5 ${
-                selectedFlow === 'bodega'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-              }`}
-            >
-              <Box size={18} className="text-emerald-500 shrink-0" />
-              <span>5. Bodega & Inventario / Stock</span>
-            </button>
+            {isModuleEnabled('BODEGA') && (
+              <button
+                onClick={() => setSelectedFlow('bodega')}
+                className={`p-3.5 rounded-xl border text-left font-bold text-xs transition-all flex items-center gap-2.5 ${
+                  selectedFlow === 'bodega'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                }`}
+              >
+                <Box size={18} className="text-emerald-500 shrink-0" />
+                <span>5. Bodega & Inventario / Stock</span>
+              </button>
+            )}
 
             <button
               onClick={() => setSelectedFlow('antifraude')}

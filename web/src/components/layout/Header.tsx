@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { useThemeStore } from '../../stores/theme.store';
-import { LogOut, Menu, Sun, Moon, Settings, Sparkles } from 'lucide-react';
+import { LogOut, Menu, Sun, Moon, Settings, Sparkles, ShieldCheck } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { UserProfileModal } from './UserProfileModal';
 import { NotificationsPopover } from './NotificationsPopover';
+import { QuickCalculatorPopover } from './QuickCalculatorPopover';
 
 interface HeaderProps {
   onOpenMobileMenu?: () => void;
@@ -12,7 +14,7 @@ interface HeaderProps {
 }
 
 export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
-  const { user, logout, can } = useAuthStore();
+  const { user, logout, can, isModuleEnabled, hasRole, isImpersonating } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -29,17 +31,30 @@ export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
           >
             <Menu size={22} />
           </Button>
-          <div className="font-semibold text-slate-800 dark:text-slate-200 hidden md:block">
-            KATEI — Gestión de Operaciones y Maquinaria
+          <div className="font-semibold text-slate-800 dark:text-slate-200 hidden md:flex items-center gap-2 text-sm">
+            <span className="text-slate-400 font-normal">Panel de Control:</span>
+            <span className="font-bold text-slate-900 dark:text-white">{useAuthStore.getState().getTenantName()}</span>
           </div>
-          <div className="font-bold text-xl md:hidden text-primary-600 dark:text-blue-400 tracking-wider">
+          <div className="font-bold text-base md:hidden text-primary-600 dark:text-blue-400 tracking-wider">
             KATEI
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* KATEI Copilot AI Shortcut (governed by COPILOT permission) */}
-          {can('COPILOT', 'read') && (
+          {/* SaaS Super Admin Master Portal Shortcut */}
+          {hasRole('SUPER_USUARIO') && !isImpersonating() && (
+            <Link
+              to="/super-admin"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500 transition-all shadow-sm text-xs font-bold"
+              title="Portal Maestro SaaS (Control KATEI)"
+            >
+              <ShieldCheck size={15} className="text-indigo-200" />
+              <span className="hidden sm:inline">Portal Maestro</span>
+            </Link>
+          )}
+
+          {/* KATEI Copilot AI Shortcut (governed by Tenant Plan + COPILOT permission) */}
+          {isModuleEnabled('COPILOT') && can('COPILOT', 'read') && (
             <button
               type="button"
               onClick={onOpenCopilot}
@@ -53,6 +68,9 @@ export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
 
           {/* Notifications Popover */}
           <NotificationsPopover />
+
+          {/* Quick Calculator Popover */}
+          <QuickCalculatorPopover />
 
           {/* Theme Toggle Button */}
           <button

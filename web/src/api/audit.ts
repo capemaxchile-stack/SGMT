@@ -13,10 +13,21 @@ export interface AuditLog {
   detail?: any;
   details?: any;
   ipAddress?: string | null;
-  user?: User;
+  user?: User & {
+    tenantId?: string | null;
+    tenant?: {
+      id: string;
+      name: string;
+      slug: string;
+    };
+  };
 }
 
-export const fetchAuditLogs = async (params?: { entity?: string; action?: string }): Promise<AuditLog[]> => {
+export const fetchAuditLogs = async (params?: {
+  entity?: string;
+  action?: string;
+  tenantId?: string;
+}): Promise<AuditLog[]> => {
   const { data } = await api.get<AuditLog[]>('/audit', { params });
   return data;
 };
@@ -26,7 +37,7 @@ export const fetchUsers = async (): Promise<User[]> => {
   return data;
 };
 
-export const useAuditLogs = (params?: { entity?: string; action?: string }) => {
+export const useAuditLogs = (params?: { entity?: string; action?: string; tenantId?: string }) => {
   return useQuery({
     queryKey: ['audit', params],
     queryFn: () => fetchAuditLogs(params),

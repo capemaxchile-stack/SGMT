@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { Eye, ArrowLeft } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { CopilotDrawer } from '../copilot/CopilotDrawer';
@@ -10,9 +11,10 @@ import { useThemeStore } from '../../stores/theme.store';
 export function AppLayout() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
-  const { can } = useAuthStore();
+  const navigate = useNavigate();
+  const { can, isModuleEnabled, isImpersonating, stopImpersonating, getTenantName } = useAuthStore();
   const { copilotEnabled } = useThemeStore();
-  const hasCopilotAccess = copilotEnabled && can('COPILOT', 'read');
+  const hasCopilotAccess = copilotEnabled && isModuleEnabled('COPILOT') && can('COPILOT', 'read');
 
   // Global Keyboard Shortcut: Ctrl+K or Cmd+K to toggle Copilot
   useEffect(() => {
@@ -39,6 +41,29 @@ export function AppLayout() {
         onCloseMobile={() => setIsMobileNavOpen(false)}
       />
       <div className="flex flex-col flex-1 min-w-0">
+        {/* Impersonation / Monitoring Active Banner */}
+        {isImpersonating() && (
+          <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 px-4 py-2 text-xs font-bold flex items-center justify-between shadow-md z-30 shrink-0 border-b border-amber-600">
+            <div className="flex items-center gap-2 truncate">
+              <span className="flex h-2 w-2 rounded-full bg-slate-950 animate-ping" />
+              <Eye size={16} className="text-slate-950 shrink-0" />
+              <span className="truncate">
+                MODO MONITOREO ACTIVO &bull; Estás visualizando la plataforma del cliente:{' '}
+                <strong className="underline uppercase tracking-wide">{getTenantName()}</strong>
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                stopImpersonating();
+                navigate('/super-admin');
+              }}
+              className="ml-3 shrink-0 bg-slate-900 hover:bg-slate-800 text-amber-300 hover:text-white px-3 py-1 rounded text-xs font-bold transition-all flex items-center gap-1.5 shadow"
+            >
+              <ArrowLeft size={13} />
+              <span>Salir del Monitoreo</span>
+            </button>
+          </div>
+        )}
         <Header
           onOpenMobileMenu={() => setIsMobileNavOpen(true)}
           onOpenCopilot={() => hasCopilotAccess && setIsCopilotOpen(true)}

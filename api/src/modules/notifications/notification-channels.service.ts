@@ -1,5 +1,7 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, Optional } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { TenantUsageService } from '../tenants/tenant-usage.service';
+import { getCurrentTenantId } from '../../common/tenant-context/tenant-context';
 import {
   NotificationChannelsConfigDto,
   TestChannelDto,
@@ -54,7 +56,10 @@ const DEFAULT_CONFIG: NotificationChannelsConfigDto = {
 export class NotificationChannelsService {
   private readonly logger = new Logger(NotificationChannelsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly tenantUsageService?: TenantUsageService,
+  ) {}
 
   /**
    * Helper to mask sensitive keys for client display (e.g., '1234••••••••••••abcd')
@@ -68,12 +73,28 @@ export class NotificationChannelsService {
   }
 
   /**
+   * Helper to get tenant-scoped settings key
+   */
+  private getSettingKey(customTenantId?: string): string {
+    const tid = customTenantId || getCurrentTenantId();
+    return tid ? `NOTIFICATION_CHANNELS_CONFIG_${tid}` : CONFIG_SETTING_KEY;
+  }
+
+  /**
    * Retrieve current notification channels configuration (masked for security)
    */
-  async getConfig(rawSecrets = false): Promise<NotificationChannelsConfigDto> {
-    const setting = await this.prisma.systemSetting.findUnique({
-      where: { key: CONFIG_SETTING_KEY },
+  async getConfig(rawSecrets = false, customTenantId?: string): Promise<NotificationChannelsConfigDto> {
+    const key = this.getSettingKey(customTenantId);
+    let setting = await this.prisma.systemSetting.findUnique({
+      where: { key },
     });
+
+    // Fallback to global config if tenant hasn't overridden it yet
+    if ((!setting || !setting.value) && key !== CONFIG_SETTING_KEY) {
+      setting = await this.prisma.systemSetting.findUnique({
+        where: { key: CONFIG_SETTING_KEY },
+      });
+    }
 
     if (!setting || !setting.value) {
       return DEFAULT_CONFIG;
@@ -114,8 +135,9 @@ export class NotificationChannelsService {
   /**
    * Update notification channels configuration (merges unmasked secrets if unmodified)
    */
-  async updateConfig(dto: NotificationChannelsConfigDto): Promise<NotificationChannelsConfigDto> {
-    const current = await this.getConfig(true);
+  async updateConfig(dto: NotificationChannelsConfigDto, customTenantId?: string): Promise<NotificationChannelsConfigDto> {
+    const key = this.getSettingKey(customTenantId);
+    const current = await this.getConfig(true, customTenantId);
 
     // If submitted botToken is masked or empty, keep existing secret ONLY if existing secret is not masked
     let finalBotToken = dto.telegram.botToken?.trim();
@@ -151,18 +173,18 @@ export class NotificationChannelsService {
     };
 
     await this.prisma.systemSetting.upsert({
-      where: { key: CONFIG_SETTING_KEY },
+      where: { key },
       create: {
-        key: CONFIG_SETTING_KEY,
+        key,
         value: JSON.stringify(mergedConfig),
-        description: 'Configuración de canales de notificación (Telegram, Brevo Email, Webhook)',
+        description: `Configuración de canales de notificación (${key})`,
       },
       update: {
         value: JSON.stringify(mergedConfig),
       },
     });
 
-    return this.getConfig(false);
+    return this.getConfig(false, customTenantId);
   }
 
   /**
@@ -357,9 +379,11 @@ export class NotificationChannelsService {
     summary: string;
     details?: Record<string, any>;
     link?: string;
+    tenantId?: string;
   }) {
     try {
-      const config = await this.getConfig(true);
+      const targetTenantId = payload.tenantId || getCurrentTenantId() || '11111111-1111-4111-a111-111111111111';
+      const config = await this.getConfig(true, targetTenantId);
 
       // Check if immediate realtime event dispatch is active (otherwise captured in daily digest)
       const allowRealtime = config.scheduleRules?.enableRealtimeEvents ?? true;
@@ -380,9 +404,13 @@ export class NotificationChannelsService {
           `📍 *Módulo:* \`${payload.link || '/compras'}\`\n` +
           `📅 *Fecha:* ${new Date().toLocaleString('es-CL')}`;
 
-        this.executeTelegramSend(botToken, chatId, mdText).catch((err) =>
-          this.logger.warn(`Failed async telegram dispatch: ${err.message}`),
-        );
+        this.executeTelegramSend(botToken, chatId, mdText)
+          .then(() => {
+            this.tenantUsageService?.recordMessageSent(targetTenantId, 1);
+          })
+          .catch((err) =>
+            this.logger.warn(`Failed async telegram dispatch: ${err.message}`),
+          );
       }
 
       // 2. Dispatch to Brevo Email if enabled and event is subscribed
@@ -417,7 +445,11 @@ export class NotificationChannelsService {
             recipients,
             `KATEI Alerta: ${payload.title}`,
             html,
-          ).catch((err) => this.logger.warn(`Failed async brevo dispatch: ${err.message}`));
+          )
+            .then(() => {
+              this.tenantUsageService?.recordEmailSent(targetTenantId, recipients.length);
+            })
+            .catch((err) => this.logger.warn(`Failed async brevo dispatch: ${err.message}`));
         }
       }
 

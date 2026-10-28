@@ -32,61 +32,72 @@ export class NotificationSchedulerService implements OnModuleInit, OnModuleDestr
   }
 
   /**
-   * Evaluates rules (Daily at target time, Realtime vs Digest, Anti-spam cooldown)
+   * Evaluates rules tenant by tenant (Daily at target time, Realtime vs Digest, Anti-spam cooldown)
    */
   async evaluateScheduledDispatch(): Promise<void> {
-    const config = await this.channelsService.getConfig(true);
-    const rules = config.scheduleRules || {
-      digestFrequency: 'DAILY',
-      dailyDigestTime: '08:00',
-      enableRealtimeEvents: false,
-      cooldownPreventDuplicateDaily: true,
-    };
-
-    if (rules.digestFrequency === 'DISABLED' || rules.digestFrequency === 'REALTIME_ONLY') {
-      return;
-    }
+    const activeTenants = await this.prisma.tenant.findMany({
+      where: { status: 'ACTIVO' },
+    });
 
     const now = new Date();
     const localTimeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
     const localDateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
 
-    if (rules.digestFrequency === 'DAILY') {
-      const targetTime = rules.dailyDigestTime || '08:00';
-      if (localTimeStr >= targetTime) {
-        // Check if already dispatched today
-        const lastSentSetting = await this.prisma.systemSetting.findUnique({
-          where: { key: LAST_DIGEST_DATE_KEY },
-        });
+    for (const tenant of activeTenants) {
+      try {
+        const config = await this.channelsService.getConfig(true, tenant.id);
+        const rules = config.scheduleRules || {
+          digestFrequency: 'DAILY',
+          dailyDigestTime: '08:00',
+          enableRealtimeEvents: false,
+          cooldownPreventDuplicateDaily: true,
+        };
 
-        if (lastSentSetting?.value === localDateStr && rules.cooldownPreventDuplicateDaily) {
-          // Already dispatched today! Skip to prevent spam
-          return;
+        if (rules.digestFrequency === 'DISABLED' || rules.digestFrequency === 'REALTIME_ONLY') {
+          continue;
         }
 
-        // Run sweep and record date
-        const result = await this.runOperationalSweep();
-        if (result.dispatched) {
-          await this.prisma.systemSetting.upsert({
-            where: { key: LAST_DIGEST_DATE_KEY },
-            create: {
-              key: LAST_DIGEST_DATE_KEY,
-              value: localDateStr,
-              description: 'Fecha del último resumen diario enviado',
-            },
-            update: { value: localDateStr },
-          });
-          this.logger.log(`Daily operational digest dispatched successfully for date ${localDateStr}`);
+        if (rules.digestFrequency === 'DAILY') {
+          const targetTime = rules.dailyDigestTime || '08:00';
+          if (localTimeStr >= targetTime) {
+            const tenantDigestKey = `${LAST_DIGEST_DATE_KEY}_${tenant.id}`;
+            const lastSentSetting = await this.prisma.systemSetting.findUnique({
+              where: { key: tenantDigestKey },
+            });
+
+            if (lastSentSetting?.value === localDateStr && rules.cooldownPreventDuplicateDaily) {
+              continue;
+            }
+
+            const result = await this.runOperationalSweepForTenant(tenant, config);
+            if (result.dispatched) {
+              await this.prisma.systemSetting.upsert({
+                where: { key: tenantDigestKey },
+                create: {
+                  key: tenantDigestKey,
+                  value: localDateStr,
+                  description: `Fecha del último resumen diario enviado para ${tenant.name}`,
+                },
+                update: { value: localDateStr },
+              });
+              this.logger.log(`Daily digest dispatched for tenant ${tenant.name} (${tenant.id}) on ${localDateStr}`);
+            }
+          }
         }
+      } catch (err: any) {
+        this.logger.warn(`Failed digest check for tenant ${tenant.slug}: ${err.message}`);
       }
     }
   }
 
   /**
-   * Evaluates active system alerts and dispatches automatic digest
+   * Evaluates active system alerts for a single tenant and dispatches automatic digest
    */
-  async runOperationalSweep(): Promise<{ dispatched: boolean; count: number }> {
-    const alerts = await this.notificationsService.getNotifications();
+  async runOperationalSweepForTenant(
+    tenant: { id: string; name: string },
+    config: any,
+  ): Promise<{ dispatched: boolean; count: number }> {
+    const alerts = await this.notificationsService.getNotifications(tenant.id);
     if (alerts.criticalCount === 0 && alerts.highCount === 0) {
       return { dispatched: false, count: 0 };
     }
@@ -101,10 +112,8 @@ export class NotificationSchedulerService implements OnModuleInit, OnModuleDestr
     if (ordersCount > 0) summaryParts.push(`📝 *${ordersCount}* orden(es) de compra pendientes de aprobación`);
 
     if (summaryParts.length > 0) {
-      const config = await this.channelsService.getConfig(true);
-
       const mdText =
-        `📋 *KATEI — Resumen Operacional Diario* 🚜🔔\n\n` +
+        `📋 *${tenant.name} — Resumen Operacional Diario* 🚜🔔\n\n` +
         `Buenos días. Este es el consolidado matutino de alertas activas en faena:\n\n` +
         `${summaryParts.map((s) => `• ${s}`).join('\n')}\n\n` +
         `📍 *Panel:* \`/dashboard\`\n` +
@@ -116,7 +125,7 @@ export class NotificationSchedulerService implements OnModuleInit, OnModuleDestr
           config.telegram.botToken,
           config.telegram.chatId,
           mdText,
-        ).catch((err: any) => this.logger.warn(`Failed telegram sweep: ${err.message}`));
+        ).catch((err: any) => this.logger.warn(`Failed telegram sweep for ${tenant.name}: ${err.message}`));
       }
 
       // 2. Send to Brevo
@@ -124,7 +133,7 @@ export class NotificationSchedulerService implements OnModuleInit, OnModuleDestr
         const html = `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
             <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); padding: 24px; text-align: center; color: white;">
-              <h2 style="margin: 0; font-size: 20px; font-weight: 800;">KATEI &bull; Resumen Operacional Diario</h2>
+              <h2 style="margin: 0; font-size: 20px; font-weight: 800;">${tenant.name} &bull; Resumen Operacional Diario</h2>
               <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Consolidado Matutino de Alertas en Faena</p>
             </div>
             <div style="padding: 24px; color: #1e293b; font-size: 14px; line-height: 1.6;">
@@ -142,16 +151,24 @@ export class NotificationSchedulerService implements OnModuleInit, OnModuleDestr
         (this.channelsService as any).executeBrevoSend(
           config.brevo.apiKey,
           config.brevo.senderEmail || 'alertas@katei.cl',
-          config.brevo.senderName || 'KATEI Alertas',
+          config.brevo.senderName || `${tenant.name} Alertas`,
           config.brevo.recipientEmails || [],
-          `KATEI — Resumen Matutino de Alertas (${alerts.totalCount} activas)`,
+          `${tenant.name} — Resumen Matutino de Alertas (${alerts.totalCount} activas)`,
           html,
-        ).catch((err: any) => this.logger.warn(`Failed brevo sweep: ${err.message}`));
+        ).catch((err: any) => this.logger.warn(`Failed brevo sweep for ${tenant.name}: ${err.message}`));
       }
 
       return { dispatched: true, count: alerts.totalCount };
     }
 
     return { dispatched: false, count: 0 };
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   */
+  async runOperationalSweep(): Promise<{ dispatched: boolean; count: number }> {
+    const config = await this.channelsService.getConfig(true);
+    return this.runOperationalSweepForTenant({ id: '11111111-1111-4111-a111-111111111111', name: 'KATEI' }, config);
   }
 }

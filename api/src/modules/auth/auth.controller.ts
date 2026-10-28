@@ -2,6 +2,7 @@ import { Controller, Post, Patch, Body, UseGuards, Get, UseInterceptors } from '
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto, UpdateProfileDto } from './dto/change-password.dto';
+import { ForgotPasswordDto, ResetPasswordWithTokenDto } from './dto/forgot-password.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuditInterceptor } from '../../common/interceptors/audit.interceptor';
@@ -45,5 +46,15 @@ export class AuthController {
   @Patch('change-password')
   changePassword(@CurrentUser() user: any, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(user.id, dto.currentPassword, dto.newPassword);
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.requestPasswordReset(dto.email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordWithTokenDto) {
+    return this.authService.resetPasswordWithToken(dto.token, dto.newPassword);
   }
 }

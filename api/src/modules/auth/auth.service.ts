@@ -84,6 +84,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: {
+        tenant: true,
         roles: {
           include: {
             role: {
@@ -102,6 +103,20 @@ export class AuthService {
       throw new UnauthorizedException('Usuario inactivo o deshabilitado');
     }
 
+    const isSuperUser = user.roles?.some((ur: any) => ur.role?.name === 'SUPER_USUARIO');
+    if (!isSuperUser && user.tenant) {
+      if (user.tenant.status === 'SUSPENDIDO') {
+        throw new UnauthorizedException(
+          'Tu cuenta de empresa se encuentra suspendida temporalmente por regularización comercial. Por favor contacta a administración.',
+        );
+      }
+      if (user.tenant.status === 'CANCELADO') {
+        throw new UnauthorizedException(
+          'La cuenta de empresa ha sido cancelada o terminada. Contacta al soporte de KATEI.',
+        );
+      }
+    }
+
     const isMatch = await bcrypt.compare(pass, user.passwordHash);
     if (!isMatch) {
       throw new UnauthorizedException('Invalid credentials');
@@ -115,7 +130,12 @@ export class AuthService {
       throw new UnauthorizedException('Usuario inactivo o deshabilitado');
     }
 
-    const payload = { email: user.email, sub: user.id, roles: user.roles };
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      roles: user.roles,
+      tenantId: user.tenantId,
+    };
     const refreshSecret = this.refreshSecret;
     const refreshExpiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '7d');
     
@@ -126,6 +146,33 @@ export class AuthService {
         expiresIn: refreshExpiresIn,
       }),
       user,
+    };
+  }
+
+  async createImpersonationToken(superUser: any, targetTenant: any): Promise<AuthResponseDto> {
+    const payload = {
+      email: superUser.email,
+      sub: superUser.id,
+      roles: superUser.roles,
+      tenantId: targetTenant.id,
+      isImpersonating: true,
+      originalTenantId: superUser.tenantId || null,
+    };
+    const refreshSecret = this.refreshSecret;
+    const refreshExpiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '7d');
+
+    return {
+      accessToken: this.jwtService.sign(payload),
+      refreshToken: this.jwtService.sign(payload, {
+        secret: refreshSecret,
+        expiresIn: refreshExpiresIn,
+      }),
+      user: {
+        ...superUser,
+        tenantId: targetTenant.id,
+        tenant: targetTenant,
+        isImpersonating: true,
+      },
     };
   }
 
@@ -151,6 +198,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
+        tenant: true,
         roles: {
           include: {
             role: {
@@ -200,5 +248,113 @@ export class AuthService {
       data: { passwordHash },
     });
     return { success: true, message: 'Contraseña actualizada correctamente' };
+  }
+
+  /**
+   * Genera un token firmado temporal y despacha correo vía Brevo central KATEI
+   */
+  async requestPasswordReset(email: string): Promise<{ success: boolean; message: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+      include: { tenant: true },
+    });
+
+    // Retornamos éxito genérico para evitar enumeración de usuarios
+    if (!user || !user.isActive) {
+      return {
+        success: true,
+        message: 'Si el correo existe en el sistema, recibirás las instrucciones de recuperación.',
+      };
+    }
+
+    const resetPayload = {
+      sub: user.id,
+      email: user.email,
+      purpose: 'password_reset',
+    };
+
+    const resetToken = this.jwtService.sign(resetPayload, {
+      expiresIn: '1h',
+    });
+
+    const brevoApiKey = process.env.BREVO_API_KEY;
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || 'soporte@katei.cl';
+    const senderName = 'KATEI Plataforma';
+
+    if (brevoApiKey) {
+      const resetUrl = `${process.env.APP_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+      const htmlContent = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <div style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); padding: 32px 24px; text-align: center; color: white;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">KATEI</h1>
+            <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Recuperación de Contraseña</p>
+          </div>
+          <div style="padding: 32px 24px; color: #1e293b; font-size: 14px; line-height: 1.6;">
+            <p style="margin-top: 0; font-size: 15px;">Hola <strong>${user.name}</strong>,</p>
+            <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en KATEI.</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 28px; text-decoration: none; font-size: 14px; font-weight: 600; border-radius: 8px; display: inline-block;">
+                Restablecer mi Contraseña
+              </a>
+            </div>
+            <p style="font-size: 12px; color: #64748b; margin-top: 24px;">
+              Este enlace expirará en <strong>60 minutos</strong> por razones de seguridad. Si no solicitaste este cambio, podés ignorar este correo.
+            </p>
+          </div>
+        </div>
+      `;
+
+      fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'api-key': brevoApiKey,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { name: senderName, email: senderEmail },
+          to: [{ email: user.email, name: user.name }],
+          subject: 'KATEI — Instrucciones para restablecer tu contraseña',
+          htmlContent,
+        }),
+      }).catch(() => {});
+    }
+
+    return {
+      success: true,
+      message: 'Si el correo existe en el sistema, recibirás las instrucciones de recuperación.',
+    };
+  }
+
+  /**
+   * Restablece la contraseña validando el token temporal
+   */
+  async resetPasswordWithToken(token: string, newPass: string): Promise<{ success: boolean; message: string }> {
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(token);
+    } catch {
+      throw new UnauthorizedException('El enlace de recuperación es inválido o ha expirado.');
+    }
+
+    if (payload.purpose !== 'password_reset' || !payload.sub) {
+      throw new UnauthorizedException('Token inválido para restablecimiento de contraseña.');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Usuario no válido o deshabilitado.');
+    }
+
+    const passwordHash = await bcrypt.hash(newPass, 12);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+
+    return { success: true, message: 'Tu contraseña ha sido actualizada con éxito.' };
   }
 }

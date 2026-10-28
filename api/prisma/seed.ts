@@ -137,6 +137,22 @@ async function main() {
 
   // 2. Users
   const adminPassword = await bcrypt.hash('admin123', 12);
+  const kateiAdminPassword = await bcrypt.hash('Admin123!', 12);
+
+  // Super / Admin accounts
+  await prisma.user.upsert({
+    where: { email: 'admin@katei.cl' },
+    update: {},
+    create: {
+      email: 'admin@katei.cl',
+      name: 'Super Admin KATEI',
+      passwordHash: kateiAdminPassword,
+      roles: {
+        create: [{ roleId: roles['SUPER_USUARIO'].id }, { roleId: roles['ADMIN_SISTEMA'].id }],
+      },
+    },
+  });
+
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@sgmt.local' },
     update: {},
@@ -423,6 +439,239 @@ async function main() {
     if (!existing) {
       await prisma.maintenancePlan.create({
         data: plan
+      });
+    }
+  }
+
+  // 7. Demo Tenant & Realistic Showroom Data
+  console.log('Seeding Demo Tenant (demo.katei.cl)...');
+  const demoTenant = await prisma.tenant.upsert({
+    where: { slug: 'demo' },
+    update: {},
+    create: {
+      name: 'KATEI Demo Operaciones',
+      slug: 'demo',
+      rut: '76.999.888-7',
+      planTier: 'ENTERPRISE',
+      status: 'ACTIVO',
+      contactEmail: 'demo@katei.cl',
+      contactPhone: '+56 9 8765 4321',
+      address: 'Av. Las Condes 12400, Santiago',
+    },
+  });
+
+  const demoModules = [
+    'DASHBOARD',
+    'FAENAS',
+    'FLOTA',
+    'CERTIFICACIONES',
+    'MANTENIMIENTO',
+    'COMBUSTIBLE',
+    'BODEGA',
+    'COMPRAS',
+    'REPORTES',
+    'ADMINISTRACION',
+    'COPILOT',
+  ];
+
+  for (const mod of demoModules) {
+    await prisma.tenantModuleConfig.upsert({
+      where: {
+        tenantId_module: {
+          tenantId: demoTenant.id,
+          module: mod as any,
+        },
+      },
+      update: { isEnabled: true },
+      create: {
+        tenantId: demoTenant.id,
+        module: mod as any,
+        isEnabled: true,
+      },
+    });
+  }
+
+  // Demo Users (Password: Demo2026!)
+  const demoUserPassword = await bcrypt.hash('Demo2026!', 12);
+
+  const demoAdmin = await prisma.user.upsert({
+    where: { email: 'demo@katei.cl' },
+    update: { tenantId: demoTenant.id },
+    create: {
+      email: 'demo@katei.cl',
+      name: 'Administrador Demo',
+      passwordHash: demoUserPassword,
+      tenantId: demoTenant.id,
+      roles: {
+        create: [{ roleId: roles['ADMIN_SISTEMA'].id }],
+      },
+    },
+  });
+
+  const demoJefe = await prisma.user.upsert({
+    where: { email: 'jefe@katei.cl' },
+    update: { tenantId: demoTenant.id },
+    create: {
+      email: 'jefe@katei.cl',
+      name: 'Carlos Jefe Terreno',
+      passwordHash: demoUserPassword,
+      tenantId: demoTenant.id,
+      roles: {
+        create: [{ roleId: roles['JEFE_FAENA'].id }],
+      },
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: 'bodega@katei.cl' },
+    update: { tenantId: demoTenant.id },
+    create: {
+      email: 'bodega@katei.cl',
+      name: 'Pedro Bodega Central',
+      passwordHash: demoUserPassword,
+      tenantId: demoTenant.id,
+      roles: {
+        create: [{ roleId: roles['BODEGUERO'].id }],
+      },
+    },
+  });
+
+  // Demo Faenas
+  let demoFaena1 = await prisma.faena.findFirst({
+    where: { name: 'Faena Minera Cordillera Central', tenantId: demoTenant.id },
+  });
+  if (!demoFaena1) {
+    demoFaena1 = await prisma.faena.create({
+      data: {
+        tenantId: demoTenant.id,
+        name: 'Faena Minera Cordillera Central',
+        location: 'Calama, Región de Antofagasta',
+        status: 'ACTIVA',
+        startDate: new Date('2026-01-15'),
+        chiefId: demoJefe.id,
+      },
+    });
+  }
+
+  let demoFaena2 = await prisma.faena.findFirst({
+    where: { name: 'Proyecto Vial Autopista Norte', tenantId: demoTenant.id },
+  });
+  if (!demoFaena2) {
+    demoFaena2 = await prisma.faena.create({
+      data: {
+        tenantId: demoTenant.id,
+        name: 'Proyecto Vial Autopista Norte',
+        location: 'La Serena, Región de Coquimbo',
+        status: 'ACTIVA',
+        startDate: new Date('2026-03-01'),
+        chiefId: demoJefe.id,
+      },
+    });
+  }
+
+  // Demo Assets
+  const demoAssets = [
+    {
+      internalNumber: 'EXC-001',
+      brand: 'Caterpillar',
+      model: '336D L',
+      type: 'EXCAVADORA' as const,
+      year: 2023,
+      currentHourmeter: 1420,
+      operationalStatus: 'OPERATIVO' as const,
+      tenantId: demoTenant.id,
+      faenaId: demoFaena1.id,
+    },
+    {
+      internalNumber: 'CAM-001',
+      brand: 'Mercedes-Benz',
+      model: 'Actros 3344 6x4',
+      type: 'CAMION_TOLVA' as const,
+      year: 2022,
+      currentHourmeter: 2150,
+      currentKilometrage: 48600,
+      operationalStatus: 'OPERATIVO' as const,
+      tenantId: demoTenant.id,
+      faenaId: demoFaena1.id,
+    },
+    {
+      internalNumber: 'CAR-001',
+      brand: 'Komatsu',
+      model: 'WA380-6',
+      type: 'CARGADOR_FRONTAL' as const,
+      year: 2021,
+      currentHourmeter: 3200,
+      operationalStatus: 'EN_MANTENCION' as const,
+      tenantId: demoTenant.id,
+      faenaId: demoFaena2.id,
+    },
+    {
+      internalNumber: 'CT-001',
+      brand: 'Toyota',
+      model: 'Hilux SRV 4x4',
+      type: 'CAMIONETA' as const,
+      year: 2024,
+      currentHourmeter: 450,
+      currentKilometrage: 18200,
+      operationalStatus: 'OPERATIVO' as const,
+      tenantId: demoTenant.id,
+      faenaId: demoFaena1.id,
+    },
+  ];
+
+  for (const a of demoAssets) {
+    const existing = await prisma.asset.findUnique({
+      where: { internalNumber: a.internalNumber },
+    });
+    if (!existing) {
+      const createdAsset = await prisma.asset.create({
+        data: {
+          internalNumber: a.internalNumber,
+          brand: a.brand,
+          model: a.model,
+          type: a.type,
+          year: a.year,
+          currentHourmeter: a.currentHourmeter,
+          currentKilometrage: a.currentKilometrage || 0,
+          operationalStatus: a.operationalStatus,
+          tenantId: a.tenantId,
+        },
+      });
+
+      await prisma.assetAssignment.create({
+        data: {
+          assetId: createdAsset.id,
+          faenaId: a.faenaId,
+          startDate: new Date('2026-02-01'),
+        },
+      });
+    }
+  }
+
+  // Demo Warehouse
+  let demoWarehouse = await prisma.warehouse.findFirst({
+    where: { name: 'Bodega Principal Faena', tenantId: demoTenant.id },
+  });
+  if (!demoWarehouse) {
+    demoWarehouse = await prisma.warehouse.create({
+      data: {
+        name: 'Bodega Principal Faena',
+        location: 'Calama (Cordillera Central)',
+        type: 'FAENA',
+        tenantId: demoTenant.id,
+        faenaId: demoFaena1.id,
+      },
+    });
+
+    const firstItems = await prisma.item.findMany({ take: 8 });
+    for (const itm of firstItems) {
+      await prisma.stock.create({
+        data: {
+          itemId: itm.id,
+          warehouseId: demoWarehouse.id,
+          quantity: 25,
+          averageCost: 15000,
+        },
       });
     }
   }
