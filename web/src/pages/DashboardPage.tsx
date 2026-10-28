@@ -94,25 +94,26 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Executive Banner */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-800 to-slate-900 rounded-2xl p-5 sm:p-6 text-white shadow-lg border border-blue-600/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Executive Clean Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-white">
-            KATEI — Plataforma de Gestión Operativa y Abastecimiento
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+            <BarChart3 className="text-blue-600 dark:text-blue-400" size={24} />
+            Dashboard Operacional
           </h1>
-          <p className="text-sm text-blue-100/80 mt-1 max-w-2xl">
-            Control integral de faenas, maquinaria, mantenimiento preventivo/correctivo, abastecimiento y combustible en terreno.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Métricas clave de faenas, maquinaria, mantenimiento, abastecimiento y combustible en tiempo real.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleRefresh}
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-xl text-xs font-semibold text-white transition-colors border border-white/20"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors shadow-xs"
             title="Refrescar métricas en vivo"
           >
-            <RefreshCw size={14} className={loadingMetrics || loadingQuotations ? 'animate-spin' : ''} />
-            <span className="hidden sm:inline">Actualizar</span>
+            <RefreshCw size={14} className={loadingMetrics || loadingQuotations ? 'animate-spin text-blue-600' : 'text-slate-500'} />
+            <span>Actualizar</span>
           </button>
         </div>
       </div>

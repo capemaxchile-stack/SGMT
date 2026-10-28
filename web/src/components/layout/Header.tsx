@@ -30,10 +30,11 @@ export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
           >
             <Menu size={22} />
           </Button>
-          <div className="font-semibold text-slate-800 dark:text-slate-200 hidden md:block">
-            KATEI — Gestión de Operaciones y Maquinaria
+          <div className="font-semibold text-slate-800 dark:text-slate-200 hidden md:flex items-center gap-2 text-sm">
+            <span className="text-slate-400 font-normal">Panel de Control:</span>
+            <span className="font-bold text-slate-900 dark:text-white">{useAuthStore.getState().getTenantName()}</span>
           </div>
-          <div className="font-bold text-xl md:hidden text-primary-600 dark:text-blue-400 tracking-wider">
+          <div className="font-bold text-base md:hidden text-primary-600 dark:text-blue-400 tracking-wider">
             KATEI
           </div>
         </div>

@@ -14,6 +14,7 @@ import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { CreateBackendAdminDto } from './dto/create-backend-admin.dto';
 import { TenantPlanTier, TenantStatus } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
+import { tenantContextStorage } from '../../common/tenant-context/tenant-context';
 import { NotificationChannelsService } from '../notifications/notification-channels.service';
 import * as bcrypt from 'bcrypt';
 
@@ -859,53 +860,56 @@ export class TenantsService {
   }
 
   async getTenantBusinessProfile(id: string) {
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: {
-            users: true,
-            faenas: true,
-            assets: true,
-            purchaseOrders: true,
-            workOrders: true,
-            warehouses: true,
-            fuelLogs: true,
+    // Forzamos contexto scoped al tenant consultado para evitar que el middleware de Prisma restrinja a la sesión activa
+    return tenantContextStorage.run({ tenantId: id, isSuperUser: true }, async () => {
+      const tenant = await this.prisma.tenant.findUnique({
+        where: { id },
+        include: {
+          _count: {
+            select: {
+              users: true,
+              faenas: true,
+              assets: true,
+              purchaseOrders: true,
+              workOrders: true,
+              warehouses: true,
+              fuelLogs: true,
+            },
           },
         },
-      },
+      });
+
+      if (!tenant) {
+        throw new NotFoundException(`Empresa con ID '${id}' no encontrada`);
+      }
+
+      const poAgg = await this.prisma.purchaseOrder.aggregate({
+        where: {
+          tenantId: id,
+          status: { in: ['APROBADA', 'APROBADA_EXCEPCION', 'EMITIDA', 'RECEPCION_TOTAL'] },
+        },
+        _sum: {
+          totalAmount: true,
+        },
+      });
+
+      const now = new Date();
+      const created = new Date(tenant.createdAt);
+      const diffMonths = Math.max(
+        1,
+        (now.getFullYear() - created.getFullYear()) * 12 + (now.getMonth() - created.getMonth()) + 1,
+      );
+
+      return {
+        tenant,
+        businessMetrics: {
+          createdAt: tenant.createdAt,
+          monthsActive: diffMonths,
+          totalPurchasesAmount: Number(poAgg._sum?.totalAmount || 0),
+          counts: tenant._count,
+        },
+      };
     });
-
-    if (!tenant) {
-      throw new NotFoundException(`Empresa con ID '${id}' no encontrada`);
-    }
-
-    const poAgg = await this.prisma.purchaseOrder.aggregate({
-      where: {
-        tenantId: id,
-        status: { in: ['APROBADA', 'APROBADA_EXCEPCION', 'EMITIDA', 'RECEPCION_TOTAL'] },
-      },
-      _sum: {
-        totalAmount: true,
-      },
-    });
-
-    const now = new Date();
-    const created = new Date(tenant.createdAt);
-    const diffMonths = Math.max(
-      1,
-      (now.getFullYear() - created.getFullYear()) * 12 + (now.getMonth() - created.getMonth()) + 1,
-    );
-
-    return {
-      tenant,
-      businessMetrics: {
-        createdAt: tenant.createdAt,
-        monthsActive: diffMonths,
-        totalPurchasesAmount: Number(poAgg._sum?.totalAmount || 0),
-        counts: tenant._count,
-      },
-    };
   }
 
   async remove(id: string) {
