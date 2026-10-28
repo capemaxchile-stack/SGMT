@@ -59,6 +59,7 @@ import {
   TrendingUp,
   Search,
   Trash2,
+  LogOut,
 } from 'lucide-react';
 
 const ALL_SYSTEM_MODULES = [
@@ -119,7 +120,7 @@ const PRESET_MODULES: Record<string, string[]> = {
 export function MasterPortalPage() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { user, impersonateTenant } = useAuthStore();
+  const { user, impersonateTenant, logout } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
 
   const [activeTab, setActiveTab] = useState<'empresas' | 'planes' | 'auditoria' | 'guia_alta' | 'admins'>('empresas');
@@ -649,6 +650,17 @@ export function MasterPortalPage() {
           >
             <ExternalLink size={14} className="mr-1.5" />
             Ir a Plataforma Operativa
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={logout}
+            className="text-xs border-red-300 dark:border-red-900/60 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 font-medium"
+            title="Cerrar sesión del Portal Maestro SaaS"
+          >
+            <LogOut size={14} className="mr-1.5" />
+            Cerrar Sesión
           </Button>
 
           <div className="text-right hidden sm:block border-l border-slate-200 dark:border-slate-800 pl-4">

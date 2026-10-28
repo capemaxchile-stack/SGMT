@@ -123,6 +123,8 @@ export function LoginPage() {
       await login({ email, password });
       if (isTerrainMode) {
         navigate('/terreno');
+      } else if (useAuthStore.getState().user?.roles?.includes('SUPER_USUARIO')) {
+        navigate('/super-admin');
       } else {
         navigate('/');
       }

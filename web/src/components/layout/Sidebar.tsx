@@ -113,10 +113,10 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
       title: 'Gestión Operativa',
       items: [
         { name: 'Compras & Abastecimiento', path: '/compras', icon: <ShoppingCart size={18} />, module: 'COMPRAS', end: true },
-        { name: 'Pedidos Terreno (Móvil)', path: '/terreno', icon: <Smartphone size={18} />, module: 'TERRENO', end: true },
         { name: 'Bodega & Inventario', path: '/bodega', icon: <Box size={18} />, module: 'BODEGA' },
         { name: 'Mantenimiento & OTs', path: '/mantenimiento', icon: <Wrench size={18} />, module: 'MANTENIMIENTO' },
         { name: 'Combustible & Cargas', path: '/combustible', icon: <Fuel size={18} />, module: 'COMBUSTIBLE' },
+        { name: 'Pedidos Terreno (Móvil)', path: '/terreno', icon: <Smartphone size={18} />, module: 'TERRENO', end: true },
       ],
     },
     {
