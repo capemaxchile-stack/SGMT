@@ -271,7 +271,6 @@ async function main() {
       status: 'ACTIVO',
       contactEmail: 'demo@katei.cl',
       contactPhone: '+56 9 8765 4321',
-      address: 'Av. Las Condes 12400, Santiago',
     },
   });
 
