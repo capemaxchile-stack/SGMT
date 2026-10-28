@@ -659,8 +659,7 @@ async function main() {
         location: 'Calama (Cordillera Central)',
         type: 'FAENA',
         tenantId: demoTenant.id,
-        faenaId: demoFaena1.id,
-      },
+        },
     });
 
     const firstItems = await prisma.item.findMany({ take: 8 });
