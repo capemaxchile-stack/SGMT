@@ -478,13 +478,10 @@ async function main() {
 
     const firstItems = await prisma.item.findMany({ take: 8 });
     for (const itm of firstItems) {
-      await prisma.stock.create({
-        data: {
-          itemId: itm.id,
-          warehouseId: demoWarehouse.id,
-          quantity: 25,
-          averageCost: 15000,
-        },
+      await prisma.stock.upsert({
+        where: { itemId_warehouseId: { itemId: itm.id, warehouseId: demoWarehouse.id } },
+        update: { quantity: 25, averageCost: 15000 },
+        create: { itemId: itm.id, warehouseId: demoWarehouse.id, quantity: 25, averageCost: 15000 },
       });
     }
   }
