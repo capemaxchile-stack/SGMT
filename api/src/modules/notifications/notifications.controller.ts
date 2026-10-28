@@ -4,6 +4,7 @@ import { NotificationChannelsService } from './notification-channels.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuditInterceptor } from '../../common/interceptors/audit.interceptor';
 import {
   NotificationChannelsConfigDto,
@@ -20,8 +21,8 @@ export class NotificationsController {
   ) {}
 
   @Get()
-  getNotifications() {
-    return this.notificationsService.getNotifications();
+  getNotifications(@CurrentUser() user: any) {
+    return this.notificationsService.getNotifications(user?.tenantId);
   }
 
   @Get('channels/config')

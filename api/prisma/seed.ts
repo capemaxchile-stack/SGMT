@@ -445,12 +445,29 @@ async function main() {
 
   // 7. Demo Tenant & Realistic Showroom Data
   console.log('Seeding Demo Tenant (demo.katei.cl)...');
+  const demoModules = [
+    'DASHBOARD',
+    'FAENAS',
+    'FLOTA',
+    'CERTIFICACIONES',
+    'MANTENIMIENTO',
+    'COMBUSTIBLE',
+    'BODEGA',
+    'COMPRAS',
+    'REPORTES',
+    'ADMINISTRACION',
+    'COPILOT',
+    'TERRENO',
+  ];
+
   const demoTenant = await prisma.tenant.upsert({
     where: { slug: 'demo' },
-    update: {},
+    update: {
+      enabledModules: demoModules,
+    },
     create: {
       name: 'KATEI Demo Operaciones',
-      enabledModules: ['DASHBOARD', 'FAENAS', 'FLOTA', 'CERTIFICACIONES', 'MANTENIMIENTO', 'COMBUSTIBLE', 'BODEGA', 'COMPRAS', 'REPORTES', 'ADMINISTRACION', 'COPILOT'],
+      enabledModules: demoModules,
       slug: 'demo',
       rut: '76.999.888-7',
       planTier: 'ENTERPRISE',
@@ -459,8 +476,6 @@ async function main() {
       contactPhone: '+56 9 8765 4321',
     },
   });
-
-
 
   // Demo Users (Password: Demo2026!)
   const demoUserPassword = await bcrypt.hash('Demo2026!', 12);
@@ -493,7 +508,7 @@ async function main() {
     },
   });
 
-  await prisma.user.upsert({
+  const demoBodega = await prisma.user.upsert({
     where: { email: 'bodega@katei.cl' },
     update: { tenantId: demoTenant.id },
     create: {
@@ -503,6 +518,20 @@ async function main() {
       tenantId: demoTenant.id,
       roles: {
         create: [{ roleId: roles['BODEGUERO'].id }],
+      },
+    },
+  });
+
+  const demoComprador = await prisma.user.upsert({
+    where: { email: 'comprador.demo@katei.cl' },
+    update: { tenantId: demoTenant.id },
+    create: {
+      email: 'comprador.demo@katei.cl',
+      name: 'Ana Compradora Minera',
+      passwordHash: demoUserPassword,
+      tenantId: demoTenant.id,
+      roles: {
+        create: [{ roleId: roles['COMPRADOR'].id }],
       },
     },
   });
@@ -540,110 +569,400 @@ async function main() {
     });
   }
 
-  // Demo Assets
-  const demoAssets = [
+  // Demo Warehouses
+  let demoWarehouse1 = await prisma.warehouse.findFirst({
+    where: { name: 'Bodega Central Faena Calama', tenantId: demoTenant.id },
+  });
+  if (!demoWarehouse1) {
+    demoWarehouse1 = await prisma.warehouse.create({
+      data: {
+        name: 'Bodega Central Faena Calama',
+        location: 'Calama (Cordillera Central)',
+        type: 'FAENA',
+        tenantId: demoTenant.id,
+      },
+    });
+  }
+
+  let demoWarehouse2 = await prisma.warehouse.findFirst({
+    where: { name: 'Bodega Campamento La Serena', tenantId: demoTenant.id },
+  });
+  if (!demoWarehouse2) {
+    demoWarehouse2 = await prisma.warehouse.create({
+      data: {
+        name: 'Bodega Campamento La Serena',
+        location: 'La Serena (Autopista Norte)',
+        type: 'FAENA',
+        tenantId: demoTenant.id,
+      },
+    });
+  }
+
+  // Demo Suppliers
+  const demoSuppliersData = [
     {
-      internalNumber: 'EXC-001',
-      brand: 'Caterpillar',
-      model: '336D L',
-      type: 'EXCAVADORA' as const,
-      year: 2023,
-      currentHourmeter: 1420,
-      operationalStatus: 'OPERATIVO' as const,
+      rut: '91.564.000-8',
+      businessName: 'Finning Chile S.A.',
+      contactName: 'Gonzalo Repuestos CAT',
+      contactEmail: 'ventas@finning.cl',
+      contactPhone: '+56 2 2927 7000',
+      address: 'Av. Eduardo Frei Montalva 6115, Renca',
       tenantId: demoTenant.id,
-      faenaId: demoFaena1.id,
     },
     {
-      internalNumber: 'CAM-001',
-      brand: 'Mercedes-Benz',
-      model: 'Actros 3344 6x4',
-      type: 'CAMION_TOLVA' as const,
-      year: 2022,
-      currentHourmeter: 2150,
-      currentKilometrage: 48600,
-      operationalStatus: 'OPERATIVO' as const,
+      rut: '90.732.000-5',
+      businessName: 'Kaufmann S.A.',
+      contactName: 'Mariana Tolvas MB',
+      contactEmail: 'ventas@kaufmann.cl',
+      contactPhone: '+56 2 2720 2000',
+      address: 'Gladys Marín 5830, Estación Central',
       tenantId: demoTenant.id,
-      faenaId: demoFaena1.id,
     },
     {
-      internalNumber: 'CAR-001',
-      brand: 'Komatsu',
-      model: 'WA380-6',
-      type: 'CARGADOR_FRONTAL' as const,
-      year: 2021,
-      currentHourmeter: 3200,
-      operationalStatus: 'EN_MANTENCION' as const,
+      rut: '77.234.567-1',
+      businessName: 'Distribuidora Lubricantes del Norte Ltda.',
+      contactName: 'Eduardo Combustibles',
+      contactEmail: 'ventas@lubnorte.cl',
+      contactPhone: '+56 55 241 8900',
+      address: 'Parque Industrial Lote 14, Calama',
       tenantId: demoTenant.id,
-      faenaId: demoFaena2.id,
-    },
-    {
-      internalNumber: 'CT-001',
-      brand: 'Toyota',
-      model: 'Hilux SRV 4x4',
-      type: 'CAMIONETA' as const,
-      year: 2024,
-      currentHourmeter: 450,
-      currentKilometrage: 18200,
-      operationalStatus: 'OPERATIVO' as const,
-      tenantId: demoTenant.id,
-      faenaId: demoFaena1.id,
     },
   ];
 
-  for (const a of demoAssets) {
-    const existing = await prisma.asset.findUnique({
-      where: { internalNumber: a.internalNumber },
+  const demoSuppliers = {};
+  for (const s of demoSuppliersData) {
+    demoSuppliers[s.rut] = await prisma.supplier.upsert({
+      where: { rut: s.rut },
+      update: { tenantId: demoTenant.id },
+      create: s,
     });
-    if (!existing) {
-      const createdAsset = await prisma.asset.create({
+  }
+
+  // Demo Items
+  const demoItemsData = [
+    { code: 'DEMO-DSL-001', description: 'Diesel Grado Minero Ultra Bajo Azufre', unitOfMeasure: 'L', category: 'COMBUSTIBLE', minimumStock: 2000, tenantId: demoTenant.id },
+    { code: 'DEMO-LUB-001', description: 'Aceite Hidráulico Shell Tellus S2 V46', unitOfMeasure: 'L', category: 'LUBRICANTE', minimumStock: 100, tenantId: demoTenant.id },
+    { code: 'DEMO-LUB-002', description: 'Aceite Motor 15W-40 Mobil Delvac MX', unitOfMeasure: 'L', category: 'LUBRICANTE', minimumStock: 80, tenantId: demoTenant.id },
+    { code: 'DEMO-REP-001', description: 'Filtro de Aceite Lubricante CAT 1R-1808', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 10, tenantId: demoTenant.id },
+    { code: 'DEMO-REP-002', description: 'Filtro Primario Combustible CAT 1R-0750', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 8, tenantId: demoTenant.id },
+    { code: 'DEMO-LUB-003', description: 'Grasa Litio Multipropósito EP-2', unitOfMeasure: 'KG', category: 'LUBRICANTE', minimumStock: 50, tenantId: demoTenant.id },
+    { code: 'DEMO-REP-003', description: 'Puntas de Balde Pesado Excavadora CAT 336', unitOfMeasure: 'JGO', category: 'REPUESTO', minimumStock: 4, tenantId: demoTenant.id },
+    { code: 'DEMO-REP-004', description: 'Balatas de Freno Eje Delantero Mercedes Actros', unitOfMeasure: 'JGO', category: 'REPUESTO', minimumStock: 5, tenantId: demoTenant.id },
+    { code: 'DEMO-REP-005', description: 'Neumático 315/80R22.5 Faena Todo Terreno', unitOfMeasure: 'UN', category: 'REPUESTO', minimumStock: 4, tenantId: demoTenant.id },
+    { code: 'DEMO-FER-001', description: 'Pernos Grado 8 para Cuchilla Motoniveladora 1"', unitOfMeasure: 'UN', category: 'FERRETERIA', minimumStock: 100, tenantId: demoTenant.id },
+  ];
+
+  const demoItems = {};
+  for (const item of demoItemsData) {
+    demoItems[item.code] = await prisma.item.upsert({
+      where: { code: item.code },
+      update: { minimumStock: item.minimumStock, tenantId: demoTenant.id },
+      create: item,
+    });
+  }
+
+  // Demo Stock
+  const stockDefinitions = [
+    { warehouseId: demoWarehouse1.id, itemCode: 'DEMO-DSL-001', qty: 8500, cost: 1050 },
+    { warehouseId: demoWarehouse1.id, itemCode: 'DEMO-LUB-001', qty: 350, cost: 4800 },
+    { warehouseId: demoWarehouse1.id, itemCode: 'DEMO-LUB-002', qty: 220, cost: 5200 },
+    { warehouseId: demoWarehouse1.id, itemCode: 'DEMO-REP-001', qty: 25, cost: 19500 },
+    { warehouseId: demoWarehouse1.id, itemCode: 'DEMO-REP-002', qty: 18, cost: 22000 },
+    { warehouseId: demoWarehouse1.id, itemCode: 'DEMO-LUB-003', qty: 140, cost: 8500 },
+    { warehouseId: demoWarehouse1.id, itemCode: 'DEMO-REP-003', qty: 6, cost: 85000 },
+    { warehouseId: demoWarehouse1.id, itemCode: 'DEMO-REP-004', qty: 1, cost: 65000 },
+    { warehouseId: demoWarehouse1.id, itemCode: 'DEMO-REP-005', qty: 8, cost: 320000 },
+    { warehouseId: demoWarehouse1.id, itemCode: 'DEMO-FER-001', qty: 320, cost: 1200 },
+    { warehouseId: demoWarehouse2.id, itemCode: 'DEMO-DSL-001', qty: 4200, cost: 1050 },
+    { warehouseId: demoWarehouse2.id, itemCode: 'DEMO-LUB-001', qty: 150, cost: 4800 },
+    { warehouseId: demoWarehouse2.id, itemCode: 'DEMO-REP-001', qty: 12, cost: 19500 },
+  ];
+
+  for (const s of stockDefinitions) {
+    const item = demoItems[s.itemCode];
+    if (item) {
+      await prisma.stock.upsert({
+        where: { itemId_warehouseId: { itemId: item.id, warehouseId: s.warehouseId } },
+        update: { quantity: s.qty, averageCost: s.cost },
+        create: { itemId: item.id, warehouseId: s.warehouseId, quantity: s.qty, averageCost: s.cost },
+      });
+    }
+  }
+
+  // Demo Assets (10 equipos y camiones)
+  const demoAssetsData = [
+    { internalNumber: 'EXC-001', brand: 'Caterpillar', model: '336D L', type: 'EXCAVADORA', year: 2023, currentHourmeter: 1420, currentKilometrage: 0, operationalStatus: 'OPERATIVO', faenaId: demoFaena1.id },
+    { internalNumber: 'EXC-002', brand: 'Komatsu', model: 'PC490LC-11', type: 'EXCAVADORA', year: 2024, currentHourmeter: 2850, currentKilometrage: 0, operationalStatus: 'OPERATIVO', faenaId: demoFaena1.id },
+    { internalNumber: 'CAM-001', brand: 'Mercedes-Benz', model: 'Actros 3344 6x4', type: 'CAMION_TOLVA', year: 2022, currentHourmeter: 2150, currentKilometrage: 48600, operationalStatus: 'OPERATIVO', licensePlate: 'KM-83-01', faenaId: demoFaena1.id },
+    { internalNumber: 'CAM-002', brand: 'Volvo', model: 'FMX 440 8x4', type: 'CAMION_TOLVA', year: 2023, currentHourmeter: 1890, currentKilometrage: 35200, operationalStatus: 'OPERATIVO', licensePlate: 'VJ-44-88', faenaId: demoFaena1.id },
+    { internalNumber: 'CAR-001', brand: 'Komatsu', model: 'WA380-6', type: 'CARGADOR_FRONTAL', year: 2021, currentHourmeter: 3200, currentKilometrage: 0, operationalStatus: 'EN_MANTENCION', faenaId: demoFaena2.id },
+    { internalNumber: 'RET-001', brand: 'Caterpillar', model: '420F2 IT', type: 'RETROEXCAVADORA', year: 2023, currentHourmeter: 890, currentKilometrage: 0, operationalStatus: 'OPERATIVO', faenaId: demoFaena2.id },
+    { internalNumber: 'ROD-001', brand: 'Bomag', model: 'BW 211 D-50', type: 'RODILLO', year: 2022, currentHourmeter: 640, currentKilometrage: 0, operationalStatus: 'OPERATIVO', faenaId: demoFaena2.id },
+    { internalNumber: 'MOT-001', brand: 'Caterpillar', model: '140M', type: 'MOTONIVELADORA', year: 2021, currentHourmeter: 2410, currentKilometrage: 0, operationalStatus: 'OPERATIVO', faenaId: demoFaena2.id },
+    { internalNumber: 'CT-001', brand: 'Toyota', model: 'Hilux SRV 4x4', type: 'CAMIONETA', year: 2024, currentHourmeter: 450, currentKilometrage: 18200, operationalStatus: 'OPERATIVO', licensePlate: 'TH-44-12', faenaId: demoFaena1.id },
+    { internalNumber: 'CT-002', brand: 'Mitsubishi', model: 'L200 Dakar 4x4', type: 'CAMIONETA', year: 2023, currentHourmeter: 620, currentKilometrage: 26400, operationalStatus: 'OPERATIVO', licensePlate: 'ML-20-99', faenaId: demoFaena2.id },
+  ];
+
+  const demoAssets = {};
+  for (const a of demoAssetsData) {
+    let asset = await prisma.asset.findUnique({ where: { internalNumber: a.internalNumber } });
+    if (!asset) {
+      asset = await prisma.asset.create({
         data: {
           internalNumber: a.internalNumber,
           brand: a.brand,
           model: a.model,
           type: a.type,
           year: a.year,
+          licensePlate: a.licensePlate || null,
           currentHourmeter: a.currentHourmeter,
-          currentKilometrage: a.currentKilometrage || 0,
+          currentKilometrage: a.currentKilometrage,
           operationalStatus: a.operationalStatus,
-          tenantId: a.tenantId,
+          tenantId: demoTenant.id,
         },
       });
 
       await prisma.assetAssignment.create({
         data: {
-          assetId: createdAsset.id,
+          assetId: asset.id,
           faenaId: a.faenaId,
           startDate: new Date('2026-02-01'),
         },
       });
-    }
-  }
-
-  // Demo Warehouse
-  let demoWarehouse = await prisma.warehouse.findFirst({
-    where: { name: 'Bodega Principal Faena', tenantId: demoTenant.id },
-  });
-  if (!demoWarehouse) {
-    demoWarehouse = await prisma.warehouse.create({
-      data: {
-        name: 'Bodega Principal Faena',
-        location: 'Calama (Cordillera Central)',
-        type: 'FAENA',
-        tenantId: demoTenant.id,
-        },
-    });
-
-    const firstItems = await prisma.item.findMany({ take: 8 });
-    for (const itm of firstItems) {
-      await prisma.stock.upsert({
-        where: { itemId_warehouseId: { itemId: itm.id, warehouseId: demoWarehouse.id } },
-        update: { quantity: 25, averageCost: 15000 },
-        create: { itemId: itm.id, warehouseId: demoWarehouse.id, quantity: 25, averageCost: 15000 },
+    } else {
+      await prisma.asset.update({
+        where: { id: asset.id },
+        data: { tenantId: demoTenant.id, operationalStatus: a.operationalStatus },
       });
     }
+    demoAssets[a.internalNumber] = asset;
   }
 
-  console.log('Seed completed successfully.');
+  // Demo Maintenance Plans
+  const demoPlansData = [
+    {
+      name: 'Pauta Preventiva 250 Horas (Maquinaria Pesada)',
+      assetType: 'EXCAVADORA',
+      intervalHours: 250,
+      description: 'Cambio de aceite de motor, reemplazo de filtros y engrase general de pasadores.',
+      tenantId: demoTenant.id,
+    },
+    {
+      name: 'Pauta Preventiva 500 Horas (Camiones Tolva)',
+      assetType: 'CAMION_TOLVA',
+      intervalHours: 500,
+      description: 'Mantenimiento intermedio con cambio de filtros de aire, combustible, aceite y chequeo de frenos.',
+      tenantId: demoTenant.id,
+    },
+    {
+      name: 'Pauta Preventiva 10.000 Km (Vehículos Terreno)',
+      assetType: 'CAMIONETA',
+      intervalKm: 10000,
+      description: 'Alineación, balanceo, cambio de aceite sintético, filtros de habitáculo y revisión de frenos.',
+      tenantId: demoTenant.id,
+    },
+  ];
+
+  for (const p of demoPlansData) {
+    let plan = await prisma.maintenancePlan.findFirst({
+      where: { name: p.name, tenantId: demoTenant.id },
+    });
+    if (!plan) {
+      await prisma.maintenancePlan.create({ data: p });
+    }
+  }
+
+  // Demo Work Orders (OTs)
+  const demoWOs = [
+    {
+      otNumber: 'OT-DEMO-001',
+      assetId: demoAssets['EXC-001'].id,
+      faenaId: demoFaena1.id,
+      type: 'PREVENTIVO',
+      priority: 'MEDIA',
+      status: 'COMPLETADA',
+      description: 'Pauta Preventiva 250 Horas ejecutada conforme según protocolo del fabricante.',
+      currentHourmeter: 1420,
+      totalCost: 280000,
+      technicianName: 'Rodrigo Araya (Mecánico Especialista)',
+      startDate: new Date('2026-10-15T08:00:00Z'),
+      completedDate: new Date('2026-10-15T14:30:00Z'),
+      createdById: demoJefe.id,
+      tenantId: demoTenant.id,
+    },
+    {
+      otNumber: 'OT-DEMO-002',
+      assetId: demoAssets['CAR-001'].id,
+      faenaId: demoFaena2.id,
+      type: 'CORRECTIVO',
+      priority: 'ALTA',
+      status: 'EN_PROGRESO',
+      description: 'Reparación de fuga hidráulica en mangueras de presión del cilindro de levante.',
+      currentHourmeter: 3200,
+      totalCost: 150000,
+      technicianName: 'Marcelo Tapia (Técnico Hidráulico)',
+      startDate: new Date('2026-10-27T09:00:00Z'),
+      createdById: demoJefe.id,
+      tenantId: demoTenant.id,
+    },
+    {
+      otNumber: 'OT-DEMO-003',
+      assetId: demoAssets['CT-001'].id,
+      faenaId: demoFaena1.id,
+      type: 'PREVENTIVO',
+      priority: 'MEDIA',
+      status: 'ABIERTA',
+      description: 'Pauta Preventiva 10.000 Km programada para camioneta de supervisión.',
+      currentKilometrage: 18200,
+      createdById: demoJefe.id,
+      tenantId: demoTenant.id,
+    },
+  ];
+
+  for (const wo of demoWOs) {
+    await prisma.workOrder.upsert({
+      where: { otNumber: wo.otNumber },
+      update: { tenantId: demoTenant.id, status: wo.status },
+      create: wo,
+    });
+  }
+
+  // Demo Asset Documents & Certifications
+  const nowTime = new Date();
+  const demoDocs = [
+    {
+      assetId: demoAssets['CT-001'].id,
+      docType: 'REVISION_TECNICA',
+      documentNumber: 'RT-2026-4412',
+      issuingEntity: 'Planta Revisión Técnica SGS Calama',
+      expirationDate: new Date(nowTime.getTime() + 180 * 24 * 60 * 60 * 1000),
+      isMandatory: true,
+      createdById: demoJefe.id,
+      tenantId: demoTenant.id,
+    },
+    {
+      assetId: demoAssets['EXC-001'].id,
+      docType: 'CERTIFICACION_ESTRUCTURAL',
+      documentNumber: 'CERT-SERNAGEOMIN-336D',
+      issuingEntity: 'Sernageomin / Inspectoría Técnica',
+      expirationDate: new Date(nowTime.getTime() + 90 * 24 * 60 * 60 * 1000),
+      isMandatory: true,
+      createdById: demoJefe.id,
+      tenantId: demoTenant.id,
+    },
+    {
+      assetId: demoAssets['CAM-001'].id,
+      docType: 'CERTIFICACION_ESTRUCTURAL',
+      documentNumber: 'TOLVA-INSPECCION-2026',
+      issuingEntity: 'Bureau Veritas Chile',
+      expirationDate: new Date(nowTime.getTime() + 14 * 24 * 60 * 60 * 1000),
+      isMandatory: true,
+      createdById: demoJefe.id,
+      tenantId: demoTenant.id,
+    },
+  ];
+
+  for (const doc of demoDocs) {
+    const existing = await prisma.assetDocument.findFirst({
+      where: { assetId: doc.assetId, docType: doc.docType, tenantId: demoTenant.id },
+    });
+    if (!existing) {
+      await prisma.assetDocument.create({ data: doc });
+    }
+  }
+
+  // Demo Purchase Request (Solicitud para aprobar en vivo)
+  const existingPR = await prisma.purchaseRequest.findUnique({
+    where: { requestNumber: 'SOL-DEMO-001' },
+  });
+  if (!existingPR) {
+    const prItem = demoItems['DEMO-REP-004'];
+    await prisma.purchaseRequest.create({
+      data: {
+        requestNumber: 'SOL-DEMO-001',
+        status: 'PENDIENTE',
+        justification: 'Reposición urgente de balatas de tolva para mantenimiento de flota pesada en faena Cordillera.',
+        faenaId: demoFaena1.id,
+        requesterId: demoJefe.id,
+        tenantId: demoTenant.id,
+        lines: {
+          create: [
+            {
+              itemId: prItem.id,
+              quantity: 4,
+              urgency: 'ALTA',
+              notes: 'Stock actual en bodega bajo mínimo crítico (1 unidad restante)',
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  // Demo Purchase Order
+  const supLub = demoSuppliers['77.234.567-1'];
+  if (supLub) {
+    await prisma.purchaseOrder.upsert({
+      where: { orderNumber: 'OC-DEMO-001' },
+      update: { tenantId: demoTenant.id },
+      create: {
+        orderNumber: 'OC-DEMO-001',
+        status: 'APROBADA',
+        totalAmount: 960000,
+        supplierId: supLub.id,
+        faenaId: demoFaena1.id,
+        deliveryTerms: 'Despacho directo en bodega de Faena Calama',
+        tenantId: demoTenant.id,
+      },
+    });
+  }
+
+  // Demo Fuel Logs
+  const existingFuel1 = await prisma.fuelLog.findUnique({ where: { dispatchNumber: 'TK-DEMO-001' } });
+  if (!existingFuel1) {
+    await prisma.fuelLog.create({
+      data: {
+        dispatchNumber: 'TK-DEMO-001',
+        assetId: demoAssets['EXC-001'].id,
+        faenaId: demoFaena1.id,
+        warehouseId: demoWarehouse1.id,
+        liters: 450,
+        unitPrice: 1050,
+        totalCost: 472500,
+        previousHourmeter: 1410,
+        currentHourmeter: 1420,
+        hourmeterDelta: 10,
+        litersPerHour: 45,
+        operatorName: 'Juan Carlos Pérez',
+        fuelTruckPlate: 'CA-ALJ-04',
+        tenantId: demoTenant.id,
+      },
+    });
+  }
+
+  const existingFuel2 = await prisma.fuelLog.findUnique({ where: { dispatchNumber: 'TK-DEMO-002' } });
+  if (!existingFuel2) {
+    await prisma.fuelLog.create({
+      data: {
+        dispatchNumber: 'TK-DEMO-002',
+        assetId: demoAssets['CAM-001'].id,
+        faenaId: demoFaena1.id,
+        warehouseId: demoWarehouse1.id,
+        liters: 280,
+        unitPrice: 1050,
+        totalCost: 294000,
+        previousKilometrage: 48320,
+        currentKilometrage: 48600,
+        kilometrageDelta: 280,
+        kmPerLiter: 1,
+        operatorName: 'Mario Soto Gómez',
+        fuelTruckPlate: 'CA-ALJ-04',
+        tenantId: demoTenant.id,
+      },
+    });
+  }
+
+    console.log('Seed completed successfully.');
 }
 
 main()
