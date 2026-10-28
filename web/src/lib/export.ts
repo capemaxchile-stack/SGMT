@@ -43,7 +43,12 @@ export function exportToCSV<T>(
   URL.revokeObjectURL(url);
 }
 
-export function printElement(elementId: string, title: string) {
+export function printElement(
+  elementId: string,
+  title: string,
+  subtitle?: string,
+  companyName?: string
+) {
   const content = document.getElementById(elementId);
   if (!content) {
     window.print();
@@ -56,49 +61,95 @@ export function printElement(elementId: string, title: string) {
     return;
   }
 
+  const cleanTitle = title.replace(/_/g, ' ');
+  const clientCompany = companyName || '';
+
   printWindow.document.write(`
     <!DOCTYPE html>
-    <html>
+    <html lang="es">
       <head>
-        <title>${title} - KATEI</title>
+        <meta charset="utf-8" />
+        <title>${cleanTitle}${clientCompany ? ` - ${clientCompany}` : ''} | KATEI</title>
         <style>
+          @page {
+            size: letter;
+            margin: 1.2cm;
+          }
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 20px;
-            color: #1e293b;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #0f172a;
+            background: #ffffff;
+            font-size: 12px;
+            line-height: 1.4;
           }
           .header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #2563eb;
+            align-items: flex-start;
+            border-bottom: 2px solid #0f172a;
             padding-bottom: 12px;
             margin-bottom: 20px;
           }
-          .title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #1e3a8a;
+          .brand-badge {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #2563eb;
+            margin-bottom: 2px;
+          }
+          .company-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+          }
+          .doc-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+            margin-top: 2px;
+          }
+          .doc-subtitle {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
           }
           .meta {
-            font-size: 12px;
-            color: #64748b;
+            font-size: 11px;
+            color: #475569;
+            line-height: 1.5;
+          }
+          .meta-item {
+            margin-bottom: 2px;
           }
           table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 11.5px;
+            margin-top: 10px;
+            margin-bottom: 10px;
           }
           th {
             background-color: #f1f5f9;
-            color: #334155;
-            font-weight: 600;
+            color: #1e293b;
+            font-weight: 700;
             text-align: left;
-            padding: 8px 10px;
+            padding: 7px 10px;
             border: 1px solid #cbd5e1;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
           }
           td {
-            padding: 8px 10px;
+            padding: 7px 10px;
             border: 1px solid #e2e8f0;
           }
           tr:nth-child(even) td {
@@ -113,27 +164,45 @@ export function printElement(elementId: string, title: string) {
             display: inline-block;
             padding: 2px 6px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
           }
           .badge-ingreso { background: #dcfce7; color: #166534; }
           .badge-salida { background: #fee2e2; color: #991b1b; }
           .badge-ajuste { background: #fef9c3; color: #854d0e; }
-          @page { margin: 1.5cm; }
+          .signature-section {
+            page-break-inside: avoid;
+            margin-top: 30px;
+          }
+          .footer-note {
+            margin-top: 25px;
+            padding-top: 10px;
+            border-top: 1px dashed #cbd5e1;
+            font-size: 10px;
+            color: #94a3b8;
+            text-align: center;
+          }
         </style>
       </head>
       <body>
         <div class="header">
           <div>
-            <div class="title">KATEI — ${title}</div>
-            <div class="meta">Plataforma de Gestión Operativa y Abastecimiento</div>
+            <div class="brand-badge">KATEI &bull; GESTIÓN OPERATIVA &bull; SISTEMA MULTI-TENANT</div>
+            <div class="company-title">${clientCompany ? clientCompany.toUpperCase() : 'EMPRESA REGISTRADA'}</div>
+            <div class="doc-title">${cleanTitle}</div>
+            ${subtitle ? `<div class="doc-subtitle">${subtitle}</div>` : ''}
           </div>
           <div class="meta text-right">
-            <div>Fecha de emisión: ${new Date().toLocaleString('es-CL')}</div>
-            <div>Documento oficial generado</div>
+            ${clientCompany ? `<div class="meta-item"><strong>Titular:</strong> ${clientCompany}</div>` : ''}
+            <div class="meta-item"><strong>Fecha Emisión:</strong> ${new Date().toLocaleDateString('es-CL')}</div>
+            <div class="meta-item"><strong>Hora:</strong> ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</div>
+            <div class="meta-item"><strong>Documento Oficial</strong></div>
           </div>
         </div>
         ${content.innerHTML}
+        <div class="footer-note">
+          Documento emitido formalmente a través de la plataforma KATEI para <strong>${clientCompany || 'la empresa'}</strong>. Información protegida y sujeta a trazabilidad operativa.
+        </div>
       </body>
     </html>
   `);

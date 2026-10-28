@@ -120,17 +120,17 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
       ],
     },
     {
-      title: 'Control & Reportes',
-      items: [
-        { name: 'Certificaciones Flota', path: '/certificaciones', icon: <FileBadge size={18} />, module: 'CERTIFICACIONES' },
-        { name: 'Reportes y Cierres', path: '/reportes', icon: <BarChart3 size={18} />, module: 'REPORTES' },
-      ],
-    },
-    {
       title: 'Mantenedores',
       items: [
         { name: 'Faenas & Contratos', path: '/faenas', icon: <Factory size={18} />, module: 'FAENAS' },
         { name: 'Flota & Maquinaria', path: '/flota', icon: <Truck size={18} />, module: 'FLOTA' },
+      ],
+    },
+    {
+      title: 'Control & Reportes',
+      items: [
+        { name: 'Certificaciones Flota', path: '/certificaciones', icon: <FileBadge size={18} />, module: 'CERTIFICACIONES' },
+        { name: 'Reportes y Cierres', path: '/reportes', icon: <BarChart3 size={18} />, module: 'REPORTES' },
       ],
     },
     {

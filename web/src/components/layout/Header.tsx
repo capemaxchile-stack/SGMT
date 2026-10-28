@@ -6,6 +6,7 @@ import { LogOut, Menu, Sun, Moon, Settings, Sparkles, ShieldCheck } from 'lucide
 import { Button } from '../ui/Button';
 import { UserProfileModal } from './UserProfileModal';
 import { NotificationsPopover } from './NotificationsPopover';
+import { QuickCalculatorPopover } from './QuickCalculatorPopover';
 
 interface HeaderProps {
   onOpenMobileMenu?: () => void;
@@ -67,6 +68,9 @@ export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
 
           {/* Notifications Popover */}
           <NotificationsPopover />
+
+          {/* Quick Calculator Popover */}
+          <QuickCalculatorPopover />
 
           {/* Theme Toggle Button */}
           <button

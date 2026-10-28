@@ -25,8 +25,10 @@ import {
   Building2,
 } from 'lucide-react';
 import { Faena, FaenaReportSummary, AssetReportSummary } from '../../types/models';
+import { useAuthStore } from '../../stores/auth.store';
 
 export function ReportesPage() {
+  const { getTenantName } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'resumen' | 'cierre' | 'exportar'>('resumen');
   const [period, setPeriod] = useState<string>('current_month');
   const [selectedFaenaId, setSelectedFaenaId] = useState<string>('ALL');
@@ -174,43 +176,44 @@ export function ReportesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Executive Clean Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/30 border border-blue-400/40 text-blue-300 text-xs font-bold tracking-wider uppercase">
-              Control Financiero y Operacional
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold">
-              Cierre de Costos
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
-            <BarChart3 className="text-blue-400" size={30} />
-            Reportes Ejecutivos & Cierres de Faena
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+            <BarChart3 className="text-blue-600 dark:text-blue-400" size={24} />
+            Reportes & Cierres de Faena
           </h1>
-          <p className="text-sm text-slate-300 mt-1 max-w-3xl leading-relaxed">
-            Consolidación de costos operacionales (combustible, mantenimiento y bodegas), análisis de rendimiento de flota y liquidaciones mensuales de faena listas para exportar o imprimir.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Costos consolidados de combustible, mantenimiento, bodegas y liquidaciones operacionales.
           </p>
         </div>
 
-        <div className="flex gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <Button
             onClick={() => setActiveTab('exportar')}
             variant="outline"
-            className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs sm:text-sm"
+            size="sm"
+            className="text-xs font-semibold"
           >
-            <Download size={16} className="mr-1.5" />
+            <Download size={14} className="mr-1.5" />
             Descargar CSV
           </Button>
           <Button
             onClick={() => {
               setActiveTab('cierre');
-              setTimeout(() => printElement('faena-closing-statement', 'Liquidacion_Faena'), 150);
+              setTimeout(() => {
+                printElement(
+                  'faena-closing-statement',
+                  'Liquidación Operativa de Faena',
+                  'Documento Formal de Costos',
+                  getTenantName()
+                );
+              }, 150);
             }}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm shadow-md"
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs"
           >
-            <Printer size={16} className="mr-1.5" />
+            <Printer size={14} className="mr-1.5" />
             Imprimir Cierre
           </Button>
         </div>
@@ -663,7 +666,14 @@ export function ReportesPage() {
               </Button>
               <Button
                 size="sm"
-                onClick={() => printElement('faena-closing-statement', `Cierre_${closingData?.faena.name || 'Faena'}`)}
+                onClick={() =>
+                  printElement(
+                    'faena-closing-statement',
+                    `Cierre Faena - ${closingData?.faena.name || 'Liquidación'}`,
+                    'Liquidación Mensual de Costos Operacionales',
+                    getTenantName()
+                  )
+                }
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Printer size={15} className="mr-1.5" />
@@ -678,20 +688,26 @@ export function ReportesPage() {
             className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-md space-y-6"
           >
             {/* Statement Header */}
-            <div className="border-b-2 border-slate-900 dark:border-slate-700 pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="border-b-2 border-slate-900 dark:border-slate-700 pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <span className="text-xs font-bold text-blue-600 dark:text-blue-400 tracking-wider uppercase">
-                  KATEI — Plataforma de Gestión Operativa y Abastecimiento
-                </span>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight mt-1">
+                <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 tracking-wider uppercase">
+                  <span>Plataforma KATEI</span>
+                  <span>&bull;</span>
+                  <span className="text-slate-900 dark:text-white font-extrabold">{getTenantName()}</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight mt-1">
                   Liquidación Operativa & Cierre Mensual de Faena
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Documento formal de liquidación de costos de operación, combustible y mantenimiento
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Documento formal de liquidación y control de costos de combustible, mantenimiento y bodega
                 </p>
               </div>
 
-              <div className="text-left sm:text-right text-xs text-slate-500 dark:text-slate-400">
+              <div className="text-left sm:text-right text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700 leading-relaxed">
+                <p>
+                  <strong>Empresa Titular:</strong>{' '}
+                  <span className="font-bold text-slate-900 dark:text-white">{getTenantName()}</span>
+                </p>
                 <p>
                   <strong>Fecha de Emisión:</strong> {new Date().toLocaleDateString('es-CL')}
                 </p>
@@ -813,21 +829,23 @@ export function ReportesPage() {
             )}
 
             {/* Signature Blocks for Formal Printing */}
-            <div className="pt-12 grid grid-cols-2 gap-8 text-center text-xs text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
+            <div className="pt-10 grid grid-cols-2 gap-8 text-center text-xs text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
               <div>
-                <div className="w-48 border-t border-slate-400 mx-auto mb-2"></div>
+                <div className="w-48 border-t-2 border-slate-400 mx-auto mb-2"></div>
                 <p className="font-bold text-slate-800 dark:text-slate-200">
                   {closingData?.faena.chiefName || 'Jefe de Faena'}
                 </p>
-                <p className="text-[11px]">Jefatura de Faena / Aprobación en Terreno</p>
+                <p className="text-[11px] text-slate-500">Jefatura de Faena / Aprobación Terreno</p>
+                <p className="text-[10px] text-slate-400">{closingData?.faena.name}</p>
               </div>
 
               <div>
-                <div className="w-48 border-t border-slate-400 mx-auto mb-2"></div>
+                <div className="w-48 border-t-2 border-slate-400 mx-auto mb-2"></div>
                 <p className="font-bold text-slate-800 dark:text-slate-200">
-                  Gerencia de Operaciones / Finanzas
+                  Gerencia de Operaciones & Administración
                 </p>
-                <p className="text-[11px]">Control Central KATEI</p>
+                <p className="text-[11px] text-slate-500">{getTenantName()}</p>
+                <p className="text-[10px] text-slate-400">Plataforma KATEI</p>
               </div>
             </div>
           </div>
@@ -905,7 +923,14 @@ export function ReportesPage() {
               <Button
                 onClick={() => {
                   setActiveTab('cierre');
-                  setTimeout(() => printElement('faena-closing-statement', 'Liquidacion_Faena'), 150);
+                  setTimeout(() => {
+                    printElement(
+                      'faena-closing-statement',
+                      `Liquidación de Faena - ${closingData?.faena.name || ''}`,
+                      'Documento Formal de Liquidación',
+                      getTenantName()
+                    );
+                  }, 150);
                 }}
                 variant="outline"
                 className="w-full text-xs"
