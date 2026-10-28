@@ -738,9 +738,10 @@ async function main() {
     await prisma.fuelLog.create({
       data: {
         dispatchNumber: 'TK-DEMO-001',
-        assetId: demoAssets['EXC-001'].id,
-        faenaId: demoFaena1.id,
-        warehouseId: demoWarehouse1.id,
+        asset: { connect: { id: demoAssets['EXC-001'].id } },
+        faena: { connect: { id: demoFaena1.id } },
+        warehouse: { connect: { id: demoWarehouse1.id } },
+        createdBy: { connect: { id: demoJefe.id } },
         liters: 450,
         unitPrice: 1050,
         totalCost: 472500,
@@ -760,9 +761,10 @@ async function main() {
     await prisma.fuelLog.create({
       data: {
         dispatchNumber: 'TK-DEMO-002',
-        assetId: demoAssets['CAM-001'].id,
-        faenaId: demoFaena1.id,
-        warehouseId: demoWarehouse1.id,
+        asset: { connect: { id: demoAssets['CAM-001'].id } },
+        faena: { connect: { id: demoFaena1.id } },
+        warehouse: { connect: { id: demoWarehouse1.id } },
+        createdBy: { connect: { id: demoJefe.id } },
         liters: 280,
         unitPrice: 1050,
         totalCost: 294000,
