@@ -751,7 +751,7 @@ async function main() {
         litersPerHour: 45,
         operatorName: 'Juan Carlos Pérez',
         fuelTruckPlate: 'CA-ALJ-04',
-        tenantId: demoTenant.id,
+        tenant: { connect: { id: demoTenant.id } },
       },
     });
   }
@@ -774,7 +774,7 @@ async function main() {
         kmPerLiter: 1,
         operatorName: 'Mario Soto Gómez',
         fuelTruckPlate: 'CA-ALJ-04',
-        tenantId: demoTenant.id,
+        tenant: { connect: { id: demoTenant.id } },
       },
     });
   }
