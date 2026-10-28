@@ -265,6 +265,7 @@ async function main() {
     update: {},
     create: {
       name: 'KATEI Demo Operaciones',
+      enabledModules: ['DASHBOARD', 'FAENAS', 'FLOTA', 'CERTIFICACIONES', 'MANTENIMIENTO', 'COMBUSTIBLE', 'BODEGA', 'COMPRAS', 'REPORTES', 'ADMINISTRACION', 'COPILOT'],
       slug: 'demo',
       rut: '76.999.888-7',
       planTier: 'ENTERPRISE',
@@ -274,36 +275,7 @@ async function main() {
     },
   });
 
-  const demoModules = [
-    'DASHBOARD',
-    'FAENAS',
-    'FLOTA',
-    'CERTIFICACIONES',
-    'MANTENIMIENTO',
-    'COMBUSTIBLE',
-    'BODEGA',
-    'COMPRAS',
-    'REPORTES',
-    'ADMINISTRACION',
-    'COPILOT',
-  ];
 
-  for (const mod of demoModules) {
-    await prisma.tenantModuleConfig.upsert({
-      where: {
-        tenantId_module: {
-          tenantId: demoTenant.id,
-          module: mod,
-        },
-      },
-      update: { isEnabled: true },
-      create: {
-        tenantId: demoTenant.id,
-        module: mod,
-        isEnabled: true,
-      },
-    });
-  }
 
   // Demo Users (Password: Demo2026!)
   const demoUserPassword = await bcrypt.hash('Demo2026!', 12);
