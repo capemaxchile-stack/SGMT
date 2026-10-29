@@ -16,7 +16,7 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isTerrainMode, setIsTerrainMode] = useState(false);
-  const [isVideoActive, setIsVideoActive] = useState(true);
+  const [isVideoActive, setIsVideoActive] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSuccess, setForgotSuccess] = useState('');
@@ -163,20 +163,20 @@ export function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#070a09] bg-grid select-none">
-      {/* 1. Heavy Machinery & Quarry Background Image with Smooth Cinematic Ken Burns Motion */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <img
-          src="/hero/control-room.jpg"
-          alt="Operación Maquinaria y Faena KATEI"
-          className={`w-full h-full object-cover object-[68%_center] scale-100 transition-transform duration-1000 ${
-            isVideoActive ? 'animate-kenburns' : ''
-          }`}
-        />
-      </div>
+      {/* 1. Heavy Machinery & Quarry Background Image (Fixed default) */}
+      {!isVideoActive && (
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          <img
+            src="/hero/control-room.jpg"
+            alt="Operación Maquinaria y Faena KATEI"
+            className="w-full h-full object-cover object-[68%_center] scale-100"
+          />
+        </div>
+      )}
 
-      {/* 2. Optional Video Layer (Overlay) */}
+      {/* 2. Exclusive Video Layer (Replaces the image when active, no overlapping) */}
       {isVideoActive && !hasVideoError && (
-        <div className="absolute inset-0 z-1 overflow-hidden pointer-events-none transition-opacity duration-1000">
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none transition-opacity duration-700 bg-[#070a09]">
           <video
             ref={videoRef}
             autoPlay
@@ -184,11 +184,9 @@ export function LoginPage() {
             muted
             playsInline
             onError={() => setHasVideoError(true)}
-            poster="/hero/control-room.jpg"
-            className="absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto -translate-x-1/2 -translate-y-1/2 object-cover opacity-50 brightness-[0.75] contrast-[1.08] saturate-[1.05]"
+            className="absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto -translate-x-1/2 -translate-y-1/2 object-cover opacity-60 brightness-[0.78] contrast-[1.08] saturate-[1.05]"
           >
             <source src="/hero/machinery-loop.webm" type="video/webm" />
-
           </video>
         </div>
       )}
@@ -337,12 +335,12 @@ export function LoginPage() {
           type="button"
           onClick={toggleVideo}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-xs backdrop-blur-md border border-slate-700/60 transition-colors shadow-lg"
-          title={isVideoActive ? 'Pausar efecto de fondo' : 'Activar efecto animado'}
+          title={isVideoActive ? 'Cambiar a imagen fija' : 'Activar video de fondo'}
         >
           {isVideoActive ? (
             <>
               <VideoOff size={13} className="text-amber-400" />
-              <span>Pausar Fondo</span>
+              <span>Imagen Fija</span>
             </>
           ) : (
             <>
