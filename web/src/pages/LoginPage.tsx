@@ -166,9 +166,9 @@ export function LoginPage() {
       {/* 1. Heavy Machinery & Quarry Background Image with Smooth Cinematic Ken Burns Motion */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <img
-          src="/images/earthmoving_bg.jpg"
-          alt="Operación Maquinaria y Movimiento de Tierras"
-          className={`w-full h-full object-cover object-center scale-100 transition-transform duration-1000 ${
+          src="/hero/control-room.jpg"
+          alt="Operación Maquinaria y Faena KATEI"
+          className={`w-full h-full object-cover object-[68%_center] scale-100 transition-transform duration-1000 ${
             isVideoActive ? 'animate-kenburns' : ''
           }`}
         />
@@ -184,10 +184,11 @@ export function LoginPage() {
             muted
             playsInline
             onError={() => setHasVideoError(true)}
-            className="absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto -translate-x-1/2 -translate-y-1/2 object-cover opacity-30 mix-blend-screen"
+            poster="/hero/control-room.jpg"
+            className="absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto -translate-x-1/2 -translate-y-1/2 object-cover opacity-50 brightness-[0.75] contrast-[1.08] saturate-[1.05]"
           >
-            <source src="/videos/earthmoving_bg.mp4" type="video/mp4" />
-            <source src="/videos/earthmoving_bg.webm" type="video/webm" />
+            <source src="/hero/machinery-loop.webm" type="video/webm" />
+
           </video>
         </div>
       )}
