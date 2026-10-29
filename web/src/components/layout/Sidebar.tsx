@@ -233,8 +233,8 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
                         'flex items-center rounded-lg transition-colors text-xs font-medium',
                         collapsed ? 'justify-center p-2.5 my-0.5' : 'gap-2.5 px-3 py-2',
                         isActive
-                          ? 'bg-blue-600 text-white shadow-sm font-semibold'
-                          : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                          ? 'bg-emerald-600 text-white shadow-sm font-semibold shadow-emerald-950/40'
+                          : 'text-slate-300 hover:bg-[#141c19] hover:text-white'
                       )
                     }
                   >
@@ -250,9 +250,9 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
 
       {/* Corporate Footer */}
       {collapsed ? (
-        <div className="p-2 mx-1 mb-2 flex flex-col items-center gap-2 rounded-xl bg-slate-800/80 border border-slate-700/60">
+        <div className="p-2 mx-1 mb-2 flex flex-col items-center gap-2 rounded-xl bg-[#0f1513] border border-[#1e2925]">
           <div
-            className="p-1 rounded text-blue-400 hover:bg-slate-700 transition cursor-help"
+            className="p-1 rounded text-emerald-400 hover:bg-[#141c19] transition cursor-help"
             title={`${getTenantName()} (Plan ${currentTier})`}
           >
             <Building2 size={16} />
@@ -270,13 +270,13 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
           )}
         </div>
       ) : (
-        <div className="p-3 mx-3 mb-3 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-400 text-xs space-y-2">
+        <div className="p-3 mx-3 mb-3 rounded-xl bg-[#0f1513] border border-[#1e2925] text-slate-400 text-xs space-y-2">
           <div className="flex items-center justify-between font-semibold text-slate-200">
             <div className="flex items-center gap-1.5 truncate max-w-[130px]">
-              <Building2 size={13} className="text-blue-400 shrink-0" />
+              <Building2 size={13} className="text-emerald-400 shrink-0" />
               <span className="truncate" title={getTenantName()}>{getTenantName()}</span>
             </div>
-            <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 uppercase tracking-wider">
+            <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider">
               {currentTier}
             </span>
           </div>
@@ -308,13 +308,13 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
       {/* Desktop Sidebar */}
       <aside
         className={cn(
-          'flex-shrink-0 bg-slate-900 dark:bg-slate-950 text-white flex flex-col hidden md:flex border-r border-slate-800 transition-all duration-300 ease-in-out',
+          'flex-shrink-0 bg-[#0b100e] text-white flex flex-col hidden md:flex border-r border-[#1e2925] transition-all duration-300 ease-in-out',
           isCollapsed ? 'w-16' : 'w-64'
         )}
       >
         <div
           className={cn(
-            'h-16 flex items-center border-b border-slate-800 transition-all px-3 shrink-0',
+            'h-16 flex items-center border-b border-[#1e2925] transition-all px-3 shrink-0',
             isCollapsed ? 'justify-center' : 'justify-between'
           )}
         >
@@ -322,7 +322,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             <button
               type="button"
               onClick={toggleCollapse}
-              className="p-1.5 rounded-lg hover:bg-slate-800 transition text-slate-300 hover:text-white"
+              className="p-1.5 rounded-lg hover:bg-[#141c19] transition text-slate-300 hover:text-white"
               title="Expandir menú lateral"
               aria-label="Expandir menú lateral"
             >
@@ -334,7 +334,7 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
               <button
                 type="button"
                 onClick={toggleCollapse}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#141c19] transition-colors"
                 title="Contraer menú lateral"
                 aria-label="Contraer menú lateral"
               >
@@ -349,12 +349,12 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
         </nav>
 
         {/* Desktop Expand/Collapse Bottom Bar */}
-        <div className="border-t border-slate-800 p-2 shrink-0">
+        <div className="border-t border-[#1e2925] p-2 shrink-0">
           <button
             type="button"
             onClick={toggleCollapse}
             className={cn(
-              'w-full flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors text-xs font-medium cursor-pointer',
+              'w-full flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-white hover:bg-[#141c19] transition-colors text-xs font-medium cursor-pointer',
               !isCollapsed && 'gap-2'
             )}
             title={isCollapsed ? 'Expandir menú lateral' : 'Contraer menú lateral'}
@@ -385,12 +385,12 @@ export function Sidebar({ isMobileOpen = false, onCloseMobile }: SidebarProps) {
             onClick={onCloseMobile}
             aria-hidden="true"
           />
-          <aside className="relative w-64 max-w-[80vw] bg-slate-900 dark:bg-slate-950 text-white flex flex-col h-full shadow-2xl z-10 transition-transform duration-200 ease-out border-r border-slate-800">
-            <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800 shrink-0">
+          <aside className="relative w-64 max-w-[80vw] bg-[#0b100e] text-white flex flex-col h-full shadow-2xl z-10 transition-transform duration-200 ease-out border-r border-[#1e2925]">
+            <div className="h-16 flex items-center justify-between px-4 border-b border-[#1e2925] shrink-0">
               <Logo size="sm" variant="full" textColor="text-white" />
               <button
                 onClick={onCloseMobile}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#141c19] transition-colors"
                 aria-label="Cerrar menú móvil"
               >
                 <X size={20} />

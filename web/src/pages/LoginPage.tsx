@@ -16,7 +16,7 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isTerrainMode, setIsTerrainMode] = useState(false);
-  const [isVideoActive, setIsVideoActive] = useState(true);
+  const [isVideoActive, setIsVideoActive] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSuccess, setForgotSuccess] = useState('');
@@ -75,7 +75,7 @@ export function LoginPage() {
       for (let layer = 1; layer <= 3; layer++) {
         ctx.beginPath();
         const baseOffset = height * (0.65 + layer * 0.1);
-        ctx.strokeStyle = `rgba(245, 158, 11, ${0.12 - layer * 0.03})`; // Warm amber dust contour glow
+        ctx.strokeStyle = layer === 2 ? `rgba(34, 197, 94, ${0.14 - layer * 0.03})` : `rgba(245, 158, 11, ${0.12 - layer * 0.03})`;
 
         for (let x = 0; x <= width; x += 25) {
           const wave1 = Math.sin(x * 0.003 + t + layer) * 25;
@@ -162,21 +162,21 @@ export function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-slate-950 select-none">
-      {/* 1. Heavy Machinery & Quarry Background Image with Smooth Cinematic Ken Burns Motion */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <img
-          src="/images/earthmoving_bg.jpg"
-          alt="Operación Maquinaria y Movimiento de Tierras"
-          className={`w-full h-full object-cover object-center scale-100 transition-transform duration-1000 ${
-            isVideoActive ? 'animate-kenburns' : ''
-          }`}
-        />
-      </div>
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#070a09] bg-grid select-none">
+      {/* 1. Heavy Machinery & Quarry Background Image (Fixed default) */}
+      {!isVideoActive && (
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          <img
+            src="/hero/control-room.jpg"
+            alt="Operación Maquinaria y Faena KATEI"
+            className="w-full h-full object-cover object-[68%_center] scale-100"
+          />
+        </div>
+      )}
 
-      {/* 2. Optional Video Layer (Overlay) */}
+      {/* 2. Exclusive Video Layer (Replaces the image when active, no overlapping) */}
       {isVideoActive && !hasVideoError && (
-        <div className="absolute inset-0 z-1 overflow-hidden pointer-events-none transition-opacity duration-1000">
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none transition-opacity duration-700 bg-[#070a09]">
           <video
             ref={videoRef}
             autoPlay
@@ -184,10 +184,9 @@ export function LoginPage() {
             muted
             playsInline
             onError={() => setHasVideoError(true)}
-            className="absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto -translate-x-1/2 -translate-y-1/2 object-cover opacity-30 mix-blend-screen"
+            className="absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto -translate-x-1/2 -translate-y-1/2 object-cover opacity-60 brightness-[0.78] contrast-[1.08] saturate-[1.05]"
           >
-            <source src="/videos/earthmoving_bg.mp4" type="video/mp4" />
-            <source src="/videos/earthmoving_bg.webm" type="video/webm" />
+            <source src="/hero/machinery-loop.webm" type="video/webm" />
           </video>
         </div>
       )}
@@ -199,12 +198,12 @@ export function LoginPage() {
       />
 
       {/* 4. Balanced Cinematic Vignette Overlay (Gives high contrast to the login card while showcasing machinery) */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-slate-950/75 backdrop-blur-[0.5px] pointer-events-none" />
+      <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#070a09]/95 via-[#070a09]/50 to-[#070a09]/80 backdrop-blur-[0.5px] pointer-events-none" />
 
       {/* 5. Foreground Login Card */}
-      <Card className="relative z-20 w-full max-w-md shadow-2xl border border-slate-700/60 bg-slate-900/90 backdrop-blur-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <Card className="relative z-20 w-full max-w-md shadow-2xl border border-[#1e2925] bg-[#0b100e]/95 backdrop-blur-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Top Brand Accent Line */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-amber-500 to-blue-600" />
+        <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-amber-400 to-emerald-500" />
 
         <CardHeader className="text-center pb-2 pt-6 flex flex-col items-center">
           <div className="mb-3">
@@ -217,8 +216,8 @@ export function LoginPage() {
             Gestión Integral de Maquinarias, Mantenimiento y Faenas
           </p>
           {tenantSlug && (
-            <div className="mt-2.5 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs">
-              <Building2 size={13} className="text-blue-400" />
+            <div className="mt-2.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs">
+              <Building2 size={13} className="text-emerald-400" />
               <span>Espacio: <strong className="uppercase">{tenantSlug}</strong>.katei.cl</span>
             </div>
           )}
@@ -241,7 +240,7 @@ export function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="bg-slate-800/90 border-slate-700 text-white placeholder:text-slate-500"
+              className="bg-[#141c19] border-[#1e2925] text-white placeholder:text-slate-500"
             />
 
             <div className="relative">
@@ -254,7 +253,7 @@ export function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-slate-800/90 border-slate-700 text-white placeholder:text-slate-500 pr-10"
+                className="bg-[#141c19] border-[#1e2925] text-white placeholder:text-slate-500 pr-10"
               />
               <button
                 type="button"
@@ -271,7 +270,7 @@ export function LoginPage() {
                 <input
                   type="checkbox"
                   defaultChecked
-                  className="rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-0"
+                  className="rounded border-[#1e2925] bg-[#141c19] text-emerald-600 focus:ring-0"
                 />
                 <span>Recordar sesión</span>
               </label>
@@ -282,7 +281,7 @@ export function LoginPage() {
                   setForgotSuccess('');
                   setShowForgotModal(true);
                 }}
-                className="text-blue-400 hover:underline cursor-pointer"
+                className="text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer"
               >
                 ¿Olvidaste tu contraseña?
               </span>
@@ -295,7 +294,7 @@ export function LoginPage() {
               className={`w-full font-bold py-2.5 rounded-xl shadow-lg text-sm transition-all active:scale-[0.99] ${
                 isTerrainMode
                   ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/30'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30'
               }`}
               isLoading={isLoading}
             >
@@ -307,11 +306,11 @@ export function LoginPage() {
               onClick={() => setIsTerrainMode(!isTerrainMode)}
               className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-semibold transition shadow-sm ${
                 isTerrainMode
-                  ? 'bg-blue-950/60 border-blue-700/60 text-blue-300 hover:bg-blue-900/60'
+                  ? 'bg-emerald-950/60 border-emerald-700/60 text-emerald-300 hover:bg-emerald-900/60'
                   : 'bg-slate-800/90 hover:bg-slate-700/90 border-slate-700 text-amber-300 hover:text-amber-200'
               }`}
             >
-              <Smartphone size={15} className={isTerrainMode ? 'text-blue-400' : 'text-amber-400'} />
+              <Smartphone size={15} className={isTerrainMode ? 'text-emerald-400' : 'text-amber-400'} />
               <span>
                 {isTerrainMode
                   ? 'Cambiar a Modo Plataforma / ERP'
@@ -336,16 +335,16 @@ export function LoginPage() {
           type="button"
           onClick={toggleVideo}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-xs backdrop-blur-md border border-slate-700/60 transition-colors shadow-lg"
-          title={isVideoActive ? 'Pausar efecto de fondo' : 'Activar efecto animado'}
+          title={isVideoActive ? 'Cambiar a imagen fija' : 'Activar video de fondo'}
         >
           {isVideoActive ? (
             <>
               <VideoOff size={13} className="text-amber-400" />
-              <span>Pausar Fondo</span>
+              <span>Imagen Fija</span>
             </>
           ) : (
             <>
-              <Video size={13} className="text-blue-400" />
+              <Video size={13} className="text-emerald-400" />
               <span>Fondo Dinámico</span>
             </>
           )}

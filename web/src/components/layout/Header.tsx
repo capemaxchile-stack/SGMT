@@ -20,7 +20,7 @@ export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
 
   return (
     <>
-      <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 shrink-0 transition-colors">
+      <header className="h-16 bg-white dark:bg-[#0b100e] border-b border-slate-200 dark:border-[#1e2925] flex items-center justify-between px-4 sm:px-6 shrink-0 transition-colors">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -35,7 +35,7 @@ export function Header({ onOpenMobileMenu, onOpenCopilot }: HeaderProps) {
             <span className="text-slate-400 font-normal">Panel de Control:</span>
             <span className="font-bold text-slate-900 dark:text-white">{useAuthStore.getState().getTenantName()}</span>
           </div>
-          <div className="font-bold text-base md:hidden text-primary-600 dark:text-blue-400 tracking-wider">
+          <div className="font-extrabold text-base md:hidden text-emerald-600 dark:text-emerald-400 tracking-[0.18em]">
             KATEI
           </div>
         </div>
